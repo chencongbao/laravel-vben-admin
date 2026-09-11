@@ -11,10 +11,15 @@ The default prefix is `/api/admin`. Except for login, routes require a Sanctum B
 | GET | `/auth/me` | Authenticated administrator |
 | PATCH | `/auth/profile` | Authenticated administrator |
 | PUT | `/auth/password` | Authenticated administrator, rate limited |
+| GET | `/auth/sessions` | Authenticated administrator; own sessions only |
+| DELETE | `/auth/sessions` | Revoke all other sessions |
+| DELETE | `/auth/sessions/{tokenId}` | Revoke one other owned session |
 | GET | `/access/permissions` | Authenticated administrator |
 | GET | `/access/menus` | Authenticated administrator |
 
 Profile updates accept `name` and an optional absolute avatar URL. Password updates require `current_password`, `password` and `password_confirmation`; the new password must contain upper- and lowercase letters and numbers with a minimum length of 12. A successful password change revokes the administrator's other tokens while preserving the current session.
+
+Session endpoints are always scoped through the authenticated administrator's token relation. The current token cannot be revoked through the session endpoint; normal logout must be used instead. Revocations are recorded in the audit log.
 
 ## Administrators
 

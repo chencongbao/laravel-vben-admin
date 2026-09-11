@@ -17,6 +17,9 @@ Route::middleware(['auth:sanctum', 'admin.user'])->group(function (): void {
     Route::get('auth/me', [AuthController::class, 'me']);
     Route::patch('auth/profile', [AuthController::class, 'updateProfile']);
     Route::put('auth/password', [AuthController::class, 'updatePassword'])->middleware('throttle:6,1');
+    Route::get('auth/sessions', [AuthController::class, 'sessions']);
+    Route::delete('auth/sessions', [AuthController::class, 'destroyOtherSessions']);
+    Route::delete('auth/sessions/{tokenId}', [AuthController::class, 'destroySession'])->whereNumber('tokenId');
     Route::get('access/permissions', [AccessController::class, 'permissions']);
     Route::get('access/menus', [AccessController::class, 'menus']);
 

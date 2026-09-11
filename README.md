@@ -65,6 +65,8 @@ POST /api/admin/auth/logout
 GET  /api/admin/auth/me
 PATCH /api/admin/auth/profile
 PUT  /api/admin/auth/password
+GET  /api/admin/auth/sessions
+DELETE /api/admin/auth/sessions/{tokenId}
 GET  /api/admin/access/permissions
 GET  /api/admin/access/menus
 ```

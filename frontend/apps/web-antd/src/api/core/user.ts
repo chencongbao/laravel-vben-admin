@@ -33,3 +33,23 @@ export async function updatePasswordApi(data: {
 }) {
   return requestClient.put<{ message: string }>('/auth/password', data);
 }
+
+export interface AdminSession {
+  created_at: string;
+  current: boolean;
+  id: number;
+  last_used_at?: null | string;
+  name: string;
+}
+
+export async function getSessionsApi() {
+  return requestClient.get<{ sessions: AdminSession[] }>('/auth/sessions');
+}
+
+export async function revokeSessionApi(id: number) {
+  return requestClient.delete(`/auth/sessions/${id}`);
+}
+
+export async function revokeOtherSessionsApi() {
+  return requestClient.delete<{ revoked_count: number }>('/auth/sessions');
+}

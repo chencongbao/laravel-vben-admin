@@ -89,6 +89,52 @@ final class AuthController extends Controller
         return response()->json(['message' => 'Password updated.']);
     }
 
+    public function sessions(Request $request): JsonResponse
+    {
+        /** @var AdminUser $user */
+        $user = $request->user();
+        $currentTokenId = $user->currentAccessToken()?->getKey();
+        $sessions = $user->tokens()->latest('id')->get()->map(fn ($token) => [
+            'id' => $token->getKey(),
+            'name' => $token->name,
+            'current' => $token->getKey() === $currentTokenId,
+            'last_used_at' => $token->last_used_at,
+            'created_at' => $token->created_at,
+        ]);
+
+        return response()->json(['sessions' => $sessions]);
+    }
+
+    public function destroySession(Request $request, int $tokenId): JsonResponse
+    {
+        /** @var AdminUser $user */
+        $user = $request->user();
+        if ($user->currentAccessToken()?->getKey() === $tokenId) {
+            return response()->json(['message' => 'Use logout to revoke the current session.', 'code' => 'CURRENT_SESSION_PROTECTED'], 422);
+        }
+
+        $token = $user->tokens()->whereKey($tokenId)->firstOrFail();
+        $token->delete();
+        $this->audit->record($user, 'auth.session.revoked', $user, [], ['token_id' => $tokenId]);
+
+        return response()->json(status: 204);
+    }
+
+    public function destroyOtherSessions(Request $request): JsonResponse
+    {
+        /** @var AdminUser $user */
+        $user = $request->user();
+        $currentTokenId = $user->currentAccessToken()?->getKey();
+        $query = $user->tokens();
+        if ($currentTokenId !== null) {
+            $query->where('id', '<>', $currentTokenId);
+        }
+        $revoked = $query->delete();
+        $this->audit->record($user, 'auth.sessions.revoked', $user, [], ['revoked_count' => $revoked]);
+
+        return response()->json(['revoked_count' => $revoked]);
+    }
+
     private function userPayload(AdminUser $user): array
     {
         return ['id' => $user->getKey(), 'username' => $user->username, 'name' => $user->name, 'avatar' => $user->avatar, 'is_active' => $user->is_active];
