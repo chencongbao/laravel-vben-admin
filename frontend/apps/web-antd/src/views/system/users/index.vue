@@ -66,12 +66,12 @@ onMounted(load);
 <template>
   <Page description="创建管理员、维护账号状态并分配角色。密码至少 12 位，需包含大小写字母和数字。" title="用户管理">
     <Card>
-      <div class="mb-4 flex justify-end"><Button type="primary" @click="open()">新增用户</Button></div>
+      <div class="mb-4 flex justify-end"><Button v-access:code="'system.user.create'" type="primary" @click="open()">新增用户</Button></div>
       <Table :columns="columns" :data-source="users" :loading="loading" :pagination="pagination" row-key="id" @change="changePage">
         <template #bodyCell="{ column, record, text }">
           <Space v-if="column.dataIndex === 'roles'" wrap><Tag v-for="role in record.roles" :key="role.id">{{ role.name }}</Tag></Space>
           <Tag v-else-if="column.dataIndex === 'is_active'" :color="text ? 'green' : 'default'">{{ text ? '启用' : '禁用' }}</Tag>
-          <Button v-else-if="column.dataIndex === 'action'" type="link" @click="open(record)">编辑</Button>
+          <Button v-else-if="column.dataIndex === 'action'" v-access:code="'system.user.update'" type="link" @click="open(record)">编辑</Button>
         </template>
       </Table>
     </Card>

@@ -9,8 +9,12 @@ The default prefix is `/api/admin`. Except for login, routes require a Sanctum B
 | POST | `/auth/login` | Public, rate limited |
 | POST | `/auth/logout` | Authenticated administrator |
 | GET | `/auth/me` | Authenticated administrator |
+| PATCH | `/auth/profile` | Authenticated administrator |
+| PUT | `/auth/password` | Authenticated administrator, rate limited |
 | GET | `/access/permissions` | Authenticated administrator |
 | GET | `/access/menus` | Authenticated administrator |
+
+Profile updates accept `name` and an optional absolute avatar URL. Password updates require `current_password`, `password` and `password_confirmation`; the new password must contain upper- and lowercase letters and numbers with a minimum length of 12. A successful password change revokes the administrator's other tokens while preserving the current session.
 
 ## Administrators
 

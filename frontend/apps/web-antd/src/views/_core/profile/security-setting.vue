@@ -1,43 +1,10 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-
 import { ProfileSecuritySetting } from '@vben/common-ui';
-
-const formSchema = computed(() => {
-  return [
-    {
-      value: true,
-      fieldName: 'accountPassword',
-      label: '账户密码',
-      description: '当前密码强度：强',
-    },
-    {
-      value: true,
-      fieldName: 'securityPhone',
-      label: '密保手机',
-      description: '已绑定手机：138****8293',
-    },
-    {
-      value: true,
-      fieldName: 'securityQuestion',
-      label: '密保问题',
-      description: '未设置密保问题，密保问题可有效保护账户安全',
-    },
-    {
-      value: true,
-      fieldName: 'securityEmail',
-      label: '备用邮箱',
-      description: '已绑定邮箱：ant***sign.com',
-    },
-    {
-      value: false,
-      fieldName: 'securityMfa',
-      label: 'MFA 设备',
-      description: '未绑定 MFA 设备，绑定后，可以进行二次确认',
-    },
-  ];
-});
+const formSchema = computed(() => [
+  { description: '修改密码需要验证当前密码；密码至少 12 位，并包含大小写字母和数字。', fieldName: 'accountPassword', label: '账户密码', value: true },
+  { description: '修改密码成功后，除当前会话外的其他 Sanctum 登录令牌会被撤销。', fieldName: 'sessionSecurity', label: '会话安全', value: true },
+  { description: 'MFA 尚未在基础包中实现，后续需要单独设计恢复码和强制策略。', fieldName: 'securityMfa', label: 'MFA 设备', value: false },
+]);
 </script>
-<template>
-  <ProfileSecuritySetting :form-schema="formSchema" />
-</template>
+<template><ProfileSecuritySetting :form-schema="formSchema" /></template>

@@ -15,6 +15,8 @@ Route::post('auth/login', [AuthController::class, 'login'])->middleware('throttl
 Route::middleware(['auth:sanctum', 'admin.user'])->group(function (): void {
     Route::post('auth/logout', [AuthController::class, 'logout']);
     Route::get('auth/me', [AuthController::class, 'me']);
+    Route::patch('auth/profile', [AuthController::class, 'updateProfile']);
+    Route::put('auth/password', [AuthController::class, 'updatePassword'])->middleware('throttle:6,1');
     Route::get('access/permissions', [AccessController::class, 'permissions']);
     Route::get('access/menus', [AccessController::class, 'menus']);
 

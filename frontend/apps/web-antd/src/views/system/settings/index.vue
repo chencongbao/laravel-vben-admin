@@ -43,7 +43,7 @@ onMounted(load);
           <InputNumber v-else-if="item.type === 'integer'" v-model:value="item.value" class="w-full" />
           <Input v-else v-model:value="item.value" />
         </FormItem>
-        <Button type="primary" @click="save">保存设置</Button>
+        <Button v-access:code="'system.setting.update'" type="primary" @click="save">保存设置</Button>
       </Form>
     </Card>
   </Page>

@@ -74,14 +74,14 @@ onMounted(load);
 <template>
   <Page description="为角色分配权限码与可见菜单；所有系统角色均由后端保护。" title="角色管理">
     <Card>
-      <div class="mb-4 flex justify-end"><Button type="primary" @click="openEdit()">新增角色</Button></div>
+      <div class="mb-4 flex justify-end"><Button v-access:code="'system.role.create'" type="primary" @click="openEdit()">新增角色</Button></div>
       <Table :columns="columns" :data-source="roles" :loading="loading" :pagination="pagination" row-key="id" @change="changePage">
         <template #bodyCell="{ column, record, text }">
           <Tag v-if="column.dataIndex === 'is_active'" :color="text ? 'green' : 'default'">{{ text ? '启用' : '禁用' }}</Tag>
           <Space v-else-if="column.dataIndex === 'action'">
-            <Button size="small" type="link" @click="openAccess(record)">授权</Button>
-            <Button size="small" type="link" @click="openEdit(record)">编辑</Button>
-            <Popconfirm title="确定删除该角色？" @confirm="remove(record)"><Button danger size="small" type="link">删除</Button></Popconfirm>
+            <Button v-access:code="'system.role.assign-access'" size="small" type="link" @click="openAccess(record)">授权</Button>
+            <Button v-access:code="'system.role.update'" size="small" type="link" @click="openEdit(record)">编辑</Button>
+            <Popconfirm v-access:code="'system.role.delete'" title="确定删除该角色？" @confirm="remove(record)"><Button danger size="small" type="link">删除</Button></Popconfirm>
           </Space>
         </template>
       </Table>

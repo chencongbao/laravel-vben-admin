@@ -1,17 +1,11 @@
 <script lang="ts" setup>
-import ResourcePage from '#/components/system/resource-page.vue';
-
-const fields = [
-  { key: 'id', label: 'ID' },
-  { key: 'action', label: '操作' },
-  { key: 'actor_id', label: '操作人 ID' },
-  { key: 'subject_type', label: '对象类型' },
-  { key: 'subject_id', label: '对象 ID' },
-  { key: 'ip_address', label: 'IP 地址' },
-  { key: 'created_at', label: '时间' },
+import LogPage from '#/components/system/log-page.vue';
+const columns = [
+  { dataIndex: 'id', title: 'ID' }, { dataIndex: 'action', title: '操作' },
+  { dataIndex: 'actor_id', title: '操作人 ID' }, { dataIndex: 'subject_type', title: '对象类型' },
+  { dataIndex: 'subject_id', title: '对象 ID' }, { dataIndex: 'ip_address', title: 'IP 地址' },
+  { dataIndex: 'created_at', title: '时间' },
 ];
+const filters = [{ key: 'action', label: '操作标识' }, { key: 'actor_id', label: '操作人 ID' }];
 </script>
-
-<template>
-  <ResourcePage :fields="fields" path="/system/audit-logs" read-only title="审计日志" />
-</template>
+<template><LogPage :columns="columns" :filters="filters" path="/system/audit-logs" title="审计日志" /></template>

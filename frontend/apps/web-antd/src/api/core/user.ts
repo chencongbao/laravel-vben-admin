@@ -21,3 +21,15 @@ export async function getUserInfoApi() {
     username: response.user.username,
   } satisfies UserInfo;
 }
+
+export async function updateProfileApi(data: { avatar?: null | string; name: string }) {
+  return requestClient.patch<{ user: { avatar?: null | string; id: number; name: string; username: string } }>('/auth/profile', data);
+}
+
+export async function updatePasswordApi(data: {
+  current_password: string;
+  password: string;
+  password_confirmation: string;
+}) {
+  return requestClient.put<{ message: string }>('/auth/password', data);
+}

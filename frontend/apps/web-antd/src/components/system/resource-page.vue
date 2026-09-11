@@ -40,6 +40,7 @@ const props = defineProps<{
   description?: string;
   fields: ResourceField[];
   path: string;
+  permissionPrefix?: string;
   readOnly?: boolean;
   title: string;
 }>();
@@ -140,7 +141,7 @@ onMounted(load);
   <Page :description="description" :title="title">
     <Card>
       <div v-if="!readOnly" class="mb-4 flex justify-end">
-        <Button type="primary" @click="openCreate">新增</Button>
+        <Button v-access:code="`${permissionPrefix}.create`" type="primary" @click="openCreate">新增</Button>
       </div>
       <Table
         :columns="columns"
@@ -153,8 +154,8 @@ onMounted(load);
         <template #bodyCell="{ column, record, text }">
           <template v-if="column.key === 'action'">
             <Space>
-              <Button size="small" type="link" @click="openEdit(record)">编辑</Button>
-              <Popconfirm title="确定删除此记录？" @confirm="remove(record.id)">
+              <Button v-access:code="`${permissionPrefix}.update`" size="small" type="link" @click="openEdit(record)">编辑</Button>
+              <Popconfirm v-access:code="`${permissionPrefix}.delete`" title="确定删除此记录？" @confirm="remove(record.id)">
                 <Button danger size="small" type="link">删除</Button>
               </Popconfirm>
             </Space>

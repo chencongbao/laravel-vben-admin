@@ -2,6 +2,7 @@
 
 namespace Chencongbao\LaravelVbenAdmin\Http\Controllers;
 
+use Chencongbao\LaravelVbenAdmin\Contracts\AuditRecorder;
 use Chencongbao\LaravelVbenAdmin\Models\AdminUser;
 use Chencongbao\LaravelVbenAdmin\Models\AdminLoginLog;
 use Illuminate\Http\JsonResponse;
@@ -9,9 +10,12 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Validation\Rules\Password;
 
 final class AuthController extends Controller
 {
+    public function __construct(private readonly AuditRecorder $audit) {}
+
     public function login(Request $request): JsonResponse
     {
         $credentials = $request->validate(['username' => ['required', 'string', 'max:120'], 'password' => ['required', 'string']]);
@@ -45,6 +49,44 @@ final class AuthController extends Controller
         $request->user()?->currentAccessToken()?->delete();
 
         return response()->json(['message' => 'Logged out.']);
+    }
+
+    public function updateProfile(Request $request): JsonResponse
+    {
+        /** @var AdminUser $user */
+        $user = $request->user();
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:120'],
+            'avatar' => ['nullable', 'url', 'max:2048'],
+        ]);
+        $before = $user->only(['name', 'avatar']);
+        $user->update($data);
+        $this->audit->record($user, 'auth.profile.updated', $user, ['before' => $before, 'after' => $user->only(['name', 'avatar'])]);
+
+        return response()->json(['user' => $this->userPayload($user)]);
+    }
+
+    public function updatePassword(Request $request): JsonResponse
+    {
+        /** @var AdminUser $user */
+        $user = $request->user();
+        $data = $request->validate([
+            'current_password' => ['required', 'string'],
+            'password' => ['required', 'confirmed', 'different:current_password', Password::min(12)->letters()->mixedCase()->numbers()],
+        ]);
+
+        if (! Hash::check($data['current_password'], $user->password)) {
+            throw ValidationException::withMessages(['current_password' => ['The current password is incorrect.']]);
+        }
+
+        $user->forceFill(['password' => $data['password']])->save();
+        $currentTokenId = $user->currentAccessToken()?->getKey();
+        if ($currentTokenId !== null) {
+            $user->tokens()->where('id', '<>', $currentTokenId)->delete();
+        }
+        $this->audit->record($user, 'auth.password.updated', $user, ['other_tokens_revoked' => true]);
+
+        return response()->json(['message' => 'Password updated.']);
     }
 
     private function userPayload(AdminUser $user): array

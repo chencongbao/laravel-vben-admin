@@ -63,6 +63,8 @@ All paths use the configurable `api/admin` prefix:
 POST /api/admin/auth/login
 POST /api/admin/auth/logout
 GET  /api/admin/auth/me
+PATCH /api/admin/auth/profile
+PUT  /api/admin/auth/password
 GET  /api/admin/access/permissions
 GET  /api/admin/access/menus
 ```
