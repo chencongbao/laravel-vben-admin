@@ -27,7 +27,7 @@ async function load() {
   } finally { loading.value = false; }
 }
 
-function openEdit(role?: Role) {
+function openEdit(role?: any) {
   editingId.value = role?.id;
   Object.assign(form, { code: role?.code ?? '', is_active: role?.is_active ?? true, name: role?.name ?? '' });
   visible.value = true;
@@ -43,7 +43,7 @@ async function saveRole() {
   } finally { saving.value = false; }
 }
 
-async function openAccess(role: Role) {
+async function openAccess(role: any) {
   loading.value = true;
   try {
     const [detail, permissionResult, menuResult] = await Promise.all([
@@ -66,7 +66,7 @@ async function saveAccess() {
   } finally { saving.value = false; }
 }
 
-async function remove(role: Role) { await deleteResource('/system/roles', role.id); message.success('角色已删除'); await load(); }
+async function remove(role: Record<string, any>) { await deleteResource('/system/roles', Number(role.id)); message.success('角色已删除'); await load(); }
 function changePage(page: { current?: number; pageSize?: number }) { pagination.current = page.current ?? 1; pagination.pageSize = page.pageSize ?? 20; void load(); }
 onMounted(load);
 </script>

@@ -43,7 +43,7 @@ async function load() {
   } finally { loading.value = false; }
 }
 
-function open(record?: MenuItem) {
+function open(record?: any) {
   editingId.value = record?.id;
   Object.assign(form, {
     code: record?.code ?? '', icon: record?.icon ?? '', is_active: record?.is_active ?? true,
@@ -66,7 +66,7 @@ async function save() {
   } finally { saving.value = false; }
 }
 
-async function remove(item: MenuItem) { await deleteResource('/system/menus', item.id); message.success('菜单已删除'); await load(); }
+async function remove(item: Record<string, any>) { await deleteResource('/system/menus', Number(item.id)); message.success('菜单已删除'); await load(); }
 onMounted(load);
 </script>
 

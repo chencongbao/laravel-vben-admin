@@ -24,7 +24,7 @@ The repository also contains an editable Vben Admin 5.7.0 Starter in `frontend/`
 
 - PHP 8.4
 - Laravel 13
-- Laravel Sanctum 5
+- Laravel Sanctum 4.3+
 - MySQL 8.0+ for the initial supported database target
 - Node.js `^22.18.0 || ^24.0.0` and pnpm `>=10` for the Vben Starter
 
@@ -41,23 +41,46 @@ Development and production default to the same-origin `/api/admin` API. For a se
 
 The Starter uses backend access mode. Laravel returns the effective menu tree and permissions, while `frontend/apps/web-antd/src/api/core/menu.ts` maps trusted `view_key` values to local Vue components. Unknown view keys are never interpreted as arbitrary imports.
 
+The browser path is configurable, while the API path is deliberately fixed:
+
+```dotenv
+VBEN_ADMIN_PATH=admin
+```
+
+For a different path, build with the matching Vite base and then publish the compiled assets:
+
+```bash
+cd frontend
+VITE_BASE=/control-center/ pnpm build:antd
+cd ..
+php artisan vben-admin:publish-assets
+```
+
+`vben-admin:publish-assets` copies the compiled application to `public/{VBEN_ADMIN_PATH}`. It refuses unsafe, reserved, or non-empty destinations unless `--force` is explicitly provided. The Laravel API always remains at `/api/admin` and project PHP extensions belong in `app/Admin`.
+
 ## Install
+
+完整的中文安装、启动、Path 仓库联调和前端构建说明见 [安装文档](docs/installation.zh-CN.md)。
 
 ```bash
 composer require chencongbao/laravel-vben-admin
 
 php artisan vben-admin:install
-php artisan migrate
-php artisan vben-admin:sync --dry-run
-php artisan vben-admin:sync
-php artisan vben-admin:create-admin
+php artisan vben-admin:publish-assets
 ```
 
-The installer deliberately does not run migrations or create a fixed default password. Production database changes remain explicit deployment steps.
+The installer publishes the package configuration and Sanctum migration, runs all pending migrations, synchronizes the package-owned roles, permissions and menus, and creates the initial super administrator when it does not already exist:
+
+```text
+Username: admin
+Password: admin
+```
+
+Running the installer again never resets an existing administrator's password. Change the default password immediately after the first login. Use `vben-admin:create-admin` when an additional super administrator is required.
 
 ## API foundation
 
-All paths use the configurable `api/admin` prefix:
+All paths use the fixed `/api/admin` prefix:
 
 ```text
 POST /api/admin/auth/login

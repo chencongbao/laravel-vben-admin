@@ -3,8 +3,10 @@
 use Chencongbao\LaravelVbenAdmin\Models\AdminUser;
 
 return [
+    // Browser path for the compiled administration SPA. The API remains fixed at /api/admin.
+    'path' => env('VBEN_ADMIN_PATH', 'admin'),
+
     'route' => [
-        'prefix' => 'api/admin',
         'middleware' => ['api'],
     ],
 

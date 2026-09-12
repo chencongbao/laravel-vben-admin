@@ -7,7 +7,7 @@ const columns = [
 ];
 const filters = [
   { key: 'username', label: '用户名' },
-  { key: 'succeeded', label: '登录结果', options: [{ label: '成功', value: true }, { label: '失败', value: false }] },
+  { key: 'succeeded', label: '登录结果', options: [{ label: '成功', value: '1' }, { label: '失败', value: '0' }] },
 ];
 </script>
 <template><LogPage :columns="columns" :filters="filters" path="/system/login-logs" title="登录日志" /></template>

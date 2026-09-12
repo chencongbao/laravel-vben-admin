@@ -47,7 +47,7 @@ final class AccessController extends Controller
             'view_key' => $menu->view_key,
             'meta' => ['title' => $menu->title, 'icon' => $menu->icon, 'order' => $menu->sort, 'hidden' => $menu->is_hidden, 'authority' => array_values(array_filter([$menu->permission_code]))],
             'children' => [],
-        ])->keyBy('code');
+        ])->keyBy('code')->all();
 
         $tree = [];
         foreach ($menus as $code => &$menu) {

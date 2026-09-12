@@ -21,7 +21,7 @@ async function load() {
     permissions.value = result.data as Permission[]; pagination.total = result.total;
   } finally { loading.value = false; }
 }
-function open(item?: Permission) {
+function open(item?: any) {
   editingId.value = item?.id;
   Object.assign(form, { code: item?.code ?? '', is_active: item?.is_active ?? true, is_sensitive: item?.is_sensitive ?? false, name: item?.name ?? '' });
   visible.value = true;
@@ -35,7 +35,7 @@ async function save() {
     visible.value = false; message.success('权限保存成功'); await load();
   } finally { saving.value = false; }
 }
-async function remove(item: Permission) { await deleteResource('/system/permissions', item.id); message.success('权限已删除'); await load(); }
+async function remove(item: Record<string, any>) { await deleteResource('/system/permissions', Number(item.id)); message.success('权限已删除'); await load(); }
 function changePage(page: { current?: number; pageSize?: number }) { pagination.current = page.current ?? 1; pagination.pageSize = page.pageSize ?? 20; void load(); }
 onMounted(load);
 </script>

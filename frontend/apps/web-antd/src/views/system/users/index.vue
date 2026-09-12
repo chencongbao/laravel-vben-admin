@@ -34,11 +34,11 @@ async function load() {
   } finally { loading.value = false; }
 }
 
-function open(record?: AdminUser) {
+function open(record?: any) {
   editingId.value = record?.id;
   Object.assign(form, {
     is_active: record?.is_active ?? true, name: record?.name ?? '', password: '',
-    role_ids: record?.roles.map((role) => role.id) ?? [], username: record?.username ?? '',
+    role_ids: record?.roles.map((role: Role) => role.id) ?? [], username: record?.username ?? '',
   });
   visible.value = true;
 }

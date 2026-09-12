@@ -31,7 +31,12 @@ export async function getAllMenusApi() {
 
   const mapMenu = (menu: BackendMenu): RouteRecordStringComponent => ({
     children: menu.children?.map(mapMenu),
-    component: menu.view_key ? components[menu.view_key] : undefined,
+    component:
+      menu.type === 'directory'
+        ? 'BasicLayout'
+        : menu.view_key
+          ? (components[menu.view_key] ?? '/_core/fallback/not-found')
+          : '/_core/fallback/not-found',
     meta: menu.meta,
     name: menu.name || menu.code,
     path: menu.path,

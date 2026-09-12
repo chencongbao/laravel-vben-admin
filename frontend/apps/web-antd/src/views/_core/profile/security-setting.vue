@@ -14,7 +14,7 @@ async function load() {
   loading.value = true;
   try { sessions.value = (await getSessionsApi()).sessions; } finally { loading.value = false; }
 }
-async function revoke(session: AdminSession) { await revokeSessionApi(session.id); message.success('会话已撤销'); await load(); }
+async function revoke(session: Record<string, any>) { await revokeSessionApi(Number(session.id)); message.success('会话已撤销'); await load(); }
 async function revokeOthers() {
   const result = await revokeOtherSessionsApi();
   message.success(`已撤销 ${result.revoked_count} 个其他会话`); await load();

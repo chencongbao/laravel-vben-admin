@@ -6,7 +6,7 @@ import { getResource } from '#/api/system';
 
 const props = defineProps<{
   columns: Array<{ dataIndex: string; title: string }>;
-  filters: Array<{ key: string; label: string; options?: Array<{ label: string; value: boolean | string }> }>;
+  filters: Array<{ key: string; label: string; options?: Array<{ label: string; value: number | string }> }>;
   path: string;
   title: string;
 }>();

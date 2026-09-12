@@ -45,7 +45,7 @@ function createRequestClient(baseURL: string, options?: RequestClientOptions) {
   /**
    * 刷新token逻辑
    */
-  async function doRefreshToken() {
+  async function doRefreshToken(): Promise<string> {
     throw new Error('Laravel Vben Admin uses revocable tokens without refresh.');
   }
 

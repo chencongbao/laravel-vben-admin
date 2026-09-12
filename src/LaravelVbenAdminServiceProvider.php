@@ -4,6 +4,7 @@ namespace Chencongbao\LaravelVbenAdmin;
 
 use Chencongbao\LaravelVbenAdmin\Console\CreateAdminCommand;
 use Chencongbao\LaravelVbenAdmin\Console\InstallCommand;
+use Chencongbao\LaravelVbenAdmin\Console\PublishAssetsCommand;
 use Chencongbao\LaravelVbenAdmin\Console\SyncSystemDataCommand;
 use Chencongbao\LaravelVbenAdmin\Contracts\Authorizer;
 use Chencongbao\LaravelVbenAdmin\Contracts\AuditRecorder;
@@ -35,7 +36,7 @@ final class LaravelVbenAdminServiceProvider extends ServiceProvider
         $router->aliasMiddleware('admin.user', EnsureAdminUser::class);
         $router->aliasMiddleware('admin.permission', RequirePermission::class);
         Route::middleware(config('laravel-vben-admin.route.middleware', ['api']))
-            ->prefix(config('laravel-vben-admin.route.prefix', 'api/admin'))
+            ->prefix('api/admin')
             ->group(__DIR__.'/../routes/admin.php');
 
         if ($this->app->runningInConsole()) {
@@ -45,6 +46,7 @@ final class LaravelVbenAdminServiceProvider extends ServiceProvider
 
             $this->commands([
                 InstallCommand::class,
+                PublishAssetsCommand::class,
                 CreateAdminCommand::class,
                 SyncSystemDataCommand::class,
             ]);

@@ -20,7 +20,7 @@ export function createResource(path: string, data: Record<string, any>) {
 }
 
 export function updateResource(path: string, id: number, data: Record<string, any>) {
-  return requestClient.patch(`${path}/${id}`, data);
+  return requestClient.request(`${path}/${id}`, { data, method: 'PATCH' });
 }
 
 export function deleteResource(path: string, id: number) {

@@ -23,7 +23,7 @@ export async function getUserInfoApi() {
 }
 
 export async function updateProfileApi(data: { avatar?: null | string; name: string }) {
-  return requestClient.patch<{ user: { avatar?: null | string; id: number; name: string; username: string } }>('/auth/profile', data);
+  return requestClient.request<{ user: { avatar?: null | string; id: number; name: string; username: string } }>('/auth/profile', { data, method: 'PATCH' });
 }
 
 export async function updatePasswordApi(data: {
