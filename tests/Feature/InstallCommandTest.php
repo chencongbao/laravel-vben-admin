@@ -3,6 +3,7 @@
 namespace Chencongbao\LaravelVbenAdmin\Tests\Feature;
 
 use Chencongbao\LaravelVbenAdmin\LaravelVbenAdminServiceProvider;
+use Chencongbao\LaravelVbenAdmin\Models\AdminRole;
 use Chencongbao\LaravelVbenAdmin\Models\AdminUser;
 use Illuminate\Support\Facades\Hash;
 use Orchestra\Testbench\TestCase;
@@ -31,7 +32,9 @@ final class InstallCommandTest extends TestCase
         $administrator = AdminUser::query()->where('username', 'admin')->firstOrFail();
 
         self::assertTrue(Hash::check('admin', $administrator->password));
-        self::assertTrue($administrator->roles()->where('code', 'super-admin')->exists());
+        self::assertTrue($administrator->roles()->where('code', 'administrator')->exists());
+        self::assertTrue(AdminRole::query()->where('code', 'administrator')->where('is_super_admin', true)->exists());
+        self::assertTrue(AdminRole::query()->where('code', 'manager')->where('is_super_admin', false)->exists());
 
         $administrator->update(['password' => 'changed-password']);
 

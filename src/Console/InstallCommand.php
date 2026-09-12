@@ -54,7 +54,7 @@ final class InstallCommand extends Command
         }
 
         $role = AdminRole::query()
-            ->where('code', 'super-admin')
+            ->where('code', 'administrator')
             ->where('is_super_admin', true)
             ->firstOrFail();
 

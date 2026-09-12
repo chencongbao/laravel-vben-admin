@@ -50,17 +50,19 @@ An administrator cannot disable their current account or remove their own super-
 | Method | Path | Permission |
 | --- | --- | --- |
 | GET | `/system/roles` | `system.role.view` |
-| POST | `/system/roles` | `system.role.create` |
+| POST | `/system/roles` | `system.role.create` and `system.role.assign-access` |
 | GET | `/system/roles/{adminRole}` | `system.role.view` |
-| PATCH | `/system/roles/{adminRole}` | `system.role.update` |
+| PATCH | `/system/roles/{adminRole}` | `system.role.update` and `system.role.assign-access` |
 | DELETE | `/system/roles/{adminRole}` | `system.role.delete` |
 | PUT | `/system/roles/{adminRole}/access` | `system.role.assign-access` |
 
-System roles cannot be modified or deleted. A role assigned to administrators cannot be deleted.
+Creating and updating a non-super role accepts `code`, `name`, `is_active`, `permission_ids`, and `menu_ids` in one atomic request. The built-in `administrator` role is immutable and has implicit full access. The built-in `manager` identity is protected, while its access assignments can be updated. A role assigned to administrators cannot be deleted.
 
 ## Permissions and menus
 
 Permission CRUD uses `/system/permissions`; menu CRUD uses `/system/menus`. Each action has a distinct `system.permission.*` or `system.menu.*` permission. System records are protected, referenced permissions cannot be deleted, menus with children cannot be deleted, and cyclic menu parents are rejected.
+
+`PUT /system/menus/reorder` requires `system.menu.update` and atomically accepts the complete menu tree as `items` containing `id`, `parent_code`, and `sort`. Incomplete trees and cyclic parent relationships are rejected.
 
 The effective menu API returns a tree. A non-super administrator only receives menus that are both assigned to one of their roles and allowed by their effective permission codes.
 

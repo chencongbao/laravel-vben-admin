@@ -36,7 +36,7 @@ php artisan vben-admin:publish-assets
 1. 发布 `config/laravel-vben-admin.php`；
 2. 在项目不存在 Sanctum 迁移时发布 `personal_access_tokens` 迁移；
 3. 执行所有待执行的数据库 migration；
-4. 同步包内置的角色、权限和菜单；
+4. 同步内置的 `administrator`（超级管理员）、`manager`（管理员）、权限和菜单；
 5. 首次安装时创建默认超级管理员。
 
 默认登录信息：

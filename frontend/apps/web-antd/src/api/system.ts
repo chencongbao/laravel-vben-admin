@@ -35,6 +35,10 @@ export function updateRoleAccess(id: number, data: { menu_ids: number[]; permiss
   return requestClient.put(`/system/roles/${id}/access`, data);
 }
 
+export function reorderMenus(items: Array<{ id: number; parent_code: null | string; sort: number }>) {
+  return requestClient.put('/system/menus/reorder', { items });
+}
+
 export function updateSettings(settings: Array<{ key: string; value: any }>) {
   return requestClient.put<{ settings: SettingItem[] }>('/system/settings', {
     settings,

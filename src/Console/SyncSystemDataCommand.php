@@ -30,7 +30,19 @@ final class SyncSystemDataCommand extends Command
         }
 
         DB::transaction(function () use ($permissions, $menus): void {
-            AdminRole::query()->updateOrCreate(['code' => 'super-admin'], ['name' => 'Super Administrator', 'is_active' => true, 'is_system' => true, 'is_super_admin' => true]);
+            $legacyAdministrator = AdminRole::query()->where('code', 'super-admin')->first();
+            if ($legacyAdministrator && ! AdminRole::query()->where('code', 'administrator')->exists()) {
+                $legacyAdministrator->update(['code' => 'administrator']);
+            }
+
+            AdminRole::query()->updateOrCreate(
+                ['code' => 'administrator'],
+                ['name' => '超级管理员', 'is_active' => true, 'is_system' => true, 'is_super_admin' => true],
+            );
+            AdminRole::query()->updateOrCreate(
+                ['code' => 'manager'],
+                ['name' => '管理员', 'is_active' => true, 'is_system' => true, 'is_super_admin' => false],
+            );
 
             foreach ($permissions as $permission) {
                 AdminPermission::query()->updateOrCreate(['code' => $permission['code']], $permission);
@@ -97,23 +109,23 @@ final class SyncSystemDataCommand extends Command
                 'is_active' => true, 'is_hidden' => false, 'is_system' => true,
             ],
             [
-            'code' => 'system', 'parent_code' => null, 'title' => 'System', 'type' => 'directory', 'route_name' => 'System', 'route_path' => '/system', 'view_key' => null,
-            'permission_code' => 'system.access', 'icon' => 'lucide:settings', 'sort' => 1000, 'is_active' => true, 'is_hidden' => false, 'is_system' => true,
+                'code' => 'system', 'parent_code' => null, 'title' => 'page.system.title', 'type' => 'directory', 'route_name' => 'System', 'route_path' => '/system', 'view_key' => null,
+                'permission_code' => 'system.access', 'icon' => 'lucide:settings', 'sort' => 1000, 'is_active' => true, 'is_hidden' => false, 'is_system' => true,
             ],
         ];
 
         foreach ([
-            ['system.users', 'Administrators', 'SystemUsers', '/system/users', 'system.users', 'system.user.view', 10],
-            ['system.roles', 'Roles', 'SystemRoles', '/system/roles', 'system.roles', 'system.role.view', 20],
-            ['system.permissions', 'Permissions', 'SystemPermissions', '/system/permissions', 'system.permissions', 'system.permission.view', 30],
-            ['system.menus', 'Menus', 'SystemMenus', '/system/menus', 'system.menus', 'system.menu.view', 40],
-            ['system.login-logs', 'Login Logs', 'SystemLoginLogs', '/system/login-logs', 'system.login-logs', 'system.login-log.view', 80],
-            ['system.audit-logs', 'Audit Logs', 'SystemAuditLogs', '/system/audit-logs', 'system.audit-logs', 'system.audit.view', 90],
-            ['system.settings', 'Settings', 'SystemSettings', '/system/settings', 'system.settings', 'system.setting.view', 100],
-        ] as [$code, $title, $routeName, $routePath, $viewKey, $permissionCode, $sort]) {
+            ['system.users', 'page.system.administrators', 'SystemUsers', '/system/users', 'system.users', 'system.user.view', 'lucide:users', 10],
+            ['system.roles', 'page.system.roles', 'SystemRoles', '/system/roles', 'system.roles', 'system.role.view', 'lucide:user-cog', 20],
+            ['system.permissions', 'page.system.permissions', 'SystemPermissions', '/system/permissions', 'system.permissions', 'system.permission.view', 'lucide:shield-check', 30],
+            ['system.menus', 'page.system.menus', 'SystemMenus', '/system/menus', 'system.menus', 'system.menu.view', 'lucide:list-tree', 40],
+            ['system.login-logs', 'page.system.loginLogs', 'SystemLoginLogs', '/system/login-logs', 'system.login-logs', 'system.login-log.view', 'lucide:log-in', 80],
+            ['system.audit-logs', 'page.system.auditLogs', 'SystemAuditLogs', '/system/audit-logs', 'system.audit-logs', 'system.audit.view', 'lucide:clipboard-list', 90],
+            ['system.settings', 'page.system.settings', 'SystemSettings', '/system/settings', 'system.settings', 'system.setting.view', 'lucide:settings-2', 100],
+        ] as [$code, $title, $routeName, $routePath, $viewKey, $permissionCode, $icon, $sort]) {
             $items[] = [
                 'code' => $code, 'parent_code' => 'system', 'title' => $title, 'type' => 'page', 'route_name' => $routeName,
-                'route_path' => $routePath, 'view_key' => $viewKey, 'permission_code' => $permissionCode, 'icon' => null,
+                'route_path' => $routePath, 'view_key' => $viewKey, 'permission_code' => $permissionCode, 'icon' => $icon,
                 'sort' => $sort, 'is_active' => true, 'is_hidden' => false, 'is_system' => true,
             ];
         }

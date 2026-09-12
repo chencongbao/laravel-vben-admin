@@ -6,8 +6,8 @@ use Chencongbao\LaravelVbenAdmin\Models\AdminRole;
 use Chencongbao\LaravelVbenAdmin\Models\AdminUser;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rules\Password;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rules\Password;
 
 final class CreateAdminCommand extends Command
 {
@@ -27,7 +27,7 @@ final class CreateAdminCommand extends Command
             'password' => ['required', 'string', Password::min(12)->letters()->mixedCase()->numbers()],
         ])->validate();
 
-        $role = AdminRole::query()->where('code', 'super-admin')->where('is_super_admin', true)->firstOrFail();
+        $role = AdminRole::query()->where('code', 'administrator')->where('is_super_admin', true)->firstOrFail();
         $user = AdminUser::query()->create(['username' => $username, 'name' => $name, 'password' => Hash::make($password), 'is_active' => true]);
         $user->roles()->syncWithoutDetaching([$role->getKey()]);
 

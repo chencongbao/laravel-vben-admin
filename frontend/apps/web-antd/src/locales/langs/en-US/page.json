@@ -11,5 +11,15 @@
     "title": "Dashboard",
     "analytics": "Analytics",
     "workspace": "Workspace"
+  },
+  "system": {
+    "title": "System",
+    "administrators": "Administrators",
+    "roles": "Roles",
+    "permissions": "Permissions",
+    "menus": "Menus",
+    "loginLogs": "Login Logs",
+    "auditLogs": "Audit Logs",
+    "settings": "Settings"
   }
 }

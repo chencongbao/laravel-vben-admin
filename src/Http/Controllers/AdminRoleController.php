@@ -24,10 +24,18 @@ final class AdminRoleController extends Controller
     public function store(Request $request): JsonResponse
     {
         $data = $this->validateRole($request);
-        $role = AdminRole::query()->create($data + ['is_system' => false, 'is_super_admin' => false]);
-        $this->audit->record($request->user(), 'system.role.created', $role, ['after' => $data]);
+        $access = $this->validateAccess($request);
 
-        return response()->json(['role' => $role], 201);
+        $role = DB::transaction(function () use ($access, $data, $request): AdminRole {
+            $role = AdminRole::query()->create($data + ['is_system' => false, 'is_super_admin' => false]);
+            $role->permissions()->sync($access['permission_ids']);
+            $role->menus()->sync($access['menu_ids']);
+            $this->audit->record($request->user(), 'system.role.created', $role, ['after' => $data + $access]);
+
+            return $role;
+        });
+
+        return response()->json(['role' => $role->load('permissions:id,code,name', 'menus:id,code,title')], 201);
     }
 
     public function show(AdminRole $adminRole): JsonResponse
@@ -37,21 +45,33 @@ final class AdminRoleController extends Controller
 
     public function update(Request $request, AdminRole $adminRole): JsonResponse
     {
-        if ($adminRole->is_system) {
+        if ($adminRole->is_super_admin) {
             return response()->json(['message' => 'System roles cannot be modified.', 'code' => 'SYSTEM_ROLE_PROTECTED'], 422);
         }
 
         $data = $this->validateRole($request, $adminRole);
+        $access = $this->validateAccess($request);
         $before = $adminRole->only(['code', 'name', 'is_active']);
-        $adminRole->update($data);
-        $this->audit->record($request->user(), 'system.role.updated', $adminRole, ['before' => $before, 'after' => $adminRole->only(['code', 'name', 'is_active'])]);
+        if ($adminRole->is_system) {
+            unset($data['code'], $data['name'], $data['is_active']);
+        }
 
-        return response()->json(['role' => $adminRole]);
+        DB::transaction(function () use ($access, $adminRole, $before, $data, $request): void {
+            $adminRole->update($data);
+            $adminRole->permissions()->sync($access['permission_ids']);
+            $adminRole->menus()->sync($access['menu_ids']);
+            $this->audit->record($request->user(), 'system.role.updated', $adminRole, [
+                'before' => $before,
+                'after' => $adminRole->only(['code', 'name', 'is_active']) + $access,
+            ]);
+        });
+
+        return response()->json(['role' => $adminRole->load('permissions:id,code,name', 'menus:id,code,title')]);
     }
 
     public function destroy(Request $request, AdminRole $adminRole): JsonResponse
     {
-        if ($adminRole->is_system || $adminRole->is_super_admin) {
+        if ($adminRole->is_system) {
             return response()->json(['message' => 'System roles cannot be deleted.', 'code' => 'SYSTEM_ROLE_PROTECTED'], 422);
         }
         if ($adminRole->users()->exists()) {
@@ -68,7 +88,7 @@ final class AdminRoleController extends Controller
 
     public function access(Request $request, AdminRole $adminRole): JsonResponse
     {
-        if ($adminRole->is_system || $adminRole->is_super_admin) {
+        if ($adminRole->is_super_admin) {
             return response()->json(['message' => 'System role access cannot be modified.', 'code' => 'SYSTEM_ROLE_PROTECTED'], 422);
         }
 
@@ -92,6 +112,16 @@ final class AdminRoleController extends Controller
             'code' => [$role ? 'sometimes' : 'required', 'string', 'max:120', Rule::unique(config('laravel-vben-admin.tables.roles', 'admin_roles'), 'code')->ignore($role?->getKey())],
             'name' => [$role ? 'sometimes' : 'required', 'string', 'max:120'],
             'is_active' => ['sometimes', 'boolean'],
+        ]);
+    }
+
+    private function validateAccess(Request $request): array
+    {
+        return $request->validate([
+            'permission_ids' => ['required', 'array', 'min:1'],
+            'permission_ids.*' => ['integer', Rule::exists(config('laravel-vben-admin.tables.permissions', 'admin_permissions'), 'id')->where('is_active', true)],
+            'menu_ids' => ['required', 'array', 'min:1'],
+            'menu_ids.*' => ['integer', Rule::exists(config('laravel-vben-admin.tables.menus', 'admin_menus'), 'id')->where('is_active', true)],
         ]);
     }
 }

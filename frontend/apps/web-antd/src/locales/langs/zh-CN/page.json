@@ -11,5 +11,15 @@
     "title": "概览",
     "analytics": "分析页",
     "workspace": "工作台"
+  },
+  "system": {
+    "title": "系统管理",
+    "administrators": "管理员",
+    "roles": "角色管理",
+    "permissions": "权限管理",
+    "menus": "菜单管理",
+    "loginLogs": "登录日志",
+    "auditLogs": "审计日志",
+    "settings": "系统设置"
   }
 }

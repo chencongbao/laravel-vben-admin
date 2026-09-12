@@ -7,8 +7,8 @@ use Chencongbao\LaravelVbenAdmin\Http\Controllers\AdminPermissionController;
 use Chencongbao\LaravelVbenAdmin\Http\Controllers\AdminRoleController;
 use Chencongbao\LaravelVbenAdmin\Http\Controllers\AdminSettingController;
 use Chencongbao\LaravelVbenAdmin\Http\Controllers\AdminUserController;
-use Chencongbao\LaravelVbenAdmin\Http\Controllers\AuthController;
 use Chencongbao\LaravelVbenAdmin\Http\Controllers\ApplicationConfigController;
+use Chencongbao\LaravelVbenAdmin\Http\Controllers\AuthController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('application', ApplicationConfigController::class);
@@ -31,9 +31,9 @@ Route::middleware(['auth:sanctum', 'admin.user'])->group(function (): void {
     Route::patch('system/users/{adminUser}', [AdminUserController::class, 'update'])->middleware('admin.permission:system.user.update');
 
     Route::get('system/roles', [AdminRoleController::class, 'index'])->middleware('admin.permission:system.role.view');
-    Route::post('system/roles', [AdminRoleController::class, 'store'])->middleware('admin.permission:system.role.create');
+    Route::post('system/roles', [AdminRoleController::class, 'store'])->middleware(['admin.permission:system.role.create', 'admin.permission:system.role.assign-access']);
     Route::get('system/roles/{adminRole}', [AdminRoleController::class, 'show'])->middleware('admin.permission:system.role.view');
-    Route::patch('system/roles/{adminRole}', [AdminRoleController::class, 'update'])->middleware('admin.permission:system.role.update');
+    Route::patch('system/roles/{adminRole}', [AdminRoleController::class, 'update'])->middleware(['admin.permission:system.role.update', 'admin.permission:system.role.assign-access']);
     Route::delete('system/roles/{adminRole}', [AdminRoleController::class, 'destroy'])->middleware('admin.permission:system.role.delete');
     Route::put('system/roles/{adminRole}/access', [AdminRoleController::class, 'access'])->middleware('admin.permission:system.role.assign-access');
 
@@ -45,6 +45,7 @@ Route::middleware(['auth:sanctum', 'admin.user'])->group(function (): void {
 
     Route::get('system/menus', [AdminMenuController::class, 'index'])->middleware('admin.permission:system.menu.view');
     Route::post('system/menus', [AdminMenuController::class, 'store'])->middleware('admin.permission:system.menu.create');
+    Route::put('system/menus/reorder', [AdminMenuController::class, 'reorder'])->middleware('admin.permission:system.menu.update');
     Route::get('system/menus/{adminMenu}', [AdminMenuController::class, 'show'])->middleware('admin.permission:system.menu.view');
     Route::patch('system/menus/{adminMenu}', [AdminMenuController::class, 'update'])->middleware('admin.permission:system.menu.update');
     Route::delete('system/menus/{adminMenu}', [AdminMenuController::class, 'destroy'])->middleware('admin.permission:system.menu.delete');
