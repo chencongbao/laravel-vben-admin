@@ -89,10 +89,18 @@ final class SyncSystemDataCommand extends Command
 
     private function menus(ModuleRegistry $registry): array
     {
-        $items = [[
+        $items = [
+            [
+                'code' => 'dashboard.workspace', 'parent_code' => null, 'title' => 'page.dashboard.workspace', 'type' => 'page',
+                'route_name' => 'Workspace', 'route_path' => '/workspace', 'view_key' => 'dashboard.workspace',
+                'permission_code' => null, 'icon' => 'carbon:workspace', 'sort' => -1000,
+                'is_active' => true, 'is_hidden' => false, 'is_system' => true,
+            ],
+            [
             'code' => 'system', 'parent_code' => null, 'title' => 'System', 'type' => 'directory', 'route_name' => 'System', 'route_path' => '/system', 'view_key' => null,
             'permission_code' => 'system.access', 'icon' => 'lucide:settings', 'sort' => 1000, 'is_active' => true, 'is_hidden' => false, 'is_system' => true,
-        ]];
+            ],
+        ];
 
         foreach ([
             ['system.users', 'Administrators', 'SystemUsers', '/system/users', 'system.users', 'system.user.view', 10],

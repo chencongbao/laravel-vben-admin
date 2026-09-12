@@ -2,6 +2,19 @@
 
 The default prefix is `/api/admin`. Except for login, routes require a Sanctum Bearer token with the `admin` ability and an active `AdminUser`.
 
+## Application bootstrap
+
+### `GET /api/admin/application`
+
+Public, read-only bootstrap data used before the login page initializes. It returns only the Vben locale mapped from Laravel's `config('app.locale')` and the supported locale list.
+
+```json
+{
+  "locale": "zh-CN",
+  "supported_locales": ["zh-CN", "en-US"]
+}
+```
+
 ## Authentication and effective access
 
 | Method | Path | Permission |

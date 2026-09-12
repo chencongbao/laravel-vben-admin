@@ -8,8 +8,10 @@ use Chencongbao\LaravelVbenAdmin\Http\Controllers\AdminRoleController;
 use Chencongbao\LaravelVbenAdmin\Http\Controllers\AdminSettingController;
 use Chencongbao\LaravelVbenAdmin\Http\Controllers\AdminUserController;
 use Chencongbao\LaravelVbenAdmin\Http\Controllers\AuthController;
+use Chencongbao\LaravelVbenAdmin\Http\Controllers\ApplicationConfigController;
 use Illuminate\Support\Facades\Route;
 
+Route::get('application', ApplicationConfigController::class);
 Route::post('auth/login', [AuthController::class, 'login'])->middleware('throttle:6,1');
 
 Route::middleware(['auth:sanctum', 'admin.user'])->group(function (): void {

@@ -1,7 +1,28 @@
+import type { SupportedLanguagesType } from '@vben/locales';
+
 import { initPreferences } from '@vben/preferences';
 import { unmountGlobalLoading } from '@vben/utils';
 
-import { overridesPreferences, preferencesExtension } from './preferences';
+import {
+  createOverridesPreferences,
+  preferencesExtension,
+} from './preferences';
+
+async function resolveLaravelLocale(): Promise<SupportedLanguagesType> {
+  try {
+    const response = await fetch('/api/admin/application', {
+      headers: { Accept: 'application/json' },
+    });
+    if (!response.ok) {
+      return 'zh-CN';
+    }
+
+    const data = (await response.json()) as { locale?: string };
+    return data.locale === 'en-US' ? 'en-US' : 'zh-CN';
+  } catch {
+    return 'zh-CN';
+  }
+}
 
 /**
  * 应用初始化完成之后再进行页面加载渲染
@@ -12,12 +33,13 @@ async function initApplication() {
   const env = import.meta.env.PROD ? 'prod' : 'dev';
   const appVersion = import.meta.env.VITE_APP_VERSION;
   const namespace = `${import.meta.env.VITE_APP_NAMESPACE}-${appVersion}-${env}`;
+  const locale = await resolveLaravelLocale();
 
   // app偏好设置初始化
   await initPreferences({
     extension: preferencesExtension,
     namespace,
-    overrides: overridesPreferences,
+    overrides: createOverridesPreferences(locale),
   });
 
   // 启动应用并挂载

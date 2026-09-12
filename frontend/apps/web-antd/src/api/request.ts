@@ -7,6 +7,7 @@ import { useAppConfig } from '@vben/hooks';
 import { preferences } from '@vben/preferences';
 import {
   authenticateResponseInterceptor,
+  defaultResponseInterceptor,
   errorMessageResponseInterceptor,
   RequestClient,
 } from '@vben/request';
@@ -63,6 +64,14 @@ function createRequestClient(baseURL: string, options?: RequestClientOptions) {
       return config;
     },
   });
+
+  client.addResponseInterceptor(
+    defaultResponseInterceptor({
+      codeField: 'code',
+      dataField: 'data',
+      successCode: 0,
+    }),
+  );
 
   // 处理返回的响应数据格式
   // token过期的处理

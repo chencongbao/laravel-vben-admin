@@ -20,6 +20,7 @@ export async function getAllMenusApi() {
     '/access/menus',
   );
   const components: Record<string, string> = {
+    'dashboard.workspace': '/dashboard/workspace/index',
     'system.audit-logs': '/system/audit-logs/index',
     'system.login-logs': '/system/login-logs/index',
     'system.menus': '/system/menus/index',

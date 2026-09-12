@@ -13,7 +13,7 @@ export async function getUserInfoApi() {
   return {
     avatar: response.user.avatar ?? '',
     desc: '',
-    homePath: '/system/users',
+    homePath: '/workspace',
     realName: response.user.name,
     roles: [],
     token: '',

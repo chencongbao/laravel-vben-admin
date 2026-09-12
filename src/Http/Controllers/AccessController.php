@@ -34,8 +34,13 @@ final class AccessController extends Controller
 
         if (! $roles->contains('is_super_admin', true)) {
             $permissionCodes = $roles->flatMap(fn ($role) => $role->permissions()->where('is_active', true)->pluck('code'))->unique()->all();
-            $query->whereHas('roles', fn ($roleQuery) => $roleQuery->whereKey($roles->modelKeys()))
-                ->where(fn ($menuQuery) => $menuQuery->whereNull('permission_code')->orWhereIn('permission_code', $permissionCodes));
+            $query->where(function ($menuQuery) use ($roles, $permissionCodes): void {
+                $menuQuery->where('code', 'dashboard.workspace')
+                    ->orWhere(function ($roleMenuQuery) use ($roles, $permissionCodes): void {
+                        $roleMenuQuery->whereHas('roles', fn ($roleQuery) => $roleQuery->whereKey($roles->modelKeys()))
+                            ->where(fn ($permissionQuery) => $permissionQuery->whereNull('permission_code')->orWhereIn('permission_code', $permissionCodes));
+                    });
+            });
         }
 
         $menus = $query->get()->map(fn (AdminMenu $menu) => [

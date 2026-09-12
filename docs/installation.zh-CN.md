@@ -12,6 +12,15 @@
 
 后台 API 固定使用 `/api/admin`，不需要配置 API 地址。后台浏览器路径默认是 `/admin`，可以通过 `VBEN_ADMIN_PATH` 修改。
 
+后台支持简体中文和英文。初始语言读取 Laravel 的 `config('app.locale')`；推荐默认配置：
+
+```dotenv
+APP_LOCALE=zh_CN
+APP_FALLBACK_LOCALE=zh_CN
+```
+
+`zh`、`zh_CN`、`zh-CN` 映射为 Vben 的 `zh-CN`，`en`、`en_US`、`en-US` 映射为 `en-US`，其他值回退为简体中文。
+
 ## 2. 正式 Composer 安装
 
 在 Laravel 项目根目录执行：
