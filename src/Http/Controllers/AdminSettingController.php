@@ -4,6 +4,7 @@ namespace Chencongbao\LaravelVbenAdmin\Http\Controllers;
 
 use Chencongbao\LaravelVbenAdmin\Contracts\AuditRecorder;
 use Chencongbao\LaravelVbenAdmin\Models\AdminSetting;
+use Chencongbao\LaravelVbenAdmin\Support\SystemSettings;
 use DateTimeZone;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -17,7 +18,7 @@ final class AdminSettingController extends Controller
 
     public function index(): JsonResponse
     {
-        $definitions = config('laravel-vben-admin.settings', []);
+        $definitions = SystemSettings::definitions();
         $stored = AdminSetting::query()->whereIn('key', array_keys($definitions))->pluck('value', 'key');
         $settings = collect($definitions)->map(fn (array $definition, string $key) => [
             'key' => $key,
@@ -31,7 +32,7 @@ final class AdminSettingController extends Controller
     public function update(Request $request): JsonResponse
     {
         $data = $request->validate(['settings' => ['required', 'array'], 'settings.*.key' => ['required', 'string'], 'settings.*.value' => ['present']]);
-        $definitions = config('laravel-vben-admin.settings', []);
+        $definitions = SystemSettings::definitions();
         $normalized = [];
 
         foreach ($data['settings'] as $item) {

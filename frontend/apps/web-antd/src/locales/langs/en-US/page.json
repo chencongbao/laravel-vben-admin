@@ -7,10 +7,75 @@
     "forgetPassword": "Forget Password",
     "profile": "Profile"
   },
+  "profile": {
+    "title": "Personal Center",
+    "tabs": {
+      "basic": "Basic Settings",
+      "security": "Security",
+      "password": "Change Password"
+    },
+    "basic": {
+      "title": "Basic Information",
+      "description": "Manage your administrator name and avatar.",
+      "name": "Name",
+      "namePlaceholder": "Enter your name",
+      "avatar": "Avatar URL",
+      "avatarPlaceholder": "Enter a complete avatar URL",
+      "avatarHelp": "JPG, PNG or WebP up to 2 MB. A square image works best.",
+      "uploadAvatar": "Upload New Avatar",
+      "defaultAvatars": "Choose a Default Avatar",
+      "selectAvatar": "Select this avatar",
+      "avatarUploaded": "Avatar uploaded",
+      "updated": "Profile updated"
+    },
+    "password": {
+      "title": "Change Password",
+      "description": "Update your password regularly to protect your administrator account.",
+      "current": "Current Password",
+      "currentPlaceholder": "Enter your current password",
+      "new": "New Password",
+      "newPlaceholder": "At least 12 characters with uppercase, lowercase, and numbers",
+      "confirm": "Confirm Password",
+      "confirmPlaceholder": "Enter the new password again",
+      "confirmRequired": "Please enter the new password again",
+      "mismatch": "The passwords do not match",
+      "updated": "Password updated and sessions on other devices revoked"
+    },
+    "security": {
+      "title": "Account Security",
+      "description": "Review your current sign-in and manage sessions on other devices.",
+      "sessionsTitle": "Login Sessions",
+      "ipAddress": "IP Address",
+      "signedInAt": "Signed In At",
+      "lastUsedAt": "Last Used",
+      "session": "Session",
+      "actions": "Actions",
+      "currentSession": "Current Session",
+      "otherSession": "Other Session",
+      "neverUsed": "No activity yet",
+      "unknownIp": "Not recorded for earlier sessions",
+      "protected": "Protected",
+      "revoke": "Revoke",
+      "revokeConfirm": "Revoke this login session?",
+      "revokeOthers": "Sign Out Other Devices",
+      "revokeOthersConfirm": "Sign out all other devices?",
+      "revoked": "Session revoked",
+      "revokedOthers": "Revoked {count} other sessions",
+      "notesTitle": "Security Notes",
+      "passwordNote": "Changing your password requires the current password and revokes every token except the current session.",
+      "mfaNote": "MFA is not included in the base package yet. Key encryption, recovery codes, and enforcement policies require a separate design."
+    }
+  },
   "dashboard": {
     "title": "Dashboard",
     "analytics": "Analytics",
     "workspace": "Workspace"
+  },
+  "configuration": {
+    "title": "Configuration"
+  },
+  "systemLogs": {
+    "title": "System Logs"
   },
   "system": {
     "title": "System",
@@ -19,7 +84,27 @@
     "permissions": "Permissions",
     "menus": "Menus",
     "loginLogs": "Login Logs",
-    "auditLogs": "Audit Logs",
-    "settings": "Settings"
+    "auditLogs": "Operation Logs",
+    "settings": "Settings",
+    "settingsForm": {
+      "actions": {
+        "save": "Save settings"
+      },
+      "fields": {
+        "systemName": {
+          "description": "The system name displayed in the upper-left corner of the administration panel.",
+          "label": "System name",
+          "placeholder": "Enter the system name"
+        },
+        "pageSize": {
+          "description": "Set the default number of records displayed per page, from 10 to 100.",
+          "label": "Default page size",
+          "placeholder": "Enter records per page"
+        }
+      },
+      "messages": {
+        "saved": "System settings saved"
+      }
+    }
   }
 }

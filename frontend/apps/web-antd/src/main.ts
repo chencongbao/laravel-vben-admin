@@ -8,19 +8,39 @@ import {
   preferencesExtension,
 } from './preferences';
 
-async function resolveLaravelLocale(): Promise<SupportedLanguagesType> {
+interface LaravelApplicationConfig {
+  locale: SupportedLanguagesType;
+  name: string;
+  timezone: string;
+}
+
+const fallbackApplicationConfig: LaravelApplicationConfig = {
+  locale: 'zh-CN',
+  name: import.meta.env.VITE_APP_TITLE,
+  timezone: 'UTC',
+};
+
+async function resolveLaravelApplicationConfig(): Promise<LaravelApplicationConfig> {
   try {
     const response = await fetch('/api/admin/application', {
       headers: { Accept: 'application/json' },
     });
     if (!response.ok) {
-      return 'zh-CN';
+      return fallbackApplicationConfig;
     }
 
-    const data = (await response.json()) as { locale?: string };
-    return data.locale === 'en-US' ? 'en-US' : 'zh-CN';
+    const data = (await response.json()) as {
+      locale?: string;
+      name?: string;
+      timezone?: string;
+    };
+    return {
+      locale: data.locale === 'en-US' ? 'en-US' : 'zh-CN',
+      name: data.name || fallbackApplicationConfig.name,
+      timezone: data.timezone || 'UTC',
+    };
   } catch {
-    return 'zh-CN';
+    return fallbackApplicationConfig;
   }
 }
 
@@ -33,13 +53,13 @@ async function initApplication() {
   const env = import.meta.env.PROD ? 'prod' : 'dev';
   const appVersion = import.meta.env.VITE_APP_VERSION;
   const namespace = `${import.meta.env.VITE_APP_NAMESPACE}-${appVersion}-${env}`;
-  const locale = await resolveLaravelLocale();
+  const { locale, name, timezone } = await resolveLaravelApplicationConfig();
 
   // app偏好设置初始化
   await initPreferences({
     extension: preferencesExtension,
     namespace,
-    overrides: createOverridesPreferences(locale),
+    overrides: createOverridesPreferences(locale, name, timezone),
   });
 
   // 启动应用并挂载

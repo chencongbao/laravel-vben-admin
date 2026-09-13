@@ -86,6 +86,32 @@ describe('preferences', () => {
     expect(preferenceManager.getPreferences()).toEqual(expected);
   });
 
+  it('keeps the cached locale when the server provides a default locale', async () => {
+    const cachedPreferences = {
+      ...defaultPreferences,
+      app: {
+        ...defaultPreferences.app,
+        locale: 'en-US',
+      },
+    };
+    vi.mocked(localStorage.getItem).mockImplementation((key) =>
+      key === 'locale-persistence-preferences'
+        ? JSON.stringify({ value: cachedPreferences })
+        : null,
+    );
+
+    await preferenceManager.initPreferences({
+      namespace: 'locale-persistence',
+      overrides: {
+        app: {
+          locale: 'zh-CN',
+        },
+      },
+    });
+
+    expect(preferenceManager.getPreferences().app.locale).toBe('en-US');
+  });
+
   it('updates theme mode correctly', () => {
     preferenceManager.updatePreferences({
       theme: {

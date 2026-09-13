@@ -26,12 +26,12 @@ const tabsValue = defineModel<string>('modelValue');
 </script>
 <template>
   <Page auto-content-height>
-    <div class="flex size-full">
-      <Card class="w-1/6 flex-none">
-        <div class="mt-4 flex-col-center h-40 gap-4">
+    <div class="flex size-full flex-col gap-4 lg:flex-row">
+      <Card class="w-full flex-none overflow-hidden border lg:w-64">
+        <div class="flex-col-center gap-3 px-6 py-8">
           <VbenAvatar
             :src="userInfo?.avatar ?? preferences.app.defaultAvatar"
-            class="size-20"
+            class="size-24 ring-4 ring-primary/10"
           />
           <span class="text-lg font-semibold">
             {{ userInfo?.realName ?? '' }}
@@ -40,21 +40,23 @@ const tabsValue = defineModel<string>('modelValue');
             {{ userInfo?.username ?? '' }}
           </span>
         </div>
-        <Separator class="my-4" />
-        <Tabs v-model="tabsValue" orientation="vertical" class="m-4">
-          <TabsList class="grid w-full grid-cols-1 bg-card">
+        <Separator />
+        <Tabs v-model="tabsValue" orientation="vertical" class="p-4">
+          <TabsList
+            class="grid h-auto w-full grid-cols-1 gap-1 bg-transparent p-0"
+          >
             <TabsTrigger
               v-for="tab in tabs"
               :key="tab.value"
               :value="tab.value"
-              class="h-12 justify-start data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              class="h-11 justify-start rounded-lg px-4 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
             >
               {{ tab.label }}
             </TabsTrigger>
           </TabsList>
         </Tabs>
       </Card>
-      <Card class="ml-4 w-5/6 flex-auto p-8">
+      <Card class="min-w-0 flex-auto border p-5 sm:p-8">
         <slot name="content"></slot>
       </Card>
     </div>

@@ -1,47 +1,201 @@
 <script setup lang="ts">
 import type { AdminSession } from '#/api';
-import { onMounted, ref } from 'vue';
-import { Button, Card, message, Popconfirm, Space, Table, Tag } from 'ant-design-vue';
-import { getSessionsApi, revokeOtherSessionsApi, revokeSessionApi } from '#/api';
 
-const loading = ref(false); const sessions = ref<AdminSession[]>([]);
-const columns = [
-  { dataIndex: 'name', title: '令牌名称' }, { dataIndex: 'created_at', title: '登录时间' },
-  { dataIndex: 'last_used_at', title: '最后使用' }, { dataIndex: 'current', title: '会话' },
-  { dataIndex: 'action', title: '操作' },
-];
+import { computed, onMounted, ref } from 'vue';
+
+import {
+  Button,
+  Card,
+  message,
+  Popconfirm,
+  Space,
+  Table,
+  Tag,
+} from 'ant-design-vue';
+
+import {
+  getSessionsApi,
+  revokeOtherSessionsApi,
+  revokeSessionApi,
+} from '#/api';
+import { $t } from '#/locales';
+
+const loading = ref(false);
+const sessions = ref<AdminSession[]>([]);
+const columns = computed(() => [
+  { dataIndex: 'ip_address', title: $t('page.profile.security.ipAddress') },
+  { dataIndex: 'created_at', title: $t('page.profile.security.signedInAt') },
+  { dataIndex: 'last_used_at', title: $t('page.profile.security.lastUsedAt') },
+  { dataIndex: 'current', title: $t('page.profile.security.session') },
+  { dataIndex: 'action', title: $t('page.profile.security.actions') },
+]);
+
+function formatBeijingTime(value?: null | string) {
+  if (!value) return $t('page.profile.security.neverUsed');
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+
+  return new Intl.DateTimeFormat('zh-CN', {
+    day: '2-digit',
+    hour: '2-digit',
+    hour12: false,
+    minute: '2-digit',
+    month: '2-digit',
+    second: '2-digit',
+    timeZone: 'Asia/Shanghai',
+    year: 'numeric',
+  })
+    .format(date)
+    .replaceAll('/', '-');
+}
+
 async function load() {
   loading.value = true;
-  try { sessions.value = (await getSessionsApi()).sessions; } finally { loading.value = false; }
+  try {
+    sessions.value = (await getSessionsApi()).sessions;
+  } finally {
+    loading.value = false;
+  }
 }
-async function revoke(session: Record<string, any>) { await revokeSessionApi(Number(session.id)); message.success('会话已撤销'); await load(); }
+
+async function revoke(session: Record<string, any>) {
+  await revokeSessionApi(Number(session.id));
+  message.success($t('page.profile.security.revoked'));
+  await load();
+}
+
 async function revokeOthers() {
   const result = await revokeOtherSessionsApi();
-  message.success(`已撤销 ${result.revoked_count} 个其他会话`); await load();
+  message.success(
+    $t('page.profile.security.revokedOthers', {
+      count: result.revoked_count,
+    }),
+  );
+  await load();
 }
+
 onMounted(load);
 </script>
 
 <template>
-  <div class="space-y-4">
-    <Card title="登录会话">
+  <section class="profile-section">
+    <div class="profile-section-heading">
+      <h2>{{ $t('page.profile.security.title') }}</h2>
+      <p>{{ $t('page.profile.security.description') }}</p>
+    </div>
+
+    <Card :bordered="false" class="security-card">
+      <template #title>{{
+        $t('page.profile.security.sessionsTitle')
+      }}</template>
       <template #extra>
-        <Popconfirm title="确定让其他设备全部退出登录？" @confirm="revokeOthers"><Button danger>下线其他设备</Button></Popconfirm>
+        <Popconfirm
+          :title="$t('page.profile.security.revokeOthersConfirm')"
+          @confirm="revokeOthers"
+        >
+          <Button danger>{{ $t('page.profile.security.revokeOthers') }}</Button>
+        </Popconfirm>
       </template>
-      <Table :columns="columns" :data-source="sessions" :loading="loading" :pagination="false" row-key="id">
+
+      <Table
+        :columns="columns"
+        :data-source="sessions"
+        :loading="loading"
+        :pagination="{ pageSize: 8, showSizeChanger: false }"
+        row-key="id"
+        :scroll="{ x: 760 }"
+      >
         <template #bodyCell="{ column, record, text }">
-          <Tag v-if="column.dataIndex === 'current'" :color="text ? 'green' : 'default'">{{ text ? '当前会话' : '其他会话' }}</Tag>
-          <span v-else-if="column.dataIndex === 'last_used_at'">{{ text || '尚无记录' }}</span>
+          <Tag
+            v-if="column.dataIndex === 'current'"
+            :color="text ? 'green' : 'default'"
+          >
+            {{
+              text
+                ? $t('page.profile.security.currentSession')
+                : $t('page.profile.security.otherSession')
+            }}
+          </Tag>
+          <span
+            v-else-if="
+              column.dataIndex === 'created_at' ||
+              column.dataIndex === 'last_used_at'
+            "
+            class="session-time"
+          >
+            {{ formatBeijingTime(text) }}
+          </span>
+          <span
+            v-else-if="column.dataIndex === 'ip_address'"
+            class="session-ip"
+          >
+            {{ text || $t('page.profile.security.unknownIp') }}
+          </span>
           <Space v-else-if="column.dataIndex === 'action'">
-            <Tag v-if="record.current" color="green">受保护</Tag>
-            <Popconfirm v-else title="确定撤销此登录会话？" @confirm="revoke(record)"><Button danger size="small" type="link">撤销</Button></Popconfirm>
+            <Tag v-if="record.current" color="green">
+              {{ $t('page.profile.security.protected') }}
+            </Tag>
+            <Popconfirm
+              v-else
+              :title="$t('page.profile.security.revokeConfirm')"
+              @confirm="revoke(record)"
+            >
+              <Button danger size="small" type="link">
+                {{ $t('page.profile.security.revoke') }}
+              </Button>
+            </Popconfirm>
           </Space>
         </template>
       </Table>
     </Card>
-    <Card title="安全能力说明">
-      <p>修改密码需要验证当前密码；成功后会撤销除当前会话外的其他令牌。</p>
-      <p class="mt-2 text-muted-foreground">MFA 尚未在基础包中实现，后续需要单独设计密钥加密、恢复码和强制策略。</p>
+
+    <Card :bordered="false" class="security-card security-note">
+      <template #title>{{ $t('page.profile.security.notesTitle') }}</template>
+      <p>{{ $t('page.profile.security.passwordNote') }}</p>
+      <p>{{ $t('page.profile.security.mfaNote') }}</p>
     </Card>
-  </div>
+  </section>
 </template>
+
+<style scoped>
+.profile-section-heading {
+  margin-bottom: 24px;
+}
+.profile-section-heading h2 {
+  margin: 0;
+  color: hsl(var(--foreground));
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 28px;
+}
+.profile-section-heading p,
+.security-note p {
+  color: hsl(var(--muted-foreground));
+  font-size: 13px;
+  line-height: 20px;
+}
+.profile-section-heading p {
+  margin: 6px 0 0;
+}
+.security-card {
+  overflow: hidden;
+  border: 1px solid hsl(var(--border));
+  border-radius: 10px;
+  box-shadow: none;
+}
+.security-card + .security-card {
+  margin-top: 20px;
+}
+.security-note p {
+  margin: 0;
+}
+.security-note p + p {
+  margin-top: 8px;
+}
+.session-ip,
+.session-time {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+</style>

@@ -5,6 +5,8 @@ import {
   definePreferencesExtension,
 } from '@vben/preferences';
 
+import defaultAvatar from './assets/default-avatar.svg?url';
+
 interface WebAntdPreferencesExtension {
   defaultTableSize: number;
   enableFormFullscreen: boolean;
@@ -17,14 +19,20 @@ interface WebAntdPreferencesExtension {
  * 只需要覆盖项目中的一部分配置，不需要的配置不用覆盖，会自动使用默认配置
  * !!! 更改配置后请清空缓存，否则可能不生效
  */
-export function createOverridesPreferences(locale: SupportedLanguagesType) {
+export function createOverridesPreferences(
+  locale: SupportedLanguagesType,
+  name: string,
+  timezone: string,
+) {
   return defineOverridesPreferences({
     app: {
       accessMode: 'backend',
+      defaultAvatar,
       defaultHomePath: '/workspace',
       enableRefreshToken: false,
       locale,
-      name: import.meta.env.VITE_APP_TITLE,
+      name,
+      timezone,
     },
     theme: {
       mode: 'light',

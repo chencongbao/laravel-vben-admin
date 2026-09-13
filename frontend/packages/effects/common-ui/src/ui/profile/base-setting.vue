@@ -25,6 +25,7 @@ const emit = defineEmits<{
 const [Form, formApi] = useVbenForm(
   reactive({
     commonConfig: {
+      labelWidth: 110,
       // 所有表单项
       componentProps: {
         class: 'w-full',
@@ -49,9 +50,9 @@ defineExpose({
 });
 </script>
 <template>
-  <div @keydown.enter.prevent="handleSubmit">
+  <div class="max-w-2xl" @keydown.enter.prevent="handleSubmit">
     <Form />
-    <VbenButton type="submit" class="mt-4" @click="handleSubmit">
+    <VbenButton type="submit" class="mt-5 min-w-28" @click="handleSubmit">
       {{ $t('profile.updateBasicProfile') }}
     </VbenButton>
   </div>

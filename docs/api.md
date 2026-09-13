@@ -6,12 +6,14 @@ The default prefix is `/api/admin`. Except for login, routes require a Sanctum B
 
 ### `GET /api/admin/application`
 
-Public, read-only bootstrap data used before the login page initializes. It returns only the Vben locale mapped from Laravel's `config('app.locale')` and the supported locale list.
+Public, read-only bootstrap data used before the login page initializes. It returns the database-backed system name, the Vben locale mapped from Laravel's `config('app.locale')`, the supported locale list, and the timezone from Laravel's `config('app.timezone')`. Before the settings table is available, the name falls back to Laravel's `config('app.name')`.
 
 ```json
 {
+  "name": "Laravel Vben Admin",
   "locale": "zh-CN",
-  "supported_locales": ["zh-CN", "en-US"]
+  "supported_locales": ["zh-CN", "en-US"],
+  "timezone": "UTC"
 }
 ```
 
@@ -22,6 +24,8 @@ Public, read-only bootstrap data used before the login page initializes. It retu
 | POST | `/auth/login` | Public, rate limited |
 | POST | `/auth/logout` | Authenticated administrator |
 | GET | `/auth/me` | Authenticated administrator |
+| GET | `/auth/avatars` | Authenticated administrator; list built-in avatars |
+| POST | `/auth/avatar` | Authenticated administrator, rate limited; upload avatar |
 | PATCH | `/auth/profile` | Authenticated administrator |
 | PUT | `/auth/password` | Authenticated administrator, rate limited |
 | GET | `/auth/sessions` | Authenticated administrator; own sessions only |
@@ -30,9 +34,9 @@ Public, read-only bootstrap data used before the login page initializes. It retu
 | GET | `/access/permissions` | Authenticated administrator |
 | GET | `/access/menus` | Authenticated administrator |
 
-Profile updates accept `name` and an optional absolute avatar URL. Password updates require `current_password`, `password` and `password_confirmation`; the new password must contain upper- and lowercase letters and numbers with a minimum length of 12. A successful password change revokes the administrator's other tokens while preserving the current session.
+Profile updates accept `name` and an optional absolute avatar URL or a built-in avatar identifier such as `default:avatar-1`. Avatar uploads use multipart field `avatar`; accepted formats are JPEG, PNG and WebP, with a 2 MB limit and dimensions from 64x64 through 4096x4096. Uploaded files are stored on Laravel's `public` disk under an administrator-specific directory. Replacing an uploaded avatar removes that administrator's previous package-owned avatar file. Password updates require `current_password`, `password` and `password_confirmation`; the new password must contain upper- and lowercase letters and numbers with a minimum length of 12. A successful password change revokes the administrator's other tokens while preserving the current session.
 
-Session endpoints are always scoped through the authenticated administrator's token relation. The current token cannot be revoked through the session endpoint; normal logout must be used instead. Revocations are recorded in the audit log.
+Session endpoints are always scoped through the authenticated administrator's token relation. Each newly created access token records its login IP address and user agent. `GET /auth/sessions` returns `id`, `current`, `ip_address`, `user_agent`, `created_at`, and `last_used_at`; timestamps use Laravel's standard ISO-8601 serialization and the administration UI renders them in the `Asia/Shanghai` timezone. Tokens created before the session metadata migration may have null IP and user-agent values. The current token cannot be revoked through the session endpoint; normal logout must be used instead. Revocations are recorded in the audit log.
 
 ## Administrators
 
@@ -82,4 +86,4 @@ Audit changes recursively redact keys containing password, token, secret, creden
 | GET | `/system/settings` | `system.setting.view` |
 | PUT | `/system/settings` | `system.setting.update` |
 
-Only keys registered in `config/laravel-vben-admin.php` are accepted. The initial types are string, bounded integer, boolean and IANA timezone. Secrets and credentials are deliberately unsupported.
+The package owns the built-in `system.name` and `system.page_size` definitions; their runtime values are stored in `admin_settings` instead of duplicated in the published package configuration. Updating `system.name` changes the administration brand name used by the application bootstrap. The supported types are string, bounded integer, boolean and IANA timezone. Secrets and credentials are deliberately unsupported.

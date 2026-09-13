@@ -1,5 +1,7 @@
 import type { UserInfo } from '@vben/types';
 
+import { preferences } from '@vben/preferences';
+
 import { requestClient } from '#/api/request';
 
 /**
@@ -7,11 +9,16 @@ import { requestClient } from '#/api/request';
  */
 export async function getUserInfoApi() {
   const response = await requestClient.get<{
-    user: { avatar?: null | string; id: number; name: string; username: string };
+    user: {
+      avatar?: null | string;
+      id: number;
+      name: string;
+      username: string;
+    };
   }>('/auth/me');
 
   return {
-    avatar: response.user.avatar ?? '',
+    avatar: response.user.avatar || preferences.app.defaultAvatar,
     desc: '',
     homePath: '/workspace',
     realName: response.user.name,
@@ -22,8 +29,34 @@ export async function getUserInfoApi() {
   } satisfies UserInfo;
 }
 
-export async function updateProfileApi(data: { avatar?: null | string; name: string }) {
-  return requestClient.request<{ user: { avatar?: null | string; id: number; name: string; username: string } }>('/auth/profile', { data, method: 'PATCH' });
+export async function updateProfileApi(data: {
+  avatar?: null | string;
+  name: string;
+}) {
+  return requestClient.request<{
+    user: {
+      avatar?: null | string;
+      id: number;
+      name: string;
+      username: string;
+    };
+  }>('/auth/profile', { data, method: 'PATCH' });
+}
+
+export interface DefaultAvatar {
+  id: string;
+  url: string;
+}
+
+export async function getDefaultAvatarsApi() {
+  return requestClient.get<{ avatars: DefaultAvatar[] }>('/auth/avatars');
+}
+
+export async function uploadAvatarApi(file: File) {
+  const data = new FormData();
+  data.append('avatar', file);
+
+  return requestClient.post<{ avatar: string }>('/auth/avatar', data);
 }
 
 export async function updatePasswordApi(data: {
@@ -38,8 +71,9 @@ export interface AdminSession {
   created_at: string;
   current: boolean;
   id: number;
+  ip_address?: null | string;
   last_used_at?: null | string;
-  name: string;
+  user_agent?: null | string;
 }
 
 export async function getSessionsApi() {

@@ -138,6 +138,12 @@ class PreferenceManager {
       this.initialPreferences, // 初始化配置优先，缓存仅补齐缺失字段
       cachedPreferences,
     );
+    // 服务端 locale 只作为首次访问的默认值；用户主动切换后应以缓存为准。
+    const cachedLocale = (cachedPreferences as Partial<Preferences>).app
+      ?.locale;
+    if (cachedLocale) {
+      mergedPreference.app.locale = cachedLocale;
+    }
 
     // 更新偏好设置
     this.updatePreferences(mergedPreference);

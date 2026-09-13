@@ -51,6 +51,16 @@ final class SyncSystemDataCommand extends Command
             foreach ($menus as $menu) {
                 AdminMenu::query()->updateOrCreate(['code' => $menu['code']], $menu);
             }
+
+            foreach ([
+                'configuration' => ['system.settings'],
+                'system.logs' => ['system.login-logs', 'system.audit-logs'],
+            ] as $parentCode => $childCodes) {
+                $parentMenu = AdminMenu::query()->where('code', $parentCode)->firstOrFail();
+                AdminRole::query()
+                    ->whereHas('menus', fn ($query) => $query->whereIn('code', $childCodes))
+                    ->each(fn (AdminRole $role) => $role->menus()->syncWithoutDetaching([$parentMenu->getKey()]));
+            }
         });
 
         $this->components->info('System data synchronized; custom data and role assignments were preserved.');
@@ -112,6 +122,14 @@ final class SyncSystemDataCommand extends Command
                 'code' => 'system', 'parent_code' => null, 'title' => 'page.system.title', 'type' => 'directory', 'route_name' => 'System', 'route_path' => '/system', 'view_key' => null,
                 'permission_code' => 'system.access', 'icon' => 'lucide:settings', 'sort' => 1000, 'is_active' => true, 'is_hidden' => false, 'is_system' => true,
             ],
+            [
+                'code' => 'configuration', 'parent_code' => null, 'title' => 'page.configuration.title', 'type' => 'directory', 'route_name' => 'Configuration', 'route_path' => '/configuration', 'view_key' => null,
+                'permission_code' => 'system.setting.view', 'icon' => 'lucide:sliders-horizontal', 'sort' => 3000, 'is_active' => true, 'is_hidden' => false, 'is_system' => true,
+            ],
+            [
+                'code' => 'system.logs', 'parent_code' => null, 'title' => 'page.systemLogs.title', 'type' => 'directory', 'route_name' => 'SystemLogs', 'route_path' => '/system-logs', 'view_key' => null,
+                'permission_code' => null, 'icon' => 'lucide:notebook-tabs', 'sort' => 2000, 'is_active' => true, 'is_hidden' => false, 'is_system' => true,
+            ],
         ];
 
         foreach ([
@@ -119,12 +137,27 @@ final class SyncSystemDataCommand extends Command
             ['system.roles', 'page.system.roles', 'SystemRoles', '/system/roles', 'system.roles', 'system.role.view', 'lucide:user-cog', 20],
             ['system.permissions', 'page.system.permissions', 'SystemPermissions', '/system/permissions', 'system.permissions', 'system.permission.view', 'lucide:shield-check', 30],
             ['system.menus', 'page.system.menus', 'SystemMenus', '/system/menus', 'system.menus', 'system.menu.view', 'lucide:list-tree', 40],
-            ['system.login-logs', 'page.system.loginLogs', 'SystemLoginLogs', '/system/login-logs', 'system.login-logs', 'system.login-log.view', 'lucide:log-in', 80],
-            ['system.audit-logs', 'page.system.auditLogs', 'SystemAuditLogs', '/system/audit-logs', 'system.audit-logs', 'system.audit.view', 'lucide:clipboard-list', 90],
-            ['system.settings', 'page.system.settings', 'SystemSettings', '/system/settings', 'system.settings', 'system.setting.view', 'lucide:settings-2', 100],
         ] as [$code, $title, $routeName, $routePath, $viewKey, $permissionCode, $icon, $sort]) {
             $items[] = [
                 'code' => $code, 'parent_code' => 'system', 'title' => $title, 'type' => 'page', 'route_name' => $routeName,
+                'route_path' => $routePath, 'view_key' => $viewKey, 'permission_code' => $permissionCode, 'icon' => $icon,
+                'sort' => $sort, 'is_active' => true, 'is_hidden' => false, 'is_system' => true,
+            ];
+        }
+
+        $items[] = [
+            'code' => 'system.settings', 'parent_code' => 'configuration', 'title' => 'page.system.settings', 'type' => 'page',
+            'route_name' => 'SystemSettings', 'route_path' => '/system/settings', 'view_key' => 'system.settings',
+            'permission_code' => 'system.setting.view', 'icon' => 'lucide:settings-2', 'sort' => 10,
+            'is_active' => true, 'is_hidden' => false, 'is_system' => true,
+        ];
+
+        foreach ([
+            ['system.login-logs', 'page.system.loginLogs', 'SystemLoginLogs', '/system/login-logs', 'system.login-logs', 'system.login-log.view', 'lucide:log-in', 10],
+            ['system.audit-logs', 'page.system.auditLogs', 'SystemAuditLogs', '/system/audit-logs', 'system.audit-logs', 'system.audit.view', 'lucide:clipboard-list', 20],
+        ] as [$code, $title, $routeName, $routePath, $viewKey, $permissionCode, $icon, $sort]) {
+            $items[] = [
+                'code' => $code, 'parent_code' => 'system.logs', 'title' => $title, 'type' => 'page', 'route_name' => $routeName,
                 'route_path' => $routePath, 'view_key' => $viewKey, 'permission_code' => $permissionCode, 'icon' => $icon,
                 'sort' => $sort, 'is_active' => true, 'is_hidden' => false, 'is_system' => true,
             ];

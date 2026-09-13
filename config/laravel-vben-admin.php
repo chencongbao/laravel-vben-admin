@@ -27,11 +27,4 @@ return [
         'login_logs' => 'admin_login_logs',
         'audit_logs' => 'admin_audit_logs',
     ],
-
-    'settings' => [
-        'system.name' => ['type' => 'string', 'default' => 'Laravel Vben Admin'],
-        'system.default_locale' => ['type' => 'string', 'default' => 'zh-CN'],
-        'system.default_timezone' => ['type' => 'timezone', 'default' => 'UTC'],
-        'system.page_size' => ['type' => 'integer', 'default' => 20, 'min' => 10, 'max' => 100],
-    ],
 ];

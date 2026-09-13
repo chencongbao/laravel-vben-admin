@@ -7,10 +7,75 @@
     "forgetPassword": "忘记密码",
     "profile": "个人中心"
   },
+  "profile": {
+    "title": "个人中心",
+    "tabs": {
+      "basic": "基本设置",
+      "security": "安全设置",
+      "password": "修改密码"
+    },
+    "basic": {
+      "title": "基本信息",
+      "description": "维护您的管理员名称和头像信息。",
+      "name": "姓名",
+      "namePlaceholder": "请输入姓名",
+      "avatar": "头像地址",
+      "avatarPlaceholder": "请输入完整的头像 URL",
+      "avatarHelp": "支持 JPG、PNG、WebP，最大 2 MB，建议使用正方形图片。",
+      "uploadAvatar": "上传新头像",
+      "defaultAvatars": "选择默认头像",
+      "selectAvatar": "选择这个头像",
+      "avatarUploaded": "头像上传成功",
+      "updated": "个人资料已更新"
+    },
+    "password": {
+      "title": "修改密码",
+      "description": "定期更新密码有助于保护您的管理员账户。",
+      "current": "当前密码",
+      "currentPlaceholder": "请输入当前密码",
+      "new": "新密码",
+      "newPlaceholder": "至少 12 位，包含大小写字母和数字",
+      "confirm": "确认密码",
+      "confirmPlaceholder": "请再次输入新密码",
+      "confirmRequired": "请再次输入新密码",
+      "mismatch": "两次输入的密码不一致",
+      "updated": "密码已修改，其他设备的登录令牌已撤销"
+    },
+    "security": {
+      "title": "账户安全",
+      "description": "查看当前登录状态并管理其他设备的会话。",
+      "sessionsTitle": "登录会话",
+      "ipAddress": "IP 地址",
+      "signedInAt": "登录时间",
+      "lastUsedAt": "最后使用",
+      "session": "会话",
+      "actions": "操作",
+      "currentSession": "当前会话",
+      "otherSession": "其他会话",
+      "neverUsed": "尚无记录",
+      "unknownIp": "历史会话未记录",
+      "protected": "受保护",
+      "revoke": "撤销",
+      "revokeConfirm": "确定撤销此登录会话？",
+      "revokeOthers": "下线其他设备",
+      "revokeOthersConfirm": "确定让其他设备全部退出登录？",
+      "revoked": "会话已撤销",
+      "revokedOthers": "已撤销 {count} 个其他会话",
+      "notesTitle": "安全能力说明",
+      "passwordNote": "修改密码需要验证当前密码；成功后会撤销除当前会话外的其他令牌。",
+      "mfaNote": "MFA 尚未在基础包中实现，后续需要单独设计密钥加密、恢复码和强制策略。"
+    }
+  },
   "dashboard": {
     "title": "概览",
     "analytics": "分析页",
     "workspace": "工作台"
+  },
+  "configuration": {
+    "title": "配置管理"
+  },
+  "systemLogs": {
+    "title": "系统日志"
   },
   "system": {
     "title": "系统管理",
@@ -19,7 +84,27 @@
     "permissions": "权限管理",
     "menus": "菜单管理",
     "loginLogs": "登录日志",
-    "auditLogs": "审计日志",
-    "settings": "系统设置"
+    "auditLogs": "操作日志",
+    "settings": "系统设置",
+    "settingsForm": {
+      "actions": {
+        "save": "保存设置"
+      },
+      "fields": {
+        "systemName": {
+          "description": "显示在管理后台左上角的系统名称。",
+          "label": "系统名称",
+          "placeholder": "请输入系统名称"
+        },
+        "pageSize": {
+          "description": "设置数据列表默认每页显示的记录数量，可填写 10 至 100。",
+          "label": "默认分页数量",
+          "placeholder": "请输入每页记录数"
+        }
+      },
+      "messages": {
+        "saved": "系统设置已保存"
+      }
+    }
   }
 }

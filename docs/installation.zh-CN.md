@@ -14,6 +14,8 @@
 
 后台支持简体中文和英文。初始语言读取 Laravel 的 `config('app.locale')`；推荐默认配置：
 
+后台时区读取 Laravel 的 `config('app.timezone')`，不在 `laravel-vben-admin.php` 中重复配置。
+
 ```dotenv
 APP_LOCALE=zh_CN
 APP_FALLBACK_LOCALE=zh_CN
@@ -28,6 +30,7 @@ APP_FALLBACK_LOCALE=zh_CN
 ```bash
 composer require chencongbao/laravel-vben-admin
 php artisan vben-admin:install
+php artisan storage:link
 php artisan vben-admin:publish-assets
 ```
 
@@ -53,6 +56,8 @@ php artisan vben-admin:publish-assets
 ```bash
 php artisan vben-admin:publish-assets --force
 ```
+
+`storage:link` 用于让管理员自行上传的头像可以通过 Web 访问；如果项目已经创建过 `public/storage` 链接，无需重复执行。
 
 ## 3. 本地 Path 仓库安装
 
