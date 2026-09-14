@@ -59,6 +59,7 @@ Route::middleware(['auth:sanctum', 'admin.user'])->group(function (): void {
 
     Route::get('system/audit-logs', [AdminLogController::class, 'audit'])->middleware('admin.permission:system.audit.view');
     Route::get('system/login-logs', [AdminLogController::class, 'login'])->middleware('admin.permission:system.login-log.view');
+    Route::delete('system/login-logs/batch', [AdminLogController::class, 'destroyLoginBatch'])->middleware('admin.permission:system.login-log.delete');
     Route::get('system/settings', [AdminSettingController::class, 'index'])->middleware('admin.permission:system.setting.view');
     Route::put('system/settings', [AdminSettingController::class, 'update'])->middleware('admin.permission:system.setting.update');
     Route::get('system/theme-settings', [AdminSettingController::class, 'theme'])->middleware('admin.super-admin');

@@ -31,6 +31,13 @@ export function deleteResource(path: string, id: number) {
   return requestClient.delete(`${path}/${id}`);
 }
 
+export function batchDeleteResources(path: string, ids: number[]) {
+  return requestClient.request<{ deleted_count: number }>(`${path}/batch`, {
+    data: { ids },
+    method: 'DELETE',
+  });
+}
+
 export function getResourceDetail<T = Record<string, any>>(
   path: string,
   id: number,

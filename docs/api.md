@@ -100,11 +100,14 @@ The effective menu API returns a tree. A non-super administrator only receives m
 | Method | Path | Permission |
 | --- | --- | --- |
 | GET | `/system/login-logs` | `system.login-log.view` |
+| DELETE | `/system/login-logs/batch` | `system.login-log.delete` |
 | GET | `/system/audit-logs` | `system.audit.view` |
 
 Both endpoints read the shared Spatie Activitylog `activity_log` table. `log_type=login` identifies authentication events and `log_type=operation` identifies administration changes; the stable API paths remain unchanged so existing pages do not depend on Spatie's storage schema.
 
 Both log endpoints accept an optional positive integer `id` query parameter for exact activity identifier filtering. Their existing feature-specific filters remain available and are combined with `id` when supplied.
+
+Batch login-log deletion accepts `{"ids":[1,2]}` with 1–100 distinct positive identifiers. The request is rejected atomically if any identifier does not belong to a login log in the configured administration log. A successful deletion creates one `system.login-log.batch-deleted` operation audit containing only the deleted identifiers and count. Operation logs cannot be deleted through this endpoint.
 
 Login-log items expose the existing `username`, `succeeded`, `failure_code`, `ip_address`, and `created_at` fields, plus `client_type` and `user_agent`. Audit-log items expose the existing actor, action, subject, changes, context, IP, and creation time fields, plus `description`, `method`, `path`, and `user_agent`. Timestamps use standard ISO-8601 serialization and are rendered as Beijing time by the administration client.
 

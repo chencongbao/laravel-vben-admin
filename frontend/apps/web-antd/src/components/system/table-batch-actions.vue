@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 
 import { useAccess } from '@vben/access';
 import { IconifyIcon } from '@vben/icons';
@@ -29,10 +29,10 @@ const props = withDefaults(defineProps<{
 
 const emit = defineEmits<{
   action: [key: string];
-  clear: [];
 }>();
 
 const { hasAccessByCodes } = useAccess();
+const dropdownOpen = ref(false);
 const allowedActions = computed(() => props.actions.filter((action) => {
   if (!action.permission) return true;
   const permissions = Array.isArray(action.permission)
@@ -41,41 +41,38 @@ const allowedActions = computed(() => props.actions.filter((action) => {
   return hasAccessByCodes(permissions);
 }));
 const buttonText = computed(() => props.selectedCount > 0
-  ? `${props.label || $t('common.actions.batch')} (${props.selectedCount})`
+  ? $t('common.actions.batchWithCount', {
+      count: props.selectedCount,
+      label: props.label || $t('common.actions.batch'),
+    })
   : props.label || $t('common.actions.batch'));
 
 function handleMenuClick(key: string | number) {
-  if (key === '__clear__') emit('clear');
-  else emit('action', String(key));
+  emit('action', String(key));
 }
 </script>
 
 <template>
   <div v-if="allowedActions.length" class="admin-table-batch-actions">
-    <span v-if="selectedCount > 0" class="admin-table-batch-actions__count">
-      {{ $t('common.selection.selectedCount', { count: selectedCount }) }}
-    </span>
-    <Dropdown placement="bottomRight" trigger="click">
+    <Dropdown v-model:open="dropdownOpen" overlay-class-name="admin-table-batch-dropdown" placement="bottomLeft" trigger="click">
       <PermissionButton
         :disabled="selectedCount === 0"
         icon="lucide:list-checks"
       >
         {{ buttonText }}
+        <IconifyIcon :class="['admin-table-batch-actions__chevron', { 'is-open': dropdownOpen }]" icon="lucide:chevron-down" />
       </PermissionButton>
       <template #overlay>
         <Menu @click="({ key }) => handleMenuClick(key)">
           <MenuItem
             v-for="action in allowedActions"
             :key="action.key"
+            class="admin-table-batch-dropdown__item"
             :danger="action.danger"
             :disabled="action.disabled"
           >
-            <IconifyIcon :icon="action.icon" class="mr-2" />
-            {{ action.label }}
-          </MenuItem>
-          <MenuItem key="__clear__">
-            <IconifyIcon icon="lucide:x" class="mr-2" />
-            {{ $t('common.actions.clearSelection') }}
+            <IconifyIcon :icon="action.icon" class="admin-table-batch-dropdown__icon" />
+            <span>{{ action.label }}</span>
           </MenuItem>
         </Menu>
       </template>

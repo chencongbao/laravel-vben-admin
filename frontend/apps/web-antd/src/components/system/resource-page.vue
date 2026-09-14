@@ -187,9 +187,9 @@ onMounted(load);
       <template #left>
         <ListRefreshButton :loading="loading" />
         <PermissionButton icon="lucide:filter" @click="showFilters = !showFilters">{{ $t('common.actions.filter') }}</PermissionButton>
-        <AutoRefresh :loading="loading" :storage-key="path" @refresh="load" />
       </template>
       <template #right>
+        <AutoRefresh :loading="loading" :storage-key="path" />
         <TableExportButton :columns="exportColumns" :filename="title" :permission="viewPermission" :rows="rows" />
         <PermissionButton v-if="!readOnly" icon="lucide:plus" :permission="permissionPrefix ? `${permissionPrefix}.create` : undefined" type="primary" @click="openCreate">新增</PermissionButton>
       </template>

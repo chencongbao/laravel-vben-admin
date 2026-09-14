@@ -76,6 +76,10 @@ final class InstallCommandTest extends TestCase
             'parent_code' => null,
             'title' => 'configuration.title',
         ]);
+        self::assertDatabaseHas('admin_permissions', [
+            'code' => 'system.login-log.delete',
+            'is_sensitive' => true,
+        ]);
         self::assertDatabaseHas('admin_menus', [
             'code' => 'system.settings',
             'parent_code' => 'configuration',

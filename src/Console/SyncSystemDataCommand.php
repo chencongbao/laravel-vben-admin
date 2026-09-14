@@ -94,6 +94,7 @@ final class SyncSystemDataCommand extends Command
             'system.menu.delete' => ['Delete menus', true],
             'system.audit.view' => ['View audit logs', true],
             'system.login-log.view' => ['View login logs', true],
+            'system.login-log.delete' => ['Delete login logs', true],
             'system.setting.view' => ['View system settings', false],
             'system.setting.update' => ['Update system settings', true],
         ] as $code => [$name, $sensitive]) {

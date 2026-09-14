@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 
+import { useRefresh } from '@vben/hooks';
 import { IconifyIcon } from '@vben/icons';
 import { Select, Switch } from 'ant-design-vue';
 
@@ -17,7 +18,6 @@ const props = withDefaults(defineProps<{
   loading: false,
 });
 
-const emit = defineEmits<{ refresh: [] }>();
 const intervals = computed(() => [15, 30, 60, 120, 300].map((value) => ({
   label: $t('common.time.seconds', { count: value }),
   value,
@@ -27,6 +27,8 @@ const secondsKey = `vben:auto-refresh:${props.storageKey}:seconds`;
 const enabled = ref(localStorage.getItem(enabledKey) === '1');
 const seconds = ref(Number(localStorage.getItem(secondsKey)) || props.defaultSeconds);
 const remaining = ref(seconds.value);
+const refreshing = ref(false);
+const { refresh: refreshPage } = useRefresh();
 let timer: ReturnType<typeof setInterval> | undefined;
 
 const status = computed(() => enabled.value ? `${remaining.value}s` : '');
@@ -40,12 +42,17 @@ function start() {
   stop();
   remaining.value = seconds.value;
   if (!enabled.value) return;
-  timer = setInterval(() => {
-    if (document.hidden || props.loading) return;
+  timer = setInterval(async () => {
+    if (document.hidden || props.loading || refreshing.value) return;
     remaining.value -= 1;
     if (remaining.value > 0) return;
     remaining.value = seconds.value;
-    emit('refresh');
+    refreshing.value = true;
+    try {
+      await refreshPage();
+    } finally {
+      refreshing.value = false;
+    }
   }, 1000);
 }
 
@@ -70,9 +77,3 @@ start();
     <span v-if="enabled" class="admin-auto-refresh__status">{{ status }}</span>
   </div>
 </template>
-
-<style scoped>
-.admin-auto-refresh { display: inline-flex; height: 32px; align-items: center; gap: 6px; padding: 0 8px; color: hsl(var(--primary)); border: 1px solid hsl(var(--primary)); background: hsl(var(--background)); white-space: nowrap; }
-.admin-auto-refresh:hover { background: hsl(var(--primary) / 8%); }
-.admin-auto-refresh__status { min-width: 28px; color: hsl(var(--primary)); text-align: right; font-variant-numeric: tabular-nums; }
-</style>

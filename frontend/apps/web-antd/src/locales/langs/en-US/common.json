@@ -2,7 +2,7 @@
   "actions": {
     "autoRefresh": "Auto Refresh",
     "batch": "Batch Actions",
-    "clearSelection": "Clear Selection",
+    "batchWithCount": "{label} ({count} selected)",
     "collapse": "Collapse",
     "exportCurrentPage": "Export Current Page",
     "filter": "Filter",
@@ -10,6 +10,12 @@
     "refresh": "Refresh",
     "reset": "Reset",
     "search": "Search"
+  },
+  "batch": {
+    "confirmDelete": "Delete",
+    "deleteConfirm": "Delete the selected {count} login logs? This cannot be undone.",
+    "deleteSelected": "Delete Selected Logs",
+    "deleteTitle": "Delete Login Logs"
   },
   "fields": {
     "createdAt": "Created At",
