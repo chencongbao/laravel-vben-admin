@@ -8,11 +8,13 @@ use Chencongbao\LaravelVbenAdmin\Console\PublishAssetsCommand;
 use Chencongbao\LaravelVbenAdmin\Console\SyncSystemDataCommand;
 use Chencongbao\LaravelVbenAdmin\Contracts\AuditRecorder;
 use Chencongbao\LaravelVbenAdmin\Contracts\Authorizer;
+use Chencongbao\LaravelVbenAdmin\Contracts\LoginRecorder;
 use Chencongbao\LaravelVbenAdmin\Contracts\ModuleRegistry;
 use Chencongbao\LaravelVbenAdmin\Http\Middleware\EnsureAdminUser;
 use Chencongbao\LaravelVbenAdmin\Http\Middleware\RequirePermission;
 use Chencongbao\LaravelVbenAdmin\Http\Middleware\RequireSuperAdmin;
-use Chencongbao\LaravelVbenAdmin\Services\DatabaseAuditRecorder;
+use Chencongbao\LaravelVbenAdmin\Services\ActivityAuditRecorder;
+use Chencongbao\LaravelVbenAdmin\Services\ActivityLoginRecorder;
 use Chencongbao\LaravelVbenAdmin\Services\DatabaseAuthorizer;
 use Chencongbao\LaravelVbenAdmin\Services\InMemoryModuleRegistry;
 use Illuminate\Routing\Router;
@@ -27,7 +29,15 @@ final class LaravelVbenAdminServiceProvider extends ServiceProvider
 
         $this->app->singleton(ModuleRegistry::class, InMemoryModuleRegistry::class);
         $this->app->singleton(Authorizer::class, DatabaseAuthorizer::class);
-        $this->app->singleton(AuditRecorder::class, DatabaseAuditRecorder::class);
+        $this->app->scoped(AuditRecorder::class, ActivityAuditRecorder::class);
+        $this->app->scoped(LoginRecorder::class, ActivityLoginRecorder::class);
+
+        $this->app->booted(function (): void {
+            config()->set(
+                'activitylog.clean_after_days',
+                config('laravel-vben-admin.activity_log.clean_after_days', 365),
+            );
+        });
     }
 
     public function boot(Router $router): void

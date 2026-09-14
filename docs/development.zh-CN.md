@@ -185,6 +185,34 @@ frontend/apps/web-antd/src/api/core/menu.ts
 
 敏感按钮必须同时具备服务端权限中间件；只加 `v-access` 不算完成。
 
+### 7.1 统一日志规则
+
+登录日志和操作日志统一写入 Spatie Activitylog 的 `activity_log` 表，通过 `log_type=login` 与 `log_type=operation` 区分。旧的 `admin_login_logs`、`admin_audit_logs` 表及对应 Eloquent 模型已经移除。业务代码不得重新创建或直接写这些旧表，也不要自行拼装 `activity_log` 数据。
+
+通用写操作通过包提供的 `AuditRecorder` 记录：
+
+```php
+use Chencongbao\LaravelVbenAdmin\Contracts\AuditRecorder;
+
+public function __construct(private readonly AuditRecorder $audit) {}
+
+$this->audit->record(
+    $request->user(),
+    'match.published',
+    $match,
+    ['status' => ['before' => 'draft', 'after' => 'published']],
+    ['source' => 'admin'],
+);
+```
+
+动作名使用稳定的 `领域.资源.动作` 或 `领域.动作` 英文编码，不使用会变化的中文标题。`subject` 传被操作的 Eloquent 模型；没有单一对象的批量或配置操作传 `null`。一次请求修改多项配置时只写一条请求级日志，把各项前后值放入同一个 `changes`，避免循环生成碎片日志。
+
+记录器自动补充操作者、IP、HTTP 方法、请求路径、User-Agent 和经过脱敏的请求参数。包含 `password`、`token`、`secret`、`credential`、`authorization`、`cookie`、`private_key`、`captcha`、`totp`、`two_factor` 的键会递归替换为 `[REDACTED]`；上传内容只记录文件元数据。新增敏感字段时必须同步扩展脱敏规则和测试。
+
+登录流程由包内部的 `LoginRecorder` 统一记录成功、失败原因和 `client_type`。宿主业务不要调用它伪造登录事件。日志写入应与关键业务写入处于合理的事务边界；审计失败是否阻断业务必须在需求中明确，安全和权限类变更默认要求同时成功。
+
+查询页面继续使用 `/system/login-logs` 与 `/system/audit-logs`，不要直接把 Spatie 模型结构暴露为新的前端契约。数据库中的 `created_at` 按 UTC 保存，API 返回 ISO-8601，前端统一转换为北京时间。
+
 ## 8. 认证和会话不可破坏规则
 
 - Token撤销或过期后，前端收到401必须清理本地认证并跳转登录页，不能再次用失效Token调用退出接口。
@@ -213,11 +241,43 @@ frontend/apps/web-antd/src/api/core/menu.ts
 - 数据库日期时间按UTC保存，API返回带时区的标准ISO-8601值；后台所有面向用户的时间统一使用 `src/utils/datetime.ts` 转换为 `Asia/Shanghai`（北京时间，UTC+8）并显示为 `YYYY-MM-DD HH:mm:ss`。禁止使用浏览器本地时区、服务器系统时区或在页面内重复实现格式化函数。
 - 表格必须考虑加载、空数据、分页、窄屏横向滚动和操作权限。
 - 列表页统一使用 `src/components/system/list-toolbar.vue` 组织顶部操作：刷新、筛选、重置、列显示等查看控制放左侧；新增、导出、批量处理、历史记录等业务操作放右侧。操作栏位于表格上方，直接排列按钮，不使用Card、背景、边框或额外内边距；Table所在容器的内容内边距为0，让表格贴合容器边缘。不得把所有按钮无层级地堆在同一侧，窄屏时必须允许自动换行。
+- 顶部操作统一使用 `src/components/system/permission-button.vue`：按钮必须传入Iconify图标，使用直角样式；需要授权的业务按钮通过 `permission` 传入后台权限编码，无权限时组件自动隐藏。`permission` 支持单个编码或编码数组（数组为满足任一权限即可显示），不需要权限的刷新、筛选、重置可以不传。
 - 数据列表统一添加 `admin-data-table` 类并启用Ant Design Vue的 `bordered`，使用有区分度的浅色表头、横向行线和纵向列线；悬停行需要完整高亮，固定在右侧的操作列背景必须与当前行一致。
 - 默认数据表使用中等紧凑密度：表头单元格内边距为 `10px 12px`，数据单元格为 `9px 12px`，普通行视觉高度约44px；除触控专用页面或复杂多行内容外，不得自行放大行高。
 - 行操作只有一至两项时可以直接展示；三项及以上时保留一个高频主操作，其余收入“更多”菜单。菜单按业务操作、辅助操作、危险操作分组，危险操作置底并二次确认；复杂流程进入详情抽屉，不继续扩大操作列。
+- Table行操作使用 `PermissionButton` 的 `icon-only` 模式，点击区域固定为 `32px × 32px`，并必须提供 `tooltip`（该值同时作为 `aria-label`）。桌面端最多直显三个高频图标和一个“更多”图标；移动端只保留“更多”。删除、强制下线等危险操作使用危险色并二次确认，不得只用颜色表达含义。
 - 表单必须考虑新增、编辑、服务端验证失败、重复提交和保存后的数据刷新。
 - 不直接修改 `node_modules`；共享包只有被多个页面真实复用时才修改。
+
+顶部操作按钮调用示例：
+
+```vue
+<script setup lang="ts">
+import ListToolbar from '#/components/system/list-toolbar.vue';
+import PermissionButton from '#/components/system/permission-button.vue';
+</script>
+
+<template>
+  <ListToolbar>
+    <template #left>
+      <PermissionButton icon="lucide:refresh-cw" @click="load">刷新</PermissionButton>
+      <PermissionButton icon="lucide:filter" @click="search">筛选</PermissionButton>
+    </template>
+    <template #right>
+      <PermissionButton
+        icon="lucide:plus"
+        permission="article.create"
+        type="primary"
+        @click="openCreate"
+      >
+        新增文章
+      </PermissionButton>
+    </template>
+  </ListToolbar>
+</template>
+```
+
+这里的 `article.create` 必须先由包模块或宿主模块注册到后台权限表，并分配给角色；登录后 `/access/permissions` 返回当前管理员权限，组件据此动态显示。超级管理员的 `*` 权限自动通过。前端组件只负责界面可见性，对应写接口仍必须配置 `admin.permission:article.create` 服务端中间件。
 
 修改源码后至少运行：
 

@@ -33,6 +33,7 @@ import {
   updateResource,
 } from '#/api/system';
 import ListToolbar from '#/components/system/list-toolbar.vue';
+import PermissionButton from '#/components/system/permission-button.vue';
 
 interface MenuItem {
   code: string;
@@ -293,12 +294,12 @@ onMounted(() => load());
       <Card :loading="loading" title="菜单树">
         <ListToolbar>
           <template #left>
-            <Button size="small" @click="load()">刷新</Button>
-            <Button size="small" @click="expandAll">展开</Button>
-            <Button size="small" @click="collapseAll">收起</Button>
+            <PermissionButton icon="lucide:refresh-cw" :loading="loading" @click="load()">刷新</PermissionButton>
+            <PermissionButton icon="lucide:chevrons-down-up" @click="expandAll">展开</PermissionButton>
+            <PermissionButton icon="lucide:chevrons-up-down" @click="collapseAll">收起</PermissionButton>
           </template>
           <template #right>
-            <Button v-access:code="'system.menu.create'" size="small" type="primary" @click="resetForm()">新增根菜单</Button>
+            <PermissionButton icon="lucide:list-plus" permission="system.menu.create" type="primary" @click="resetForm()">新增根菜单</PermissionButton>
           </template>
         </ListToolbar>
 
@@ -320,11 +321,11 @@ onMounted(() => load());
                 <span class="ml-2 text-xs text-gray-400">{{ item.route_path || item.code }}</span>
               </button>
               <Space size="small">
-                <Button v-access:code="'system.menu.create'" size="small" type="link" @click.stop="addChild(item)">新增子级</Button>
+                <PermissionButton icon="lucide:plus" icon-only permission="system.menu.create" tooltip="新增子级" type="text" @click.stop="addChild(item)" />
                 <Popconfirm v-if="!item.is_system" v-access:code="'system.menu.delete'" title="确定删除该菜单？" @confirm="remove(item)">
-                  <Button danger size="small" type="link" @click.stop>删除</Button>
+                  <PermissionButton danger icon="lucide:trash-2" icon-only permission="system.menu.delete" tooltip="删除菜单" type="text" @click.stop />
                 </Popconfirm>
-                <Button v-else danger disabled size="small" title="系统菜单不可删除" type="link" @click.stop>删除</Button>
+                <PermissionButton v-else danger disabled icon="lucide:lock-keyhole" icon-only tooltip="系统菜单不可删除" type="text" @click.stop />
               </Space>
             </div>
           </template>

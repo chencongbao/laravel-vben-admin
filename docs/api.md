@@ -98,7 +98,13 @@ The effective menu API returns a tree. A non-super administrator only receives m
 | GET | `/system/login-logs` | `system.login-log.view` |
 | GET | `/system/audit-logs` | `system.audit.view` |
 
-Audit changes recursively redact keys containing password, token, secret, credential or authorization. Audit records are append-only through this API.
+Both endpoints read the shared Spatie Activitylog `activity_log` table. `log_type=login` identifies authentication events and `log_type=operation` identifies administration changes; the stable API paths remain unchanged so existing pages do not depend on Spatie's storage schema.
+
+Login-log items expose the existing `username`, `succeeded`, `failure_code`, `ip_address`, and `created_at` fields, plus `client_type` and `user_agent`. Audit-log items expose the existing actor, action, subject, changes, context, IP, and creation time fields, plus `description`, `method`, `path`, and `user_agent`. Timestamps use standard ISO-8601 serialization and are rendered as Beijing time by the administration client.
+
+Audit changes, context, and captured request input recursively redact keys containing password, token, secret, credential, authorization, cookie, private key, captcha, TOTP, or two-factor data. Uploaded files are represented only by safe metadata. Records are append-only through these APIs.
+
+Updating several system or theme settings in one request creates one `system.settings.updated` operation record containing all changed keys and their before/after values. A request that produces no value changes does not create an audit record.
 
 ## Settings
 

@@ -3,13 +3,19 @@
 namespace Chencongbao\LaravelVbenAdmin\Tests\Feature;
 
 use Chencongbao\LaravelVbenAdmin\LaravelVbenAdminServiceProvider;
+use Laravel\Sanctum\SanctumServiceProvider;
 use Orchestra\Testbench\TestCase;
+use Spatie\Activitylog\ActivitylogServiceProvider;
 
 final class LoginCaptchaTest extends TestCase
 {
     protected function getPackageProviders($app): array
     {
-        return [LaravelVbenAdminServiceProvider::class];
+        return [
+            SanctumServiceProvider::class,
+            ActivitylogServiceProvider::class,
+            LaravelVbenAdminServiceProvider::class,
+        ];
     }
 
     protected function defineEnvironment($app): void

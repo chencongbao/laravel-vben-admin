@@ -1,9 +1,11 @@
 <script lang="ts" setup>
 import { onMounted, reactive, ref } from 'vue';
+import type { TableColumnsType } from 'ant-design-vue';
 import { Page } from '@vben/common-ui';
-import { Button, Card, Form, FormItem, Input, message, Modal, Select, Space, Switch, Table, Tag } from 'ant-design-vue';
+import { Card, Form, FormItem, Input, message, Modal, Select, Space, Switch, Table, Tag } from 'ant-design-vue';
 import { createResource, getResource, updateResource } from '#/api/system';
 import ListToolbar from '#/components/system/list-toolbar.vue';
+import PermissionButton from '#/components/system/permission-button.vue';
 import { formatBeijingDateTime } from '#/utils/datetime';
 
 interface Role { code: string; id: number; name: string }
@@ -36,14 +38,14 @@ const form = reactive({
   two_factor_enabled: false,
   username: '',
 });
-const columns = [
+const columns: TableColumnsType = [
   { dataIndex: 'id', title: 'ID' }, { dataIndex: 'username', title: '用户名' },
   { dataIndex: 'name', title: '姓名' }, { dataIndex: 'roles', title: '角色' },
   { dataIndex: 'two_factor_enabled', title: 'Google 2FA' },
   { dataIndex: 'login_ip_whitelist', title: '登录白名单' },
   { dataIndex: 'last_login_ip', title: '最近登录 IP' },
   { dataIndex: 'last_login_at', title: '最近登录时间' },
-  { dataIndex: 'is_active', title: '状态' }, { dataIndex: 'action', title: '操作' },
+  { dataIndex: 'is_active', title: '状态' }, { dataIndex: 'action', fixed: 'right', title: '操作', width: 58 },
 ];
 
 async function load() {
@@ -93,7 +95,7 @@ onMounted(load);
 
 <template>
   <Page description="创建管理员、维护账号状态并分配角色。密码至少 12 位，需包含大小写字母和数字。" title="用户管理">
-    <ListToolbar><template #left><Button :loading="loading" @click="load">刷新</Button></template><template #right><Button v-access:code="'system.user.create'" type="primary" @click="open()">新增用户</Button></template></ListToolbar>
+    <ListToolbar><template #left><PermissionButton icon="lucide:refresh-cw" :loading="loading" @click="load">刷新</PermissionButton></template><template #right><PermissionButton icon="lucide:user-plus" permission="system.user.create" type="primary" @click="open()">新增用户</PermissionButton></template></ListToolbar>
     <Card :body-style="{ padding: 0 }">
       <Table bordered class="admin-data-table" :columns="columns" :data-source="users" :loading="loading" :pagination="pagination" row-key="id" :scroll="{ x: 1250 }" @change="changePage">
         <template #bodyCell="{ column, record, text }">
@@ -105,7 +107,7 @@ onMounted(load);
           <Tag v-else-if="column.dataIndex === 'login_ip_whitelist'" :color="text?.length ? 'green' : 'red'">{{ text?.length ? `已设置 ${text.length} 条` : '未设置' }}</Tag>
           <span v-else-if="column.dataIndex === 'last_login_ip'">{{ text || '—' }}</span>
           <span v-else-if="column.dataIndex === 'last_login_at'">{{ formatBeijingDateTime(text) }}</span>
-          <Button v-else-if="column.dataIndex === 'action'" v-access:code="'system.user.update'" type="link" @click="open(record)">编辑</Button>
+          <PermissionButton v-else-if="column.dataIndex === 'action'" icon="lucide:pencil" icon-only permission="system.user.update" tooltip="编辑用户" type="text" @click="open(record)" />
         </template>
       </Table>
     </Card>

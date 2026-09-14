@@ -980,7 +980,7 @@ onMounted(load);
 
 .theme-actions {
   display: flex;
-  justify-content: flex-end;
+  justify-content: center;
   padding-top: 20px;
 }
 

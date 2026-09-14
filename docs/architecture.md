@@ -24,6 +24,6 @@ The Composer package does not ship an editable Vue application into `vendor`. Th
 
 1. Package boot, migrations, safe installation, login, current user, permission middleware and navigation contract.
 2. Administrator, role, permission and menu management APIs with audit coverage. Implemented in the initial working tree.
-3. Settings definitions, login logs and audit query APIs. Implemented in the initial working tree.
+3. Settings definitions and unified Spatie Activitylog storage for login and operation logs, with compatible query APIs, guarded legacy-table backfill and legacy-table removal. Implemented.
 4. Vben 5.7 Starter integration. Initial API wiring and system pages are implemented; runtime and end-to-end authorization tests remain pending on Node.js 22+ and a Laravel 13 host application.
 5. Versioned API contract, generated TypeScript client and compatibility matrix.

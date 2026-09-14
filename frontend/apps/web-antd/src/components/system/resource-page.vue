@@ -1,10 +1,11 @@
 <script lang="ts" setup>
 import { computed, onMounted, reactive, ref } from 'vue';
 
+import type { TableColumnsType } from 'ant-design-vue';
+
 import { Page } from '@vben/common-ui';
 
 import {
-  Button,
   Card,
   Form,
   FormItem,
@@ -27,6 +28,7 @@ import {
   updateResource,
 } from '#/api/system';
 import ListToolbar from '#/components/system/list-toolbar.vue';
+import PermissionButton from '#/components/system/permission-button.vue';
 import { formatBeijingDateTime, isDateTimeField } from '#/utils/datetime';
 
 export interface ResourceField {
@@ -55,11 +57,11 @@ const rows = ref<Record<string, any>[]>([]);
 const pagination = reactive({ current: 1, pageSize: 20, total: 0 });
 const form = reactive<Record<string, any>>({});
 
-const columns = computed(() => {
-  const items = props.fields
+const columns = computed<TableColumnsType>(() => {
+  const items: TableColumnsType = props.fields
     .filter((field) => field.table !== false)
     .map((field) => ({ dataIndex: field.key, key: field.key, title: field.label }));
-  if (!props.readOnly) items.push({ dataIndex: 'action', key: 'action', title: '操作' });
+  if (!props.readOnly) items.push({ dataIndex: 'action', fixed: 'right', key: 'action', title: '操作', width: 82 });
   return items;
 });
 
@@ -142,8 +144,8 @@ onMounted(load);
 <template>
   <Page :description="description" :title="title">
     <ListToolbar>
-      <template #left><Button :loading="loading" @click="load">刷新</Button></template>
-      <template v-if="!readOnly" #right><Button v-access:code="`${permissionPrefix}.create`" type="primary" @click="openCreate">新增</Button></template>
+      <template #left><PermissionButton icon="lucide:refresh-cw" :loading="loading" @click="load">刷新</PermissionButton></template>
+      <template v-if="!readOnly" #right><PermissionButton icon="lucide:plus" :permission="`${permissionPrefix}.create`" type="primary" @click="openCreate">新增</PermissionButton></template>
     </ListToolbar>
     <Card :body-style="{ padding: 0 }">
       <Table
@@ -159,9 +161,9 @@ onMounted(load);
         <template #bodyCell="{ column, record, text }">
           <template v-if="column.key === 'action'">
             <Space>
-              <Button v-access:code="`${permissionPrefix}.update`" size="small" type="link" @click="openEdit(record)">编辑</Button>
+              <PermissionButton icon="lucide:pencil" icon-only :permission="`${permissionPrefix}.update`" tooltip="编辑" type="text" @click="openEdit(record)" />
               <Popconfirm v-access:code="`${permissionPrefix}.delete`" title="确定删除此记录？" @confirm="remove(record.id)">
-                <Button danger size="small" type="link">删除</Button>
+                <PermissionButton danger icon="lucide:trash-2" icon-only :permission="`${permissionPrefix}.delete`" tooltip="删除" type="text" />
               </Popconfirm>
             </Space>
           </template>

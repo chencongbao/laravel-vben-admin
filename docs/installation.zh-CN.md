@@ -44,6 +44,8 @@ php artisan vben-admin:publish-assets
 4. 同步内置的 `administrator`（超级管理员）、`manager`（管理员）、权限和菜单；
 5. 首次安装时创建默认超级管理员。
 
+安装或升级还会创建统一的 Spatie Activitylog `activity_log` 表。已有 `admin_login_logs` 和 `admin_audit_logs` 数据会按原始主键幂等回填；后续 migration 只有在确认每一条旧记录都已进入统一表后，才删除这两张旧表。升级前仍应备份数据库，因为回滚只会恢复旧表结构，无法恢复已经删除的旧表数据；完整历史日志继续保存在 `activity_log`。
+
 默认登录信息：
 
 ```text
@@ -190,7 +192,18 @@ php artisan vben-admin:publish-assets
 
 # 覆盖更新已发布前端资源
 php artisan vben-admin:publish-assets --force
+
+# 按保留天数清理过期 activity_log（建议由 Laravel Scheduler 定期调用）
+php artisan activitylog:clean
 ```
+
+日志默认保留 365 天，可在宿主项目 `.env` 中调整：
+
+```dotenv
+VBEN_ADMIN_ACTIVITY_LOG_DAYS=365
+```
+
+修改后如启用了配置缓存，执行 `php artisan optimize:clear`。正式环境应先确认审计保留合规要求，再配置清理周期；不要把清理命令加入每次请求或每次登录流程。
 
 ## 8. 常见问题
 

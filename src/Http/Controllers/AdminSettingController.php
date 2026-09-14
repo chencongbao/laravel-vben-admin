@@ -92,11 +92,28 @@ final class AdminSettingController extends Controller
         }
 
         DB::transaction(function () use ($normalized, $definitions, $request): void {
+            $changes = [];
+
             foreach ($normalized as $key => $value) {
                 $setting = AdminSetting::query()->firstOrNew(['key' => $key]);
                 $before = $setting->exists ? $setting->value : $definitions[$key]['default'];
+
+                if ($before === $value) {
+                    continue;
+                }
+
                 $setting->fill(['type' => $definitions[$key]['type'], 'value' => $value, 'is_system' => true])->save();
-                $this->audit->record($request->user(), 'system.setting.updated', $setting, ['key' => $key, 'before' => $before, 'after' => $value]);
+                $changes[$key] = ['before' => $before, 'after' => $value];
+            }
+
+            if ($changes !== []) {
+                $this->audit->record(
+                    $request->user(),
+                    'system.settings.updated',
+                    null,
+                    ['settings' => $changes],
+                    ['keys' => array_keys($changes)],
+                );
             }
         });
 

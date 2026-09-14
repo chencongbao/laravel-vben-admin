@@ -3,6 +3,7 @@ import LogPage from '#/components/system/log-page.vue';
 const columns = [
   { dataIndex: 'id', title: 'ID' }, { dataIndex: 'username', title: '用户名' },
   { dataIndex: 'ip_address', title: 'IP 地址' }, { dataIndex: 'succeeded', title: '结果' },
+  { dataIndex: 'client_type', title: '客户端类型' },
   { dataIndex: 'failure_code', title: '失败代码' }, { dataIndex: 'created_at', title: '时间' },
 ];
 const filters = [

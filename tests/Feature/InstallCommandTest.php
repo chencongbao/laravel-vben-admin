@@ -9,13 +9,19 @@ use Chencongbao\LaravelVbenAdmin\Models\AdminUser;
 use Chencongbao\LaravelVbenAdmin\Support\SystemSettings;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
+use Laravel\Sanctum\SanctumServiceProvider;
 use Orchestra\Testbench\TestCase;
+use Spatie\Activitylog\ActivitylogServiceProvider;
 
 final class InstallCommandTest extends TestCase
 {
     protected function getPackageProviders($app): array
     {
-        return [LaravelVbenAdminServiceProvider::class];
+        return [
+            SanctumServiceProvider::class,
+            ActivitylogServiceProvider::class,
+            LaravelVbenAdminServiceProvider::class,
+        ];
     }
 
     protected function defineEnvironment($app): void
@@ -43,6 +49,9 @@ final class InstallCommandTest extends TestCase
         self::assertTrue(AdminRole::query()->where('code', 'administrator')->where('is_super_admin', true)->exists());
         self::assertTrue(AdminRole::query()->where('code', 'manager')->where('is_super_admin', false)->exists());
         self::assertTrue(Schema::hasColumns('personal_access_tokens', ['ip_address', 'user_agent']));
+        self::assertTrue(Schema::hasColumns('activity_log', ['log_name', 'log_type', 'event', 'attribute_changes', 'properties', 'legacy_source', 'legacy_id']));
+        self::assertFalse(Schema::hasTable('admin_login_logs'));
+        self::assertFalse(Schema::hasTable('admin_audit_logs'));
         self::assertSame('default', SystemSettings::value('system.login_theme'));
         self::assertSame('panel-right', SystemSettings::value('system.login_layout'));
         self::assertTrue(SystemSettings::value('system.login_remember_me'));

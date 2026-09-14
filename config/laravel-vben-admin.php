@@ -15,6 +15,11 @@ return [
         'token_name' => 'vben-admin',
     ],
 
+    'activity_log' => [
+        'log_name' => 'admin',
+        'clean_after_days' => (int) env('VBEN_ADMIN_ACTIVITY_LOG_DAYS', 365),
+    ],
+
     'tables' => [
         'users' => 'admin_users',
         'roles' => 'admin_roles',
@@ -24,6 +29,7 @@ return [
         'role_permissions' => 'admin_role_permissions',
         'role_menus' => 'admin_role_menus',
         'settings' => 'admin_settings',
+        // Used only by the legacy log backfill/drop migrations.
         'login_logs' => 'admin_login_logs',
         'audit_logs' => 'admin_audit_logs',
     ],

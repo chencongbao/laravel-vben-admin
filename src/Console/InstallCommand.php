@@ -28,6 +28,16 @@ final class InstallCommand extends Command
             $this->components->info('Sanctum migration already exists; publication skipped.');
         }
 
+        foreach (glob(database_path('migrations/*_create_personal_access_tokens_table.php')) ?: [] as $migration) {
+            if ($this->call('migrate', [
+                '--path' => $migration,
+                '--realpath' => true,
+                '--force' => true,
+            ]) !== self::SUCCESS) {
+                return self::FAILURE;
+            }
+        }
+
         if ($this->call('migrate', ['--force' => true]) !== self::SUCCESS) {
             return self::FAILURE;
         }

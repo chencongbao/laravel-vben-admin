@@ -5,9 +5,10 @@ import type { Key } from 'ant-design-vue/es/_util/type';
 import { computed, onMounted, reactive, ref } from 'vue';
 import { Page } from '@vben/common-ui';
 import { $t } from '@vben/locales';
-import { Button, Card, Checkbox, Form, FormItem, Input, message, Modal, Popconfirm, Space, Switch, Table, Tag, Tree } from 'ant-design-vue';
+import { Card, Checkbox, Form, FormItem, Input, message, Modal, Popconfirm, Space, Switch, Table, Tag, Tree } from 'ant-design-vue';
 import { createResource, deleteResource, getCollection, getResource, getResourceDetail, updateResource } from '#/api/system';
 import ListToolbar from '#/components/system/list-toolbar.vue';
+import PermissionButton from '#/components/system/permission-button.vue';
 import { formatBeijingDateTime } from '#/utils/datetime';
 
 interface MenuItem { code: string; id: number; parent_code?: null | string; permission_code?: null | string; title: string }
@@ -24,7 +25,7 @@ const columns: TableColumnsType = [
   { dataIndex: 'code', title: '角色标识' }, { dataIndex: 'name', title: '角色名称' },
   { dataIndex: 'permissions_count', title: '权限数' }, { dataIndex: 'menus_count', title: '菜单数' },
   { dataIndex: 'is_active', title: '状态' }, { dataIndex: 'created_at', title: '创建时间' },
-  { dataIndex: 'updated_at', title: '更新时间' }, { dataIndex: 'action', fixed: 'right', title: '操作', width: 190 },
+  { dataIndex: 'updated_at', title: '更新时间' }, { dataIndex: 'action', fixed: 'right', title: '操作', width: 82 },
 ];
 const isProtected = computed(() => editingRole.value?.is_super_admin === true);
 const isSystemIdentity = computed(() => editingRole.value?.is_system === true);
@@ -124,7 +125,7 @@ onMounted(load);
 
 <template>
   <Page description="创建或编辑角色时直接分配菜单和操作权限。" title="角色管理">
-    <ListToolbar><template #left><Button :loading="loading" @click="load">刷新</Button></template><template #right><Button v-access:code="'system.role.create'" type="primary" @click="openEdit()">新增角色</Button></template></ListToolbar>
+    <ListToolbar><template #left><PermissionButton icon="lucide:refresh-cw" :loading="loading" @click="load">刷新</PermissionButton></template><template #right><PermissionButton icon="lucide:shield-plus" permission="system.role.create" type="primary" @click="openEdit()">新增角色</PermissionButton></template></ListToolbar>
     <Card :body-style="{ padding: 0 }">
       <Table bordered class="admin-data-table" :columns="columns" :data-source="roles" :loading="loading" :pagination="pagination" :scroll="{ x: 1100 }" row-key="id" @change="changePage">
         <template #bodyCell="{ column, record, text }">
@@ -139,8 +140,8 @@ onMounted(load);
           <Tag v-else-if="column.dataIndex === 'is_active'" :color="text ? 'green' : 'default'">{{ text ? '启用' : '禁用' }}</Tag>
           <span v-else-if="column.dataIndex === 'created_at' || column.dataIndex === 'updated_at'">{{ formatBeijingDateTime(text) }}</span>
           <Space v-else-if="column.dataIndex === 'action'">
-            <Button v-access:code="'system.role.update'" size="small" type="link" @click="openEdit(record)">{{ record.is_super_admin ? '查看' : '编辑与授权' }}</Button>
-            <Popconfirm v-if="!record.is_system" v-access:code="'system.role.delete'" title="确定删除该角色？" @confirm="remove(record)"><Button danger size="small" type="link">删除</Button></Popconfirm>
+            <PermissionButton :icon="record.is_super_admin ? 'lucide:eye' : 'lucide:pencil'" icon-only permission="system.role.update" :tooltip="record.is_super_admin ? '查看角色' : '编辑与授权'" type="text" @click="openEdit(record)" />
+            <Popconfirm v-if="!record.is_system" v-access:code="'system.role.delete'" title="确定删除该角色？" @confirm="remove(record)"><PermissionButton danger icon="lucide:trash-2" icon-only permission="system.role.delete" tooltip="删除角色" type="text" /></Popconfirm>
           </Space>
         </template>
       </Table>

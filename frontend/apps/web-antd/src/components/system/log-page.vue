@@ -1,9 +1,10 @@
 <script lang="ts" setup>
 import { onMounted, reactive, ref } from 'vue';
 import { Page } from '@vben/common-ui';
-import { Button, Card, Input, Select, Table, Tag } from 'ant-design-vue';
+import { Card, Input, Select, Table, Tag } from 'ant-design-vue';
 import { getResource } from '#/api/system';
 import ListToolbar from '#/components/system/list-toolbar.vue';
+import PermissionButton from '#/components/system/permission-button.vue';
 import { formatBeijingDateTime, isDateTimeField } from '#/utils/datetime';
 
 const props = defineProps<{
@@ -34,12 +35,13 @@ onMounted(load);
   <Page :title="title">
     <ListToolbar>
       <template #left>
-        <Button :loading="loading" @click="load">刷新</Button>
+        <PermissionButton icon="lucide:refresh-cw" :loading="loading" @click="load">刷新</PermissionButton>
         <template v-for="filter in filters" :key="filter.key">
           <Select v-if="filter.options" v-model:value="values[filter.key]" allow-clear :options="filter.options" :placeholder="filter.label" class="w-40" />
           <Input v-else v-model:value="values[filter.key]" :placeholder="filter.label" class="w-48" @press-enter="search" />
         </template>
-        <Button type="primary" @click="search">筛选</Button><Button @click="reset">重置</Button>
+        <PermissionButton icon="lucide:filter" type="primary" @click="search">筛选</PermissionButton>
+        <PermissionButton icon="lucide:rotate-ccw" @click="reset">重置</PermissionButton>
       </template>
       <template #right><slot name="actions" /></template>
     </ListToolbar>

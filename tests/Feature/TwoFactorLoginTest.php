@@ -5,13 +5,19 @@ namespace Chencongbao\LaravelVbenAdmin\Tests\Feature;
 use Chencongbao\LaravelVbenAdmin\LaravelVbenAdminServiceProvider;
 use Chencongbao\LaravelVbenAdmin\Models\AdminUser;
 use Chencongbao\LaravelVbenAdmin\Services\TwoFactorAuthentication;
+use Laravel\Sanctum\SanctumServiceProvider;
 use Orchestra\Testbench\TestCase;
+use Spatie\Activitylog\ActivitylogServiceProvider;
 
 final class TwoFactorLoginTest extends TestCase
 {
     protected function getPackageProviders($app): array
     {
-        return [LaravelVbenAdminServiceProvider::class];
+        return [
+            SanctumServiceProvider::class,
+            ActivitylogServiceProvider::class,
+            LaravelVbenAdminServiceProvider::class,
+        ];
     }
 
     protected function defineEnvironment($app): void
@@ -23,6 +29,7 @@ final class TwoFactorLoginTest extends TestCase
             'prefix' => '',
         ]);
         $app['config']->set('cache.default', 'array');
+        $app['config']->set('app.key', 'base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=');
     }
 
     public function test_local_environment_skips_two_factor_challenge_when_enabled(): void

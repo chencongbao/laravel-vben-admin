@@ -3,7 +3,7 @@
 namespace Chencongbao\LaravelVbenAdmin\Http\Controllers;
 
 use Chencongbao\LaravelVbenAdmin\Contracts\AuditRecorder;
-use Chencongbao\LaravelVbenAdmin\Models\AdminLoginLog;
+use Chencongbao\LaravelVbenAdmin\Contracts\LoginRecorder;
 use Chencongbao\LaravelVbenAdmin\Models\AdminUser;
 use Chencongbao\LaravelVbenAdmin\Services\LoginCaptcha;
 use Chencongbao\LaravelVbenAdmin\Services\LoginClientClassifier;
@@ -22,6 +22,7 @@ final class AuthController extends Controller
 {
     public function __construct(
         private readonly AuditRecorder $audit,
+        private readonly LoginRecorder $loginRecorder,
         private readonly LoginCaptcha $captcha,
         private readonly LoginClientClassifier $loginClientClassifier,
         private readonly LoginIpWhitelist $loginIpWhitelist,
@@ -43,6 +44,8 @@ final class AuthController extends Controller
 
         if ($this->captcha->isRequired($request, $credentials['username'])
             && ! $this->captcha->verify($request, $credentials['username'], $credentials['captcha_key'] ?? null, $credentials['captcha'] ?? null)) {
+            $this->loginRecorder->record($request, $credentials['username'], null, false, 'CAPTCHA_INVALID');
+
             return response()->json([
                 'message' => 'The verification code is invalid or has expired.',
                 'code' => 'CAPTCHA_INVALID',
@@ -56,7 +59,7 @@ final class AuthController extends Controller
 
         if (! $user || ! $user->is_active || ! Hash::check($credentials['password'], $user->password)) {
             $this->captcha->require($request, $credentials['username']);
-            $this->writeLoginLog($request, $credentials['username'], $user, false, $user && ! $user->is_active ? 'ACCOUNT_DISABLED' : 'INVALID_CREDENTIALS');
+            $this->loginRecorder->record($request, $credentials['username'], $user, false, $user && ! $user->is_active ? 'ACCOUNT_DISABLED' : 'INVALID_CREDENTIALS');
 
             return response()->json([
                 'message' => 'The provided credentials are invalid.',
@@ -68,7 +71,7 @@ final class AuthController extends Controller
         $this->captcha->clear($request, $credentials['username']);
 
         if (! app()->environment('local') && ! $this->loginIpWhitelist->allows($user, $request->ip())) {
-            $this->writeLoginLog($request, $user->username, $user, false, 'LOGIN_IP_NOT_ALLOWED');
+            $this->loginRecorder->record($request, $user->username, $user, false, 'LOGIN_IP_NOT_ALLOWED');
 
             return response()->json([
                 'message' => '当前 IP 不在登录白名单中。',
@@ -95,17 +98,19 @@ final class AuthController extends Controller
         $user = $this->twoFactor->resolveChallenge($data['challenge_token']);
 
         if (! $user || ! $user->is_active || ! $user->two_factor_enabled) {
+            $this->loginRecorder->record($request, '', null, false, 'TWO_FACTOR_CHALLENGE_INVALID');
+
             return response()->json(['message' => 'The two-factor challenge is invalid or has expired.', 'code' => 'TWO_FACTOR_CHALLENGE_INVALID'], 422);
         }
 
         if (! app()->environment('local') && ! $this->loginIpWhitelist->allows($user, $request->ip())) {
-            $this->writeLoginLog($request, $user->username, $user, false, 'LOGIN_IP_NOT_ALLOWED');
+            $this->loginRecorder->record($request, $user->username, $user, false, 'LOGIN_IP_NOT_ALLOWED');
 
             return response()->json(['message' => '当前 IP 不在登录白名单中。', 'code' => 'LOGIN_IP_NOT_ALLOWED'], 403);
         }
 
         if (! $this->twoFactor->verify($user, $data['code'])) {
-            $this->writeLoginLog($request, $user->username, $user, false, 'TWO_FACTOR_INVALID');
+            $this->loginRecorder->record($request, $user->username, $user, false, 'TWO_FACTOR_INVALID');
 
             return response()->json(['message' => 'The authentication code is invalid.', 'code' => 'TWO_FACTOR_CODE_INVALID'], 422);
         }
@@ -163,7 +168,7 @@ final class AuthController extends Controller
     private function completeLogin(Request $request, AdminUser $user, string $username): JsonResponse
     {
         $user->forceFill(['last_login_at' => now(), 'last_login_ip' => $request->ip()])->save();
-        $this->writeLoginLog($request, $username, $user, true);
+        $this->loginRecorder->record($request, $username, $user, true);
 
         $accessToken = $user->createToken(config('laravel-vben-admin.auth.token_name', 'vben-admin'), ['admin']);
         $accessToken->accessToken->forceFill([
@@ -382,17 +387,5 @@ final class AuthController extends Controller
         }
 
         Storage::disk('public')->delete(Str::after($avatar, Storage::disk('public')->url('')));
-    }
-
-    private function writeLoginLog(Request $request, string $username, ?AdminUser $user, bool $succeeded, ?string $failureCode = null): void
-    {
-        AdminLoginLog::query()->create([
-            'user_id' => $user?->getKey(),
-            'username' => $username,
-            'succeeded' => $succeeded,
-            'ip_address' => $request->ip(),
-            'user_agent' => mb_substr((string) $request->userAgent(), 0, 2000),
-            'failure_code' => $failureCode,
-        ]);
     }
 }
