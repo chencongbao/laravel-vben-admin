@@ -5,7 +5,12 @@
     "codeLogin": "验证码登录",
     "qrcodeLogin": "二维码登录",
     "forgetPassword": "忘记密码",
-    "profile": "个人中心"
+    "profile": "个人中心",
+    "roles": {
+      "administrator": "超级管理员",
+      "manager": "管理员",
+      "unassigned": "未分配角色"
+    }
   },
   "profile": {
     "title": "个人中心",
@@ -72,7 +77,82 @@
     "workspace": "工作台"
   },
   "configuration": {
-    "title": "配置管理"
+    "title": "配置管理",
+    "themeSettings": "主题配置",
+    "themeForm": {
+      "login": {
+        "title": "登录界面",
+        "description": "统一控制登录页的主题配色和表单位置。"
+      },
+      "admin": {
+        "title": "后台系统",
+        "description": "统一控制登录后管理后台的主题配色和明暗模式。"
+      },
+      "tabbar": {
+        "title": "标签栏",
+        "description": "统一控制后台多标签页的显示、交互与持久化行为。"
+      },
+      "fields": {
+        "loginTheme": {
+          "label": "登录页主题配色",
+          "description": "设置所有访客看到的登录页主色。"
+        },
+        "loginLayout": {
+          "label": "登录页布局",
+          "description": "设置登录表单显示在左侧、中间或右侧。"
+        },
+        "adminTheme": {
+          "label": "后台主题配色",
+          "description": "设置管理后台按钮、菜单和交互控件的主色。"
+        },
+        "adminThemeMode": {
+          "label": "后台明暗模式",
+          "description": "设置后台使用亮色、暗色或跟随系统。"
+        },
+        "adminLayout": {
+          "label": "后台布局",
+          "description": "选择管理后台的导航与内容区域布局。"
+        },
+        "tabbarEnable": { "label": "启用标签栏", "description": "显示后台多标签页导航。" },
+        "tabbarPersist": { "label": "持久化标签页", "description": "刷新或重新进入后台后恢复已打开的标签页。" },
+        "tabbarVisitHistory": { "label": "访问历史记录", "description": "关闭当前标签页时返回上一个访问的标签页。" },
+        "tabbarMaxCount": { "label": "最大标签数", "description": "设置为 0 表示不限制，最多可设置为 30。" },
+        "tabbarDraggable": { "label": "启动拖拽排序", "description": "允许通过拖动调整标签页顺序。" },
+        "tabbarWheelable": { "label": "启用纵向滚轮响应", "description": "允许在标签栏区域使用滚轮横向浏览标签页。" },
+        "tabbarMiddleClickToClose": { "label": "点击鼠标中键关闭标签页", "description": "允许使用鼠标中键快速关闭标签页。" },
+        "tabbarShowIcon": { "label": "显示标签栏图标", "description": "在标签标题前显示对应菜单图标。" },
+        "tabbarShowMore": { "label": "显示更多按钮", "description": "显示标签页批量操作入口。" },
+        "tabbarShowMaximize": { "label": "显示最大化按钮", "description": "显示内容区域最大化按钮。" },
+        "tabbarStyleType": { "label": "标签页风格", "description": "选择后台标签页的视觉样式。" }
+      },
+      "options": {
+        "theme": {
+          "default": "默认蓝色",
+          "violet": "紫罗兰",
+          "pink": "樱花粉",
+          "yellow": "柠檬黄",
+          "sky-blue": "天空蓝",
+          "green": "浅绿色",
+          "zinc": "锌色灰",
+          "deep-green": "深绿色",
+          "deep-blue": "深蓝色",
+          "orange": "橙黄色",
+          "rose": "玫瑰红",
+          "neutral": "中性色",
+          "slate": "石板灰",
+          "gray": "中灰色"
+        },
+        "loginLayout": {
+          "panel-left": "左侧布局",
+          "panel-center": "居中布局",
+          "panel-right": "右侧布局"
+        },
+        "themeMode": { "light": "亮色", "dark": "暗色", "auto": "跟随系统" },
+        "tabbarStyle": { "chrome": "谷歌", "plain": "朴素", "card": "卡片", "brisk": "轻快" }
+      },
+      "save": "保存主题配置",
+      "saved": "主题配置已保存"
+    }
   },
   "systemLogs": {
     "title": "系统日志"
@@ -100,6 +180,41 @@
           "description": "设置数据列表默认每页显示的记录数量，可填写 10 至 100。",
           "label": "默认分页数量",
           "placeholder": "请输入每页记录数"
+        },
+        "loginRememberMe": {
+          "description": "控制后台登录页面是否显示“记住账号”选项。",
+          "label": "显示记住账号"
+        },
+        "loginDescription": {
+          "description": "设置登录页宣传区域统一显示的说明文字，不随语言切换。",
+          "label": "登录页宣传语",
+          "placeholder": "请输入登录页宣传语"
+        },
+        "loginTheme": {
+          "description": "统一设置登录页面的主题配色，登录页不再提供临时切换入口。",
+          "label": "登录页主题配色",
+          "placeholder": "请选择主题配色"
+        },
+        "loginLayout": {
+          "description": "统一设置登录表单显示在页面左侧、中间或右侧。",
+          "label": "登录页布局",
+          "placeholder": "请选择登录页布局"
+        }
+      },
+      "options": {
+        "loginTheme": {
+          "default": "默认蓝色",
+          "violet": "紫罗兰",
+          "pink": "玫红色",
+          "yellow": "金黄色",
+          "sky-blue": "天空蓝",
+          "green": "翡翠绿",
+          "zinc": "锌灰色"
+        },
+        "loginLayout": {
+          "panel-left": "左侧布局",
+          "panel-center": "居中布局",
+          "panel-right": "右侧布局"
         }
       },
       "messages": {

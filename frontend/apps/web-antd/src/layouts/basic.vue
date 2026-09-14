@@ -12,10 +12,15 @@ import {
   Notification,
   UserDropdown,
 } from '@vben/layouts';
-import { preferences, usePreferences } from '@vben/preferences';
+import {
+  preferences,
+  updatePreferences,
+  usePreferences,
+} from '@vben/preferences';
 import { useAccessStore, useUserStore } from '@vben/stores';
 
 import { $t } from '#/locales';
+import { getAdminAppearance, LOGIN_THEME_COLORS } from '#/preferences';
 import { useAuthStore } from '#/store';
 import LoginForm from '#/views/_core/authentication/login.vue';
 
@@ -78,6 +83,16 @@ const authStore = useAuthStore();
 const accessStore = useAccessStore();
 const { destroyWatermark, updateWatermark } = useWatermark();
 const { isDark } = usePreferences();
+const adminAppearance = getAdminAppearance();
+updatePreferences({
+  app: { layout: adminAppearance.layout },
+  theme: {
+    builtinType: adminAppearance.theme,
+    colorPrimary:
+      LOGIN_THEME_COLORS[adminAppearance.theme] || LOGIN_THEME_COLORS.default,
+    mode: adminAppearance.mode,
+  },
+});
 const showDot = computed(() =>
   notifications.value.some((item) => !item.isRead),
 );
@@ -94,6 +109,18 @@ const menus = computed(() => [
 
 const avatar = computed(() => {
   return userStore.userInfo?.avatar ?? preferences.app.defaultAvatar;
+});
+
+const roleName = computed(() => {
+  const roles = userStore.userInfo?.roles || [];
+  if (roles.includes('administrator')) {
+    return $t('page.auth.roles.administrator');
+  }
+  if (roles.includes('manager')) {
+    return $t('page.auth.roles.manager');
+  }
+
+  return userStore.userInfo?.desc || $t('page.auth.roles.unassigned');
 });
 
 async function handleLogout() {
@@ -192,9 +219,8 @@ watch(
       <UserDropdown
         :avatar
         :menus
-        :text="userStore.userInfo?.realName"
-        description="ann.vben@gmail.com"
-        tag-text="Pro"
+        :description="roleName"
+        :text="userStore.userInfo?.username"
         @logout="handleLogout"
         @clear-preferences-and-logout="handleLogout"
       />

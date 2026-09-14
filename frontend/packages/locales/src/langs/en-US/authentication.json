@@ -1,7 +1,7 @@
 {
   "welcomeBack": "Welcome Back",
   "pageTitle": "Plug-and-play Admin system",
-  "pageDesc": "Efficient, versatile frontend template",
+  "pageDesc": "A secure, efficient, and extensible administration platform",
   "loginSuccess": "Login Successful",
   "loginSuccessDesc": "Welcome Back",
   "loginSubtitle": "Enter your account details to manage your projects",
@@ -11,6 +11,9 @@
   "usernameTip": "Please enter username",
   "passwordErrorTip": "Password is incorrect",
   "passwordTip": "Please enter password",
+  "captcha": "Verification code",
+  "captchaClickTip": "Click the 3 characters in order and confirm",
+  "captchaCompleted": "Verification completed",
   "verifyRequiredTip": "Please complete the verification first",
   "rememberMe": "Remember Me",
   "createAnAccount": "Create an Account",

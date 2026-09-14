@@ -4,7 +4,16 @@ import { onMounted, ref } from 'vue';
 import { Page } from '@vben/common-ui';
 import { updatePreferences } from '@vben/preferences';
 
-import { Button, Card, Form, FormItem, Input, InputNumber, message, Switch } from 'ant-design-vue';
+import {
+  Button,
+  Card,
+  Form,
+  FormItem,
+  Input,
+  InputNumber,
+  message,
+  Switch,
+} from 'ant-design-vue';
 
 import { getCollection, type SettingItem, updateSettings } from '#/api/system';
 import { $t } from '#/locales';
@@ -13,7 +22,10 @@ const loading = ref(false);
 const saving = ref(false);
 const settings = ref<SettingItem[]>([]);
 
-const settingMeta: Record<string, { description: string; label: string; placeholder: string }> = {
+const settingMeta: Record<
+  string,
+  { description: string; label: string; placeholder: string }
+> = {
   'system.name': {
     description: 'page.system.settingsForm.fields.systemName.description',
     label: 'page.system.settingsForm.fields.systemName.label',
@@ -24,20 +36,35 @@ const settingMeta: Record<string, { description: string; label: string; placehol
     label: 'page.system.settingsForm.fields.pageSize.label',
     placeholder: 'page.system.settingsForm.fields.pageSize.placeholder',
   },
+  'system.login_remember_me': {
+    description: 'page.system.settingsForm.fields.loginRememberMe.description',
+    label: 'page.system.settingsForm.fields.loginRememberMe.label',
+    placeholder: '',
+  },
+  'system.login_description': {
+    description: 'page.system.settingsForm.fields.loginDescription.description',
+    label: 'page.system.settingsForm.fields.loginDescription.label',
+    placeholder: 'page.system.settingsForm.fields.loginDescription.placeholder',
+  },
 };
 
 function translate(key: string | undefined, fallback: string) {
   return key ? $t(key) : fallback;
 }
 
-function settingText(key: string, field: 'description' | 'label' | 'placeholder') {
+function settingText(
+  key: string,
+  field: 'description' | 'label' | 'placeholder',
+) {
   return settingMeta[key]?.[field];
 }
 
 async function load() {
   loading.value = true;
   try {
-    const result = await getCollection<{ settings: SettingItem[] }>('/system/settings');
+    const result = await getCollection<{ settings: SettingItem[] }>(
+      '/system/settings',
+    );
     settings.value = result.settings;
   } finally {
     loading.value = false;
@@ -47,9 +74,13 @@ async function load() {
 async function save() {
   saving.value = true;
   try {
-    const result = await updateSettings(settings.value.map(({ key, value }) => ({ key, value })));
+    const result = await updateSettings(
+      settings.value.map(({ key, value }) => ({ key, value })),
+    );
     settings.value = result.settings;
-    const systemName = settings.value.find(({ key }) => key === 'system.name')?.value;
+    const systemName = settings.value.find(
+      ({ key }) => key === 'system.name',
+    )?.value;
     if (typeof systemName === 'string' && systemName) {
       updatePreferences({ app: { name: systemName } });
     }
@@ -72,7 +103,10 @@ onMounted(load);
               <label :for="`setting-${item.key}`" class="settings-label">
                 {{ translate(settingText(item.key, 'label'), item.key) }}
               </label>
-              <p v-if="settingText(item.key, 'description')" class="settings-description">
+              <p
+                v-if="settingText(item.key, 'description')"
+                class="settings-description"
+              >
                 {{ $t(settingText(item.key, 'description')!) }}
               </p>
             </div>
@@ -89,14 +123,18 @@ onMounted(load);
                 v-model:value="item.value"
                 :max="item.key === 'system.page_size' ? 100 : undefined"
                 :min="item.key === 'system.page_size' ? 10 : undefined"
-                :placeholder="translate(settingText(item.key, 'placeholder'), '')"
+                :placeholder="
+                  translate(settingText(item.key, 'placeholder'), '')
+                "
                 class="w-full"
               />
               <Input
                 v-else
                 :id="`setting-${item.key}`"
                 v-model:value="item.value"
-                :placeholder="translate(settingText(item.key, 'placeholder'), '')"
+                :placeholder="
+                  translate(settingText(item.key, 'placeholder'), '')
+                "
               />
             </FormItem>
           </div>

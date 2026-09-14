@@ -14,16 +14,58 @@ use Illuminate\Validation\ValidationException;
 
 final class AdminSettingController extends Controller
 {
+    private const SYSTEM_KEYS = [
+        'system.name',
+        'system.page_size',
+        'system.login_remember_me',
+        'system.login_description',
+    ];
+
+    private const THEME_KEYS = [
+        'system.login_theme',
+        'system.login_layout',
+        'system.admin_theme',
+        'system.admin_theme_mode',
+        'system.admin_layout',
+        'system.tabbar_enable',
+        'system.tabbar_persist',
+        'system.tabbar_visit_history',
+        'system.tabbar_max_count',
+        'system.tabbar_draggable',
+        'system.tabbar_wheelable',
+        'system.tabbar_middle_click_to_close',
+        'system.tabbar_show_icon',
+        'system.tabbar_show_more',
+        'system.tabbar_show_maximize',
+        'system.tabbar_style_type',
+        'system.advanced_preferences',
+    ];
+
     public function __construct(private readonly AuditRecorder $audit) {}
 
     public function index(): JsonResponse
     {
-        $definitions = SystemSettings::definitions();
+        return $this->settings(self::SYSTEM_KEYS);
+    }
+
+    public function theme(): JsonResponse
+    {
+        return $this->settings(self::THEME_KEYS);
+    }
+
+    public function updateTheme(Request $request): JsonResponse
+    {
+        return $this->updateSettings($request, self::THEME_KEYS, fn () => $this->theme());
+    }
+
+    private function settings(array $keys): JsonResponse
+    {
+        $definitions = array_intersect_key(SystemSettings::definitions(), array_flip($keys));
         $stored = AdminSetting::query()->whereIn('key', array_keys($definitions))->pluck('value', 'key');
         $settings = collect($definitions)->map(fn (array $definition, string $key) => [
             'key' => $key,
             'type' => $definition['type'],
-            'value' => $stored->has($key) ? $stored->get($key) : $definition['default'],
+            'value' => $stored->has($key) ? $stored->get($key) : SystemSettings::value($key),
         ])->values();
 
         return response()->json(['settings' => $settings]);
@@ -31,8 +73,13 @@ final class AdminSettingController extends Controller
 
     public function update(Request $request): JsonResponse
     {
+        return $this->updateSettings($request, self::SYSTEM_KEYS, fn () => $this->index());
+    }
+
+    private function updateSettings(Request $request, array $keys, callable $response): JsonResponse
+    {
         $data = $request->validate(['settings' => ['required', 'array'], 'settings.*.key' => ['required', 'string'], 'settings.*.value' => ['present']]);
-        $definitions = SystemSettings::definitions();
+        $definitions = array_intersect_key(SystemSettings::definitions(), array_flip($keys));
         $normalized = [];
 
         foreach ($data['settings'] as $item) {
@@ -51,7 +98,7 @@ final class AdminSettingController extends Controller
             }
         });
 
-        return $this->index();
+        return $response();
     }
 
     private function normalize(string $key, mixed $value, array $definition): mixed
@@ -61,6 +108,8 @@ final class AdminSettingController extends Controller
             'integer' => $this->integerValue($key, $value, $definition),
             'boolean' => filter_var($value, FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE) ?? throw ValidationException::withMessages(['settings' => ["Setting [{$key}] must be boolean."]]),
             'timezone' => in_array($value, DateTimeZone::listIdentifiers(), true) ? $value : throw ValidationException::withMessages(['settings' => ["Setting [{$key}] must be an IANA timezone."]]),
+            'enum' => is_string($value) && in_array($value, $definition['values'] ?? [], true) ? $value : throw ValidationException::withMessages(['settings' => ["Setting [{$key}] has an invalid option."]]),
+            'json' => is_array($value) && strlen((string) json_encode($value)) <= 20000 ? $value : throw ValidationException::withMessages(['settings' => ["Setting [{$key}] must be a JSON object up to 20 KB."]]),
             default => throw ValidationException::withMessages(['settings' => ["Setting [{$key}] has an unsupported type."]]),
         };
     }

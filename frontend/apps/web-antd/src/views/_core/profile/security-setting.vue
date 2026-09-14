@@ -3,6 +3,8 @@ import type { AdminSession } from '#/api';
 
 import { computed, onMounted, ref } from 'vue';
 
+import { preferences } from '@vben/preferences';
+
 import {
   Button,
   Card,
@@ -43,7 +45,7 @@ function formatBeijingTime(value?: null | string) {
     minute: '2-digit',
     month: '2-digit',
     second: '2-digit',
-    timeZone: 'Asia/Shanghai',
+    timeZone: preferences.app.timezone,
     year: 'numeric',
   })
     .format(date)

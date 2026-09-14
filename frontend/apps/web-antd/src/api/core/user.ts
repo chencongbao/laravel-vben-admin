@@ -4,25 +4,28 @@ import { preferences } from '@vben/preferences';
 
 import { requestClient } from '#/api/request';
 
+interface AuthUserPayload {
+  avatar?: null | string;
+  id: number;
+  name: string;
+  roles: Array<{ code: string; name: string }>;
+  username: string;
+}
+
 /**
  * 获取用户信息
  */
 export async function getUserInfoApi() {
-  const response = await requestClient.get<{
-    user: {
-      avatar?: null | string;
-      id: number;
-      name: string;
-      username: string;
-    };
-  }>('/auth/me');
+  const response = await requestClient.get<{ user: AuthUserPayload }>(
+    '/auth/me',
+  );
 
   return {
     avatar: response.user.avatar || preferences.app.defaultAvatar,
-    desc: '',
+    desc: response.user.roles.map(({ name }) => name).join('、'),
     homePath: '/workspace',
     realName: response.user.name,
-    roles: [],
+    roles: response.user.roles.map(({ code }) => code),
     token: '',
     userId: String(response.user.id),
     username: response.user.username,
@@ -33,14 +36,10 @@ export async function updateProfileApi(data: {
   avatar?: null | string;
   name: string;
 }) {
-  return requestClient.request<{
-    user: {
-      avatar?: null | string;
-      id: number;
-      name: string;
-      username: string;
-    };
-  }>('/auth/profile', { data, method: 'PATCH' });
+  return requestClient.request<{ user: AuthUserPayload }>('/auth/profile', {
+    data,
+    method: 'PATCH',
+  });
 }
 
 export interface DefaultAvatar {

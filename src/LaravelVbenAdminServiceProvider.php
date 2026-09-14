@@ -6,13 +6,14 @@ use Chencongbao\LaravelVbenAdmin\Console\CreateAdminCommand;
 use Chencongbao\LaravelVbenAdmin\Console\InstallCommand;
 use Chencongbao\LaravelVbenAdmin\Console\PublishAssetsCommand;
 use Chencongbao\LaravelVbenAdmin\Console\SyncSystemDataCommand;
-use Chencongbao\LaravelVbenAdmin\Contracts\Authorizer;
 use Chencongbao\LaravelVbenAdmin\Contracts\AuditRecorder;
+use Chencongbao\LaravelVbenAdmin\Contracts\Authorizer;
 use Chencongbao\LaravelVbenAdmin\Contracts\ModuleRegistry;
 use Chencongbao\LaravelVbenAdmin\Http\Middleware\EnsureAdminUser;
 use Chencongbao\LaravelVbenAdmin\Http\Middleware\RequirePermission;
-use Chencongbao\LaravelVbenAdmin\Services\DatabaseAuthorizer;
+use Chencongbao\LaravelVbenAdmin\Http\Middleware\RequireSuperAdmin;
 use Chencongbao\LaravelVbenAdmin\Services\DatabaseAuditRecorder;
+use Chencongbao\LaravelVbenAdmin\Services\DatabaseAuthorizer;
 use Chencongbao\LaravelVbenAdmin\Services\InMemoryModuleRegistry;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Route;
@@ -35,6 +36,7 @@ final class LaravelVbenAdminServiceProvider extends ServiceProvider
 
         $router->aliasMiddleware('admin.user', EnsureAdminUser::class);
         $router->aliasMiddleware('admin.permission', RequirePermission::class);
+        $router->aliasMiddleware('admin.super-admin', RequireSuperAdmin::class);
         Route::middleware(config('laravel-vben-admin.route.middleware', ['api']))
             ->prefix('api/admin')
             ->group(__DIR__.'/../routes/admin.php');

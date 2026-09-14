@@ -5,7 +5,12 @@
     "codeLogin": "Code Login",
     "qrcodeLogin": "Qr Code Login",
     "forgetPassword": "Forget Password",
-    "profile": "Profile"
+    "profile": "Profile",
+    "roles": {
+      "administrator": "Super Administrator",
+      "manager": "Administrator",
+      "unassigned": "No role assigned"
+    }
   },
   "profile": {
     "title": "Personal Center",
@@ -72,7 +77,86 @@
     "workspace": "Workspace"
   },
   "configuration": {
-    "title": "Configuration"
+    "title": "Configuration",
+    "themeSettings": "Theme Settings",
+    "themeForm": {
+      "login": {
+        "title": "Login Page",
+        "description": "Control the login page color theme and form position."
+      },
+      "admin": {
+        "title": "Administration",
+        "description": "Control the administration color theme and display mode."
+      },
+      "tabbar": {
+        "title": "Tab Bar",
+        "description": "Control administration tab visibility, interaction, and persistence."
+      },
+      "fields": {
+        "loginTheme": {
+          "label": "Login page theme",
+          "description": "Set the primary color shown to every visitor on the login page."
+        },
+        "loginLayout": {
+          "label": "Login page layout",
+          "description": "Place the login form on the left, center, or right."
+        },
+        "adminTheme": {
+          "label": "Administration theme",
+          "description": "Set the primary color for buttons, menus, and controls."
+        },
+        "adminThemeMode": {
+          "label": "Administration mode",
+          "description": "Use light, dark, or operating-system appearance."
+        },
+        "adminLayout": {
+          "label": "Administration layout",
+          "description": "Choose the navigation and content layout for the administration panel."
+        },
+        "tabbarEnable": { "label": "Enable tab bar", "description": "Display the administration multi-tab navigation." },
+        "tabbarPersist": { "label": "Persist tabs", "description": "Restore opened tabs after refreshing or returning to the administration panel." },
+        "tabbarVisitHistory": { "label": "Visit history", "description": "Return to the previously visited tab when closing the current tab." },
+        "tabbarMaxCount": { "label": "Maximum tabs", "description": "Set to 0 for no limit, up to a maximum of 30." },
+        "tabbarDraggable": { "label": "Enable drag sorting", "description": "Allow tabs to be reordered by dragging." },
+        "tabbarWheelable": { "label": "Enable vertical wheel", "description": "Allow the mouse wheel to scroll horizontally through tabs." },
+        "tabbarMiddleClickToClose": { "label": "Middle-click to close", "description": "Allow tabs to be closed with the middle mouse button." },
+        "tabbarShowIcon": { "label": "Show tab icons", "description": "Display the corresponding menu icon before each tab title." },
+        "tabbarShowMore": { "label": "Show more button", "description": "Display the batch tab actions entry." },
+        "tabbarShowMaximize": { "label": "Show maximize button", "description": "Display the content-area maximize button." },
+        "tabbarStyleType": { "label": "Tab style", "description": "Choose the visual style used by administration tabs." }
+      },
+      "options": {
+        "theme": {
+          "default": "Default Blue",
+          "violet": "Violet",
+          "pink": "Pink",
+          "yellow": "Yellow",
+          "sky-blue": "Sky Blue",
+          "green": "Green",
+          "zinc": "Zinc",
+          "deep-green": "Deep Green",
+          "deep-blue": "Deep Blue",
+          "orange": "Orange",
+          "rose": "Rose",
+          "neutral": "Neutral",
+          "slate": "Slate",
+          "gray": "Gray"
+        },
+        "loginLayout": {
+          "panel-left": "Left",
+          "panel-center": "Center",
+          "panel-right": "Right"
+        },
+        "themeMode": {
+          "light": "Light",
+          "dark": "Dark",
+          "auto": "Follow System"
+        },
+        "tabbarStyle": { "chrome": "Chrome", "plain": "Plain", "card": "Card", "brisk": "Brisk" }
+      },
+      "save": "Save theme settings",
+      "saved": "Theme settings saved"
+    }
   },
   "systemLogs": {
     "title": "System Logs"
@@ -100,6 +184,41 @@
           "description": "Set the default number of records displayed per page, from 10 to 100.",
           "label": "Default page size",
           "placeholder": "Enter records per page"
+        },
+        "loginRememberMe": {
+          "description": "Control whether the Remember Me option is displayed on the administration login page.",
+          "label": "Show Remember Me"
+        },
+        "loginDescription": {
+          "description": "Set the description shown in the login promotion area for every language.",
+          "label": "Login description",
+          "placeholder": "Enter the login description"
+        },
+        "loginTheme": {
+          "description": "Set the login page color theme globally. The login page no longer exposes a temporary switcher.",
+          "label": "Login page theme",
+          "placeholder": "Select a theme"
+        },
+        "loginLayout": {
+          "description": "Place the login form on the left, center, or right for every visitor.",
+          "label": "Login page layout",
+          "placeholder": "Select a login layout"
+        }
+      },
+      "options": {
+        "loginTheme": {
+          "default": "Default Blue",
+          "violet": "Violet",
+          "pink": "Pink",
+          "yellow": "Yellow",
+          "sky-blue": "Sky Blue",
+          "green": "Green",
+          "zinc": "Zinc"
+        },
+        "loginLayout": {
+          "panel-left": "Left",
+          "panel-center": "Center",
+          "panel-right": "Right"
         }
       },
       "messages": {

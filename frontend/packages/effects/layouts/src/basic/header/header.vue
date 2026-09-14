@@ -60,25 +60,30 @@ const rightSlots = computed(() => {
       index: REFERENCE_VALUE + 10,
       name: 'preferences',
     });
-    // 将偏好设置中的子功能分组到同一个按钮位置控制逻辑下
-    if (preferences.widget.themeToggle) {
-      list.push({
-        index: REFERENCE_VALUE + 20,
-        name: 'theme-toggle',
-      });
-    }
-    if (preferences.widget.languageToggle) {
-      list.push({
-        index: REFERENCE_VALUE + 30,
-        name: 'language-toggle',
-      });
-    }
-    if (preferences.widget.timezone) {
-      list.push({
-        index: REFERENCE_VALUE + 40,
-        name: 'timezone',
-      });
-    }
+  }
+  if (preferences.widget.languageToggle) {
+    list.push({
+      index: REFERENCE_VALUE + 20,
+      name: 'language-toggle',
+    });
+  }
+  if (preferences.widget.themeToggle) {
+    list.push({
+      index: REFERENCE_VALUE + 30,
+      name: 'theme-toggle',
+    });
+  }
+  if (preferences.widget.refresh) {
+    list.push({
+      index: REFERENCE_VALUE + 40,
+      name: 'refresh',
+    });
+  }
+  if (preferences.widget.timezone) {
+    list.push({
+      index: REFERENCE_VALUE + 45,
+      name: 'timezone',
+    });
   }
   // 全屏
   if (preferences.widget.fullscreen) {
@@ -113,14 +118,6 @@ const rightSlots = computed(() => {
 
 const leftSlots = computed(() => {
   const list: Array<SlotItem> = [];
-  // 刷新
-  if (preferences.widget.refresh) {
-    list.push({
-      index: 0,
-      name: 'refresh',
-    });
-  }
-
   Object.keys(slots).forEach((key) => {
     // 适配插槽名称，例如第一个插槽名：header-left-1
     if (key.startsWith('header-left')) {
@@ -199,6 +196,11 @@ function clearPreferencesAndLogout() {
         </template>
         <template v-else-if="slot.name === 'language-toggle'">
           <LanguageToggle class="mr-1" />
+        </template>
+        <template v-else-if="slot.name === 'refresh'">
+          <VbenIconButton class="my-0 mr-1 rounded-md" @click="refresh">
+            <RotateCw class="size-4" />
+          </VbenIconButton>
         </template>
         <template v-else-if="slot.name === 'fullscreen'">
           <VbenFullScreen class="mr-1" />

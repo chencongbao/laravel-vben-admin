@@ -27,6 +27,7 @@ export async function getAllMenusApi() {
     'system.permissions': '/system/permissions/index',
     'system.roles': '/system/roles/index',
     'system.settings': '/system/settings/index',
+    'system.theme-settings': '/system/theme-settings/index',
     'system.users': '/system/users/index',
   };
 

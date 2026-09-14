@@ -12,6 +12,7 @@ use Chencongbao\LaravelVbenAdmin\Http\Controllers\AuthController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('application', ApplicationConfigController::class);
+Route::get('auth/captcha', [AuthController::class, 'captcha'])->middleware('throttle:30,1');
 Route::post('auth/login', [AuthController::class, 'login'])->middleware('throttle:6,1');
 
 Route::middleware(['auth:sanctum', 'admin.user'])->group(function (): void {
@@ -56,4 +57,6 @@ Route::middleware(['auth:sanctum', 'admin.user'])->group(function (): void {
     Route::get('system/login-logs', [AdminLogController::class, 'login'])->middleware('admin.permission:system.login-log.view');
     Route::get('system/settings', [AdminSettingController::class, 'index'])->middleware('admin.permission:system.setting.view');
     Route::put('system/settings', [AdminSettingController::class, 'update'])->middleware('admin.permission:system.setting.update');
+    Route::get('system/theme-settings', [AdminSettingController::class, 'theme'])->middleware('admin.super-admin');
+    Route::put('system/theme-settings', [AdminSettingController::class, 'updateTheme'])->middleware('admin.super-admin');
 });

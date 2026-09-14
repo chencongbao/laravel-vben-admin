@@ -6,6 +6,7 @@ use Chencongbao\LaravelVbenAdmin\LaravelVbenAdminServiceProvider;
 use Chencongbao\LaravelVbenAdmin\Models\AdminMenu;
 use Chencongbao\LaravelVbenAdmin\Models\AdminRole;
 use Chencongbao\LaravelVbenAdmin\Models\AdminUser;
+use Chencongbao\LaravelVbenAdmin\Support\SystemSettings;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 use Orchestra\Testbench\TestCase;
@@ -27,17 +28,34 @@ final class InstallCommandTest extends TestCase
         ]);
     }
 
-    public function test_install_creates_the_default_administrator_without_resetting_it(): void
+    public function test_install_creates_default_accounts_without_resetting_them(): void
     {
         $this->artisan('vben-admin:install')->assertSuccessful();
 
+        $superAdministrator = AdminUser::query()->where('username', 'cmsadmin')->firstOrFail();
         $administrator = AdminUser::query()->where('username', 'admin')->firstOrFail();
 
+        self::assertTrue(Hash::check('admin', $superAdministrator->password));
         self::assertTrue(Hash::check('admin', $administrator->password));
-        self::assertTrue($administrator->roles()->where('code', 'administrator')->exists());
+        self::assertTrue($superAdministrator->roles()->where('code', 'administrator')->exists());
+        self::assertTrue($administrator->roles()->where('code', 'manager')->exists());
+        self::assertFalse($administrator->roles()->where('is_super_admin', true)->exists());
         self::assertTrue(AdminRole::query()->where('code', 'administrator')->where('is_super_admin', true)->exists());
         self::assertTrue(AdminRole::query()->where('code', 'manager')->where('is_super_admin', false)->exists());
         self::assertTrue(Schema::hasColumns('personal_access_tokens', ['ip_address', 'user_agent']));
+        self::assertSame('default', SystemSettings::value('system.login_theme'));
+        self::assertSame('panel-right', SystemSettings::value('system.login_layout'));
+        self::assertTrue(SystemSettings::value('system.login_remember_me'));
+        self::assertSame('安全、高效、易扩展的后台管理平台', SystemSettings::value('system.login_description'));
+        self::assertSame('default', SystemSettings::value('system.admin_theme'));
+        self::assertSame('light', SystemSettings::value('system.admin_theme_mode'));
+        self::assertSame('sidebar-nav', SystemSettings::value('system.admin_layout'));
+        self::assertTrue(SystemSettings::value('system.tabbar_enable'));
+        self::assertTrue(SystemSettings::value('system.tabbar_persist'));
+        self::assertSame(0, SystemSettings::value('system.tabbar_max_count'));
+        self::assertSame('chrome', SystemSettings::value('system.tabbar_style_type'));
+        self::assertIsArray(SystemSettings::value('system.advanced_preferences'));
+        self::assertTrue(SystemSettings::value('system.advanced_preferences')['widget']['languageToggle']);
         self::assertDatabaseHas('admin_menus', [
             'code' => 'configuration',
             'parent_code' => null,
@@ -61,11 +79,13 @@ final class InstallCommandTest extends TestCase
             'parent_code' => 'system.logs',
         ]);
 
-        $administrator->update(['password' => 'changed-password']);
+        $superAdministrator->update(['password' => 'changed-super-password']);
+        $administrator->update(['password' => 'changed-manager-password']);
 
         $this->artisan('vben-admin:install')->assertSuccessful();
 
-        self::assertTrue(Hash::check('changed-password', $administrator->fresh()->password));
+        self::assertTrue(Hash::check('changed-super-password', $superAdministrator->fresh()->password));
+        self::assertTrue(Hash::check('changed-manager-password', $administrator->fresh()->password));
     }
 
     public function test_sync_preserves_settings_access_after_adding_the_configuration_parent(): void

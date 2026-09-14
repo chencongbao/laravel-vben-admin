@@ -42,7 +42,6 @@
   "dynamicTitle": "Dynamic Title",
   "watermark": "Watermark",
   "watermarkContent": "Please input Watermark content",
-  "checkUpdates": "Periodic update check",
   "position": {
     "title": "Preferences Postion",
     "header": "Header",

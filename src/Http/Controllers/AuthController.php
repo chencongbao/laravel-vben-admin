@@ -3,33 +3,63 @@
 namespace Chencongbao\LaravelVbenAdmin\Http\Controllers;
 
 use Chencongbao\LaravelVbenAdmin\Contracts\AuditRecorder;
-use Chencongbao\LaravelVbenAdmin\Models\AdminUser;
 use Chencongbao\LaravelVbenAdmin\Models\AdminLoginLog;
+use Chencongbao\LaravelVbenAdmin\Models\AdminUser;
+use Chencongbao\LaravelVbenAdmin\Services\LoginCaptcha;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use Illuminate\Validation\ValidationException;
 use Illuminate\Validation\Rules\Password;
+use Illuminate\Validation\ValidationException;
 
 final class AuthController extends Controller
 {
-    public function __construct(private readonly AuditRecorder $audit) {}
+    public function __construct(
+        private readonly AuditRecorder $audit,
+        private readonly LoginCaptcha $captcha,
+    ) {}
 
     public function login(Request $request): JsonResponse
     {
-        $credentials = $request->validate(['username' => ['required', 'string', 'max:120'], 'password' => ['required', 'string']]);
+        $credentials = $request->validate([
+            'username' => ['required', 'string', 'max:120'],
+            'password' => ['required', 'string'],
+            'captcha_key' => ['nullable', 'string', 'max:80'],
+            'captcha' => ['nullable', 'array', 'size:3'],
+            'captcha.*.x' => ['required_with:captcha', 'integer', 'between:0,'.LoginCaptcha::WIDTH],
+            'captcha.*.y' => ['required_with:captcha', 'integer', 'between:0,'.LoginCaptcha::HEIGHT],
+            'captcha.*.i' => ['required_with:captcha', 'integer', 'between:0,2'],
+            'captcha.*.t' => ['required_with:captcha', 'integer'],
+        ]);
+
+        if ($this->captcha->isRequired($request, $credentials['username'])
+            && ! $this->captcha->verify($request, $credentials['username'], $credentials['captcha_key'] ?? null, $credentials['captcha'] ?? null)) {
+            return response()->json([
+                'message' => 'The verification code is invalid or has expired.',
+                'code' => 'CAPTCHA_INVALID',
+                'captcha_required' => true,
+            ], 422);
+        }
 
         /** @var class-string<AdminUser> $model */
         $model = config('laravel-vben-admin.auth.model', AdminUser::class);
         $user = $model::query()->where('username', $credentials['username'])->first();
 
         if (! $user || ! $user->is_active || ! Hash::check($credentials['password'], $user->password)) {
+            $this->captcha->require($request, $credentials['username']);
             $this->writeLoginLog($request, $credentials['username'], $user, false, $user && ! $user->is_active ? 'ACCOUNT_DISABLED' : 'INVALID_CREDENTIALS');
-            throw ValidationException::withMessages(['username' => ['The provided credentials are invalid.']]);
+
+            return response()->json([
+                'message' => 'The provided credentials are invalid.',
+                'code' => 'INVALID_CREDENTIALS',
+                'captcha_required' => true,
+            ], 422);
         }
+
+        $this->captcha->clear($request, $credentials['username']);
 
         $user->forceFill(['last_login_at' => now(), 'last_login_ip' => $request->ip()])->save();
         $this->writeLoginLog($request, $credentials['username'], $user, true);
@@ -45,6 +75,13 @@ final class AuthController extends Controller
             'token_type' => 'Bearer',
             'user' => $this->userPayload($user),
         ]);
+    }
+
+    public function captcha(Request $request): JsonResponse
+    {
+        $data = $request->validate(['username' => ['required', 'string', 'max:120']]);
+
+        return response()->json($this->captcha->issue($request, $data['username']));
     }
 
     public function me(Request $request): JsonResponse
@@ -182,12 +219,23 @@ final class AuthController extends Controller
 
     private function userPayload(AdminUser $user): array
     {
+        $user->loadMissing('roles');
         $avatar = $user->avatar;
         if (is_string($avatar) && str_starts_with($avatar, 'default:')) {
             $avatar = $this->defaultAvatarUrl(Str::after($avatar, 'default:'));
         }
 
-        return ['id' => $user->getKey(), 'username' => $user->username, 'name' => $user->name, 'avatar' => $avatar, 'is_active' => $user->is_active];
+        return [
+            'id' => $user->getKey(),
+            'username' => $user->username,
+            'name' => $user->name,
+            'avatar' => $avatar,
+            'is_active' => $user->is_active,
+            'roles' => $user->roles->map(fn ($role) => [
+                'code' => $role->code,
+                'name' => $role->name,
+            ])->values(),
+        ];
     }
 
     private function defaultAvatarIds(): array

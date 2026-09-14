@@ -19,7 +19,11 @@ export function createResource(path: string, data: Record<string, any>) {
   return requestClient.post(path, data);
 }
 
-export function updateResource(path: string, id: number, data: Record<string, any>) {
+export function updateResource(
+  path: string,
+  id: number,
+  data: Record<string, any>,
+) {
   return requestClient.request(`${path}/${id}`, { data, method: 'PATCH' });
 }
 
@@ -27,15 +31,23 @@ export function deleteResource(path: string, id: number) {
   return requestClient.delete(`${path}/${id}`);
 }
 
-export function getResourceDetail<T = Record<string, any>>(path: string, id: number) {
+export function getResourceDetail<T = Record<string, any>>(
+  path: string,
+  id: number,
+) {
   return requestClient.get<T>(`${path}/${id}`);
 }
 
-export function updateRoleAccess(id: number, data: { menu_ids: number[]; permission_ids: number[] }) {
+export function updateRoleAccess(
+  id: number,
+  data: { menu_ids: number[]; permission_ids: number[] },
+) {
   return requestClient.put(`/system/roles/${id}/access`, data);
 }
 
-export function reorderMenus(items: Array<{ id: number; parent_code: null | string; sort: number }>) {
+export function reorderMenus(
+  items: Array<{ id: number; parent_code: null | string; sort: number }>,
+) {
   return requestClient.put('/system/menus/reorder', { items });
 }
 
@@ -45,8 +57,17 @@ export function updateSettings(settings: Array<{ key: string; value: any }>) {
   });
 }
 
+export function updateThemeSettings(
+  settings: Array<{ key: string; value: any }>,
+) {
+  return requestClient.put<{ settings: SettingItem[] }>(
+    '/system/theme-settings',
+    { settings },
+  );
+}
+
 export interface SettingItem {
   key: string;
-  type: 'boolean' | 'integer' | 'string' | 'timezone';
+  type: 'boolean' | 'enum' | 'integer' | 'json' | 'string' | 'timezone';
   value: any;
 }

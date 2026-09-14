@@ -36,7 +36,7 @@ final class InstallCommand extends Command
             return self::FAILURE;
         }
 
-        $this->createDefaultAdministrator();
+        $this->createDefaultAdministrators();
 
         $this->components->info('Laravel Vben Admin installed successfully.');
         $this->line('Administration URL: /'.config('laravel-vben-admin.path', 'admin'));
@@ -45,28 +45,30 @@ final class InstallCommand extends Command
         return self::SUCCESS;
     }
 
-    private function createDefaultAdministrator(): void
+    private function createDefaultAdministrators(): void
     {
-        if (AdminUser::query()->where('username', 'admin')->exists()) {
-            $this->components->warn('Administrator [admin] already exists; its password was not changed.');
+        $this->createDefaultAccount('cmsadmin', 'Super Administrator', 'administrator');
+        $this->createDefaultAccount('admin', 'Administrator', 'manager');
+        $this->components->warn('Change the default password immediately after the first login.');
+    }
+
+    private function createDefaultAccount(string $username, string $name, string $roleCode): void
+    {
+        if (AdminUser::query()->where('username', $username)->exists()) {
+            $this->components->warn("Administrator [{$username}] already exists; its password and roles were not changed.");
 
             return;
         }
 
-        $role = AdminRole::query()
-            ->where('code', 'administrator')
-            ->where('is_super_admin', true)
-            ->firstOrFail();
-
+        $role = AdminRole::query()->where('code', $roleCode)->firstOrFail();
         $user = AdminUser::query()->create([
-            'username' => 'admin',
-            'name' => 'Administrator',
+            'username' => $username,
+            'name' => $name,
             'password' => Hash::make('admin'),
             'is_active' => true,
         ]);
         $user->roles()->syncWithoutDetaching([$role->getKey()]);
 
-        $this->components->info('Default administrator created: admin / admin');
-        $this->components->warn('Change the default password immediately after the first login.');
+        $this->components->info("Default administrator created: {$username} / admin [{$roleCode}]");
     }
 }

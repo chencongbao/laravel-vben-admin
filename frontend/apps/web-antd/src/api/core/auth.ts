@@ -3,8 +3,17 @@ import { requestClient } from '#/api/request';
 export namespace AuthApi {
   /** 登录接口参数 */
   export interface LoginParams {
+    captcha?: Array<{ i: number; t: number; x: number; y: number }>;
+    captcha_key?: string;
     password?: string;
     username?: string;
+  }
+
+  export interface CaptchaResult {
+    captcha_hint: string;
+    captcha_image: string;
+    captcha_key: string;
+    expires_in: number;
   }
 
   /** 登录接口返回值 */
@@ -12,6 +21,12 @@ export namespace AuthApi {
     token: string;
     token_type: 'Bearer';
   }
+}
+
+export async function getLoginCaptchaApi(username: string) {
+  return requestClient.get<AuthApi.CaptchaResult>('/auth/captcha', {
+    params: { username },
+  });
 }
 
 /**

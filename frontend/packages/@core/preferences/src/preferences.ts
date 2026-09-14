@@ -131,7 +131,8 @@ class PreferenceManager {
       this.customPreferencesExtension,
     );
 
-    // 加载缓存的偏好设置，并仅用缓存补齐初始化配置中未显式设置的字段
+    // 加载缓存的偏好设置。服务端配置仍负责全局外观，用户主动调整的
+    // 语言和侧栏交互状态则应在刷新后继续生效。
     const cachedPreferences = (await this.loadFromCache()) || {};
     const mergedPreference = merge(
       {},
@@ -143,6 +144,12 @@ class PreferenceManager {
       ?.locale;
     if (cachedLocale) {
       mergedPreference.app.locale = cachedLocale;
+    }
+    const cachedExpandOnHover = (
+      cachedPreferences as Partial<Preferences>
+    ).sidebar?.expandOnHover;
+    if (typeof cachedExpandOnHover === 'boolean') {
+      mergedPreference.sidebar.expandOnHover = cachedExpandOnHover;
     }
 
     // 更新偏好设置

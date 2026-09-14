@@ -41,6 +41,7 @@ final class AccessController extends Controller
                             ->where(fn ($permissionQuery) => $permissionQuery->whereNull('permission_code')->orWhereIn('permission_code', $permissionCodes));
                     });
             });
+            $query->where('code', '!=', 'system.theme-settings');
         }
 
         $menus = $query->get()->map(fn (AdminMenu $menu) => [

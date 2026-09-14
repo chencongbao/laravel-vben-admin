@@ -53,7 +53,7 @@ final class SyncSystemDataCommand extends Command
             }
 
             foreach ([
-                'configuration' => ['system.settings'],
+                'configuration' => ['system.settings', 'system.theme-settings'],
                 'system.logs' => ['system.login-logs', 'system.audit-logs'],
             ] as $parentCode => $childCodes) {
                 $parentMenu = AdminMenu::query()->where('code', $parentCode)->firstOrFail();
@@ -149,6 +149,13 @@ final class SyncSystemDataCommand extends Command
             'code' => 'system.settings', 'parent_code' => 'configuration', 'title' => 'page.system.settings', 'type' => 'page',
             'route_name' => 'SystemSettings', 'route_path' => '/system/settings', 'view_key' => 'system.settings',
             'permission_code' => 'system.setting.view', 'icon' => 'lucide:settings-2', 'sort' => 10,
+            'is_active' => true, 'is_hidden' => false, 'is_system' => true,
+        ];
+
+        $items[] = [
+            'code' => 'system.theme-settings', 'parent_code' => 'configuration', 'title' => 'page.configuration.themeSettings', 'type' => 'page',
+            'route_name' => 'ThemeSettings', 'route_path' => '/configuration/theme', 'view_key' => 'system.theme-settings',
+            'permission_code' => null, 'icon' => 'lucide:palette', 'sort' => 20,
             'is_active' => true, 'is_hidden' => false, 'is_system' => true,
         ];
 

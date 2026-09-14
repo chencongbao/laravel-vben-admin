@@ -45,11 +45,11 @@ php artisan vben-admin:publish-assets
 默认登录信息：
 
 ```text
-用户名：admin
-密码：admin
+超级管理员：cmsadmin / admin（administrator 角色）
+管理员：admin / admin（manager 角色）
 ```
 
-如果项目中已经存在用户名为 `admin` 的管理员，重复执行安装命令不会覆盖其密码。正式环境首次登录后应立即修改默认密码。
+如果项目中已经存在同名管理员，重复执行安装命令不会覆盖其密码或角色。正式环境首次登录后应立即修改两个默认密码。
 
 `vben-admin:publish-assets` 会把包内已经编译的前端资源复制到 Laravel 的 `public/admin`。如果目标目录已经存在且需要更新，执行：
 
@@ -200,7 +200,7 @@ php artisan vben-admin:publish-assets --force
 
 ### 登录提示账号或密码错误
 
-默认账号只在首次安装且不存在 `admin` 时创建。重复安装不会把已经修改的密码重置为 `admin`。可以通过 `php artisan vben-admin:create-admin` 创建其他超级管理员。
+默认账号只在首次安装且对应用户名不存在时创建。重复安装不会把已经修改的密码重置为 `admin`，也不会改动同名账号已有角色。可以通过 `php artisan vben-admin:create-admin` 创建其他超级管理员。
 
 ### 提示 `personal_access_tokens` 表不存在
 

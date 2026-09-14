@@ -112,6 +112,29 @@ describe('preferences', () => {
     expect(preferenceManager.getPreferences().app.locale).toBe('en-US');
   });
 
+  it('keeps the cached sidebar pin state after refresh', async () => {
+    const cachedPreferences = {
+      ...defaultPreferences,
+      sidebar: {
+        ...defaultPreferences.sidebar,
+        expandOnHover: false,
+      },
+    };
+    vi.mocked(localStorage.getItem).mockImplementation((key) =>
+      key === 'sidebar-pin-persistence-preferences'
+        ? JSON.stringify({ value: cachedPreferences })
+        : null,
+    );
+
+    await preferenceManager.initPreferences({
+      namespace: 'sidebar-pin-persistence',
+    });
+
+    expect(preferenceManager.getPreferences().sidebar.expandOnHover).toBe(
+      false,
+    );
+  });
+
   it('updates theme mode correctly', () => {
     preferenceManager.updatePreferences({
       theme: {
