@@ -15,32 +15,42 @@ import { useAccessStore } from '@vben/stores';
 
 import { message } from 'ant-design-vue';
 
+import { $t } from '#/locales';
 import { useAuthStore } from '#/store';
 
 const { apiURL } = useAppConfig(import.meta.env, import.meta.env.PROD);
+
+const localizedErrorKeys: Record<string, string> = {
+  CAPTCHA_INVALID: 'authentication.errors.captchaInvalid',
+  INVALID_CREDENTIALS: 'authentication.errors.invalidCredentials',
+  LOGIN_IP_NOT_ALLOWED: 'authentication.errors.loginIpNotAllowed',
+  TWO_FACTOR_CHALLENGE_INVALID:
+    'authentication.errors.twoFactorChallengeInvalid',
+  TWO_FACTOR_CODE_INVALID: 'authentication.errors.twoFactorCodeInvalid',
+};
 
 function createRequestClient(baseURL: string, options?: RequestClientOptions) {
   const client = new RequestClient({
     ...options,
     baseURL,
   });
+  let reAuthenticating: null | Promise<void> = null;
 
   /**
    * 重新认证逻辑
    */
   async function doReAuthenticate() {
-    console.warn('Access token or refresh token is invalid or expired. ');
-    const accessStore = useAccessStore();
-    const authStore = useAuthStore();
-    accessStore.setAccessToken(null);
-    if (
-      preferences.app.loginExpiredMode === 'modal' &&
-      accessStore.isAccessChecked
-    ) {
-      accessStore.setLoginExpired(true);
-    } else {
-      await authStore.logout();
-    }
+    if (reAuthenticating) return reAuthenticating;
+
+    reAuthenticating = (async () => {
+      console.warn('Access token or refresh token is invalid or expired. ');
+      const authStore = useAuthStore();
+      await authStore.logout(true, false);
+    })().finally(() => {
+      reAuthenticating = null;
+    });
+
+    return reAuthenticating;
   }
 
   /**
@@ -91,9 +101,13 @@ function createRequestClient(baseURL: string, options?: RequestClientOptions) {
       // 这里可以根据业务进行定制,你可以拿到 error 内的信息进行定制化处理，根据不同的 code 做不同的提示，而不是直接使用 message.error 提示 msg
       // 当前mock接口返回的错误字段是 error 或者 message
       const responseData = error?.response?.data ?? {};
+      const responseCode = responseData?.code as string | undefined;
+      const localizedKey = responseCode
+        ? localizedErrorKeys[responseCode]
+        : undefined;
       const errorMessage = responseData?.error ?? responseData?.message ?? '';
       // 如果没有错误信息，则会根据状态码进行提示
-      message.error(errorMessage || msg);
+      message.error(localizedKey ? $t(localizedKey) : errorMessage || msg);
     }),
   );
 

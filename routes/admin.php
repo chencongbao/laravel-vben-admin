@@ -14,12 +14,16 @@ use Illuminate\Support\Facades\Route;
 Route::get('application', ApplicationConfigController::class);
 Route::get('auth/captcha', [AuthController::class, 'captcha'])->middleware('throttle:30,1');
 Route::post('auth/login', [AuthController::class, 'login'])->middleware('throttle:6,1');
+Route::post('auth/two-factor/challenge', [AuthController::class, 'completeTwoFactorChallenge'])->middleware('throttle:6,1');
 
 Route::middleware(['auth:sanctum', 'admin.user'])->group(function (): void {
     Route::post('auth/logout', [AuthController::class, 'logout']);
     Route::get('auth/me', [AuthController::class, 'me']);
     Route::get('auth/avatars', [AuthController::class, 'avatars']);
     Route::post('auth/avatar', [AuthController::class, 'uploadAvatar'])->middleware('throttle:12,1');
+    Route::get('auth/two-factor', [AuthController::class, 'twoFactorStatus']);
+    Route::post('auth/two-factor/enable', [AuthController::class, 'enableTwoFactor'])->middleware('throttle:6,1');
+    Route::post('auth/two-factor/disable', [AuthController::class, 'disableTwoFactor'])->middleware('throttle:6,1');
     Route::patch('auth/profile', [AuthController::class, 'updateProfile']);
     Route::put('auth/password', [AuthController::class, 'updatePassword'])->middleware('throttle:6,1');
     Route::get('auth/sessions', [AuthController::class, 'sessions']);

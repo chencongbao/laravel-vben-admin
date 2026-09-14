@@ -12,11 +12,19 @@ class AdminUser extends Authenticatable
 
     protected $guarded = [];
 
-    protected $hidden = ['password', 'remember_token'];
+    protected $hidden = ['password', 'remember_token', 'two_factor_secret'];
 
     protected function casts(): array
     {
-        return ['is_active' => 'boolean', 'password' => 'hashed', 'last_login_at' => 'datetime'];
+        return [
+            'is_active' => 'boolean',
+            'password' => 'hashed',
+            'last_login_at' => 'datetime',
+            'login_ip_whitelist' => 'array',
+            'two_factor_enabled' => 'boolean',
+            'two_factor_secret' => 'encrypted',
+            'two_factor_confirmed_at' => 'datetime',
+        ];
     }
 
     public function getTable(): string

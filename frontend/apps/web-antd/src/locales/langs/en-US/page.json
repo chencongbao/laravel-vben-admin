@@ -22,6 +22,7 @@
     "basic": {
       "title": "Basic Information",
       "description": "Manage your administrator name and avatar.",
+      "nameDescription": "Manage your administrator name. Click the avatar on the left to change it.",
       "name": "Name",
       "namePlaceholder": "Enter your name",
       "avatar": "Avatar URL",
@@ -31,6 +32,12 @@
       "defaultAvatars": "Choose a Default Avatar",
       "selectAvatar": "Select this avatar",
       "avatarUploaded": "Avatar uploaded",
+      "avatarSizeError": "The avatar file must not exceed 2 MB",
+      "avatarTypeError": "Only JPG, PNG or WebP avatars are supported",
+      "avatarUpdated": "Avatar updated",
+      "avatarSetting": "Avatar Settings",
+      "editAvatar": "Change Avatar",
+      "saveAvatar": "Save Avatar",
       "updated": "Profile updated"
     },
     "password": {
@@ -50,6 +57,15 @@
       "title": "Account Security",
       "description": "Review your current sign-in and manage sessions on other devices.",
       "sessionsTitle": "Login Sessions",
+      "clientType": "Client Type",
+      "clientTypes": {
+        "desktop": "Desktop",
+        "mobile": "Mobile",
+        "tablet": "Tablet",
+        "api": "API Client",
+        "other": "Other Client",
+        "unknown": "Unknown Client"
+      },
       "ipAddress": "IP Address",
       "signedInAt": "Signed In At",
       "lastUsedAt": "Last Used",
@@ -66,9 +82,21 @@
       "revokeOthersConfirm": "Sign out all other devices?",
       "revoked": "Session revoked",
       "revokedOthers": "Revoked {count} other sessions",
+      "twoFactorTitle": "Google Authenticator",
+      "twoFactorDescription": "When enabled, a Google authentication code is required after the password is accepted. The setup QR code appears on the first sign-in.",
+      "twoFactorActive": "Active",
+      "twoFactorPending": "Setup required",
+      "twoFactorInactive": "Disabled",
+      "twoFactorEnabledPending": "Enabled. Sign out and sign in again to set up Google Authenticator.",
+      "twoFactorDisabled": "Google two-factor authentication disabled",
+      "twoFactorDisableTitle": "Disable Google Authenticator",
+      "twoFactorDisableDescription": "Enter the current Google Authenticator code to confirm.",
+      "twoFactorDisableConfirm": "Disable",
+      "twoFactorCodePlaceholder": "Enter the 6-digit code",
+      "twoFactorCodeTip": "Enter a valid 6-digit authentication code",
       "notesTitle": "Security Notes",
       "passwordNote": "Changing your password requires the current password and revokes every token except the current session.",
-      "mfaNote": "MFA is not included in the base package yet. Key encryption, recovery codes, and enforcement policies require a separate design."
+      "mfaNote": "Google two-factor secrets are encrypted. Disabling a configured authenticator requires its current code."
     }
   },
   "dashboard": {

@@ -65,7 +65,9 @@ final class AdminSettingController extends Controller
         $settings = collect($definitions)->map(fn (array $definition, string $key) => [
             'key' => $key,
             'type' => $definition['type'],
-            'value' => $stored->has($key) ? $stored->get($key) : SystemSettings::value($key),
+            'value' => $stored->has($key) && $definition['type'] !== 'json'
+                ? $stored->get($key)
+                : SystemSettings::value($key),
         ])->values();
 
         return response()->json(['settings' => $settings]);
@@ -109,9 +111,27 @@ final class AdminSettingController extends Controller
             'boolean' => filter_var($value, FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE) ?? throw ValidationException::withMessages(['settings' => ["Setting [{$key}] must be boolean."]]),
             'timezone' => in_array($value, DateTimeZone::listIdentifiers(), true) ? $value : throw ValidationException::withMessages(['settings' => ["Setting [{$key}] must be an IANA timezone."]]),
             'enum' => is_string($value) && in_array($value, $definition['values'] ?? [], true) ? $value : throw ValidationException::withMessages(['settings' => ["Setting [{$key}] has an invalid option."]]),
-            'json' => is_array($value) && strlen((string) json_encode($value)) <= 20000 ? $value : throw ValidationException::withMessages(['settings' => ["Setting [{$key}] must be a JSON object up to 20 KB."]]),
+            'json' => $this->jsonValue($key, $value),
             default => throw ValidationException::withMessages(['settings' => ["Setting [{$key}] has an unsupported type."]]),
         };
+    }
+
+    private function jsonValue(string $key, mixed $value): array
+    {
+        if (! is_array($value) || strlen((string) json_encode($value)) > 20000) {
+            throw ValidationException::withMessages(['settings' => ["Setting [{$key}] must be a JSON object up to 20 KB."]]);
+        }
+
+        if ($key === 'system.advanced_preferences') {
+            unset(
+                $value['custom']['boardTitle'],
+                $value['custom']['defaultVisibleCount'],
+                $value['custom']['showQuickActions'],
+                $value['custom']['highlightStyle'],
+            );
+        }
+
+        return $value;
     }
 
     private function stringValue(string $key, mixed $value): string

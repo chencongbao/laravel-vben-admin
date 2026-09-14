@@ -18,8 +18,14 @@ export namespace AuthApi {
 
   /** 登录接口返回值 */
   export interface LoginResult {
-    token: string;
-    token_type: 'Bearer';
+    challenge_token?: string;
+    expires_in?: number;
+    qr_code?: string;
+    secret?: string;
+    setup_required?: boolean;
+    token?: string;
+    token_type?: 'Bearer';
+    two_factor_required?: boolean;
   }
 }
 
@@ -34,6 +40,16 @@ export async function getLoginCaptchaApi(username: string) {
  */
 export async function loginApi(data: AuthApi.LoginParams) {
   return requestClient.post<AuthApi.LoginResult>('/auth/login', data);
+}
+
+export async function completeTwoFactorChallengeApi(data: {
+  challenge_token: string;
+  code: string;
+}) {
+  return requestClient.post<AuthApi.LoginResult>(
+    '/auth/two-factor/challenge',
+    data,
+  );
 }
 
 /**

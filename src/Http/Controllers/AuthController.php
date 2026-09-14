@@ -6,6 +6,9 @@ use Chencongbao\LaravelVbenAdmin\Contracts\AuditRecorder;
 use Chencongbao\LaravelVbenAdmin\Models\AdminLoginLog;
 use Chencongbao\LaravelVbenAdmin\Models\AdminUser;
 use Chencongbao\LaravelVbenAdmin\Services\LoginCaptcha;
+use Chencongbao\LaravelVbenAdmin\Services\LoginClientClassifier;
+use Chencongbao\LaravelVbenAdmin\Services\LoginIpWhitelist;
+use Chencongbao\LaravelVbenAdmin\Services\TwoFactorAuthentication;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -20,6 +23,9 @@ final class AuthController extends Controller
     public function __construct(
         private readonly AuditRecorder $audit,
         private readonly LoginCaptcha $captcha,
+        private readonly LoginClientClassifier $loginClientClassifier,
+        private readonly LoginIpWhitelist $loginIpWhitelist,
+        private readonly TwoFactorAuthentication $twoFactor,
     ) {}
 
     public function login(Request $request): JsonResponse
@@ -61,8 +67,103 @@ final class AuthController extends Controller
 
         $this->captcha->clear($request, $credentials['username']);
 
+        if (! app()->environment('local') && ! $this->loginIpWhitelist->allows($user, $request->ip())) {
+            $this->writeLoginLog($request, $user->username, $user, false, 'LOGIN_IP_NOT_ALLOWED');
+
+            return response()->json([
+                'message' => '当前 IP 不在登录白名单中。',
+                'code' => 'LOGIN_IP_NOT_ALLOWED',
+            ], 403);
+        }
+
+        if ($user->two_factor_enabled && ! app()->environment('local')) {
+            return response()->json([
+                'two_factor_required' => true,
+                ...$this->twoFactor->issueChallenge($user),
+            ], 202);
+        }
+
+        return $this->completeLogin($request, $user, $credentials['username']);
+    }
+
+    public function completeTwoFactorChallenge(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'challenge_token' => ['required', 'string', 'size:64'],
+            'code' => ['required', 'string', 'regex:/^\d{6}$/'],
+        ]);
+        $user = $this->twoFactor->resolveChallenge($data['challenge_token']);
+
+        if (! $user || ! $user->is_active || ! $user->two_factor_enabled) {
+            return response()->json(['message' => 'The two-factor challenge is invalid or has expired.', 'code' => 'TWO_FACTOR_CHALLENGE_INVALID'], 422);
+        }
+
+        if (! app()->environment('local') && ! $this->loginIpWhitelist->allows($user, $request->ip())) {
+            $this->writeLoginLog($request, $user->username, $user, false, 'LOGIN_IP_NOT_ALLOWED');
+
+            return response()->json(['message' => '当前 IP 不在登录白名单中。', 'code' => 'LOGIN_IP_NOT_ALLOWED'], 403);
+        }
+
+        if (! $this->twoFactor->verify($user, $data['code'])) {
+            $this->writeLoginLog($request, $user->username, $user, false, 'TWO_FACTOR_INVALID');
+
+            return response()->json(['message' => 'The authentication code is invalid.', 'code' => 'TWO_FACTOR_CODE_INVALID'], 422);
+        }
+
+        $setupCompleted = $user->two_factor_confirmed_at === null;
+        if ($setupCompleted) {
+            $user->forceFill(['two_factor_confirmed_at' => now()])->save();
+            $this->audit->record($user, 'auth.two-factor.confirmed', $user);
+        }
+        $this->twoFactor->consumeChallenge($data['challenge_token']);
+
+        return $this->completeLogin($request, $user, $user->username);
+    }
+
+    public function twoFactorStatus(Request $request): JsonResponse
+    {
+        /** @var AdminUser $user */
+        $user = $request->user();
+
+        return response()->json(['two_factor' => [
+            'enabled' => $user->two_factor_enabled,
+            'confirmed' => $user->two_factor_confirmed_at !== null,
+        ]]);
+    }
+
+    public function enableTwoFactor(Request $request): JsonResponse
+    {
+        /** @var AdminUser $user */
+        $user = $request->user();
+        $this->twoFactor->enable($user);
+        $user->tokens()->where('id', '<>', $user->currentAccessToken()?->getKey())->delete();
+        $this->audit->record($user, 'auth.two-factor.enabled', $user);
+
+        return response()->json(['message' => 'Two-factor authentication will be configured at the next login.']);
+    }
+
+    public function disableTwoFactor(Request $request): JsonResponse
+    {
+        /** @var AdminUser $user */
+        $user = $request->user();
+        $rules = ['code' => [$user->two_factor_confirmed_at ? 'required' : 'nullable', 'string', 'regex:/^\d{6}$/']];
+        $data = $request->validate($rules);
+
+        if ($user->two_factor_confirmed_at && ! $this->twoFactor->verify($user, (string) ($data['code'] ?? ''))) {
+            throw ValidationException::withMessages(['code' => ['The authentication code is invalid.']]);
+        }
+
+        $this->twoFactor->disable($user);
+        $user->tokens()->where('id', '<>', $user->currentAccessToken()?->getKey())->delete();
+        $this->audit->record($user, 'auth.two-factor.disabled', $user);
+
+        return response()->json(['message' => 'Two-factor authentication disabled.']);
+    }
+
+    private function completeLogin(Request $request, AdminUser $user, string $username): JsonResponse
+    {
         $user->forceFill(['last_login_at' => now(), 'last_login_ip' => $request->ip()])->save();
-        $this->writeLoginLog($request, $credentials['username'], $user, true);
+        $this->writeLoginLog($request, $username, $user, true);
 
         $accessToken = $user->createToken(config('laravel-vben-admin.auth.token_name', 'vben-admin'), ['admin']);
         $accessToken->accessToken->forceFill([
@@ -133,6 +234,13 @@ final class AuthController extends Controller
         $user = $request->user();
         $request->validate([
             'avatar' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048', 'dimensions:min_width=64,min_height=64,max_width=4096,max_height=4096'],
+        ], [
+            'avatar.required' => '请选择要上传的头像图片。',
+            'avatar.uploaded' => '头像上传失败，请确认文件不超过 2 MB 后重试。',
+            'avatar.image' => '头像必须是有效的图片文件。',
+            'avatar.mimes' => '头像仅支持 JPG、PNG 或 WebP 格式。',
+            'avatar.max' => '头像文件不能超过 2 MB。',
+            'avatar.dimensions' => '头像尺寸必须在 64×64 至 4096×4096 像素之间。',
         ]);
 
         $oldAvatar = $user->avatar;
@@ -180,6 +288,7 @@ final class AuthController extends Controller
             'current' => $token->getKey() === $currentTokenId,
             'ip_address' => $token->ip_address,
             'user_agent' => $token->user_agent,
+            'client_type' => $this->loginClientClassifier->classify($token->user_agent),
             'last_used_at' => $token->last_used_at,
             'created_at' => $token->created_at,
         ]);
@@ -240,7 +349,7 @@ final class AuthController extends Controller
 
     private function defaultAvatarIds(): array
     {
-        return ['avatar-1', 'avatar-2', 'avatar-3', 'avatar-4', 'avatar-5', 'avatar-6'];
+        return array_map(static fn (int $number): string => 'avatar-'.$number, range(1, 30));
     }
 
     private function defaultAvatarUrl(string $id): string

@@ -30,6 +30,7 @@ import {
   Card,
   Form,
   FormItem,
+  Input,
   InputNumber,
   message,
   Select,
@@ -49,6 +50,7 @@ import { LOGIN_THEME_COLORS } from '#/preferences';
 const loading = ref(false);
 const saving = ref(false);
 const activeGroup = ref('login');
+const activeAdvancedSection = ref('appearance');
 const settings = ref<SettingItem[]>([]);
 const themePresets = BUILT_IN_THEME_PRESETS.filter(
   ({ type }) => type !== 'custom',
@@ -65,9 +67,11 @@ type AdvancedField = {
 
 const advancedSections: Array<{
   fields: AdvancedField[];
+  key: string;
   title: [string, string];
 }> = [
   {
+    key: 'appearance',
     title: ['内容与外观', 'Content & Appearance'],
     fields: [
       { key: 'app.dynamicTitle', label: ['动态页面标题', 'Dynamic page title'], type: 'boolean' },
@@ -87,6 +91,7 @@ const advancedSections: Array<{
     ],
   },
   {
+    key: 'navigation',
     title: ['侧边栏与导航', 'Sidebar & Navigation'],
     fields: [
       { key: 'sidebar.enable', label: ['显示侧边栏', 'Show sidebar'], type: 'boolean' },
@@ -105,6 +110,7 @@ const advancedSections: Array<{
     ],
   },
   {
+    key: 'header',
     title: ['顶栏与面包屑', 'Header & Breadcrumb'],
     fields: [
       { key: 'header.enable', label: ['显示顶栏', 'Show header'], type: 'boolean' },
@@ -124,6 +130,7 @@ const advancedSections: Array<{
     ],
   },
   {
+    key: 'shortcuts',
     title: ['快捷键、动画与工具栏', 'Shortcuts, Animation & Toolbar'],
     fields: [
       { key: 'shortcutKeys.enable', label: ['启用快捷键', 'Enable shortcuts'], type: 'boolean' },
@@ -147,6 +154,7 @@ const advancedSections: Array<{
     ],
   },
   {
+    key: 'extensions',
     title: ['水印、页脚与扩展', 'Watermark, Footer & Extensions'],
     fields: [
       { key: 'app.watermark', label: ['显示水印', 'Show watermark'], type: 'boolean' },
@@ -482,61 +490,67 @@ onMounted(load);
                 <p>{{ group.description }}</p>
               </header>
 
-              <div v-if="group.key === 'advanced'" class="advanced-sections">
-                <section
+              <Tabs
+                v-if="group.key === 'advanced'"
+                v-model:active-key="activeAdvancedSection"
+                class="advanced-tabs"
+                type="card"
+              >
+                <TabPane
                   v-for="section in advancedSections"
-                  :key="section.title[0]"
-                  class="advanced-section"
+                  :key="section.key"
+                  :tab="localizedText(section.title)"
                 >
-                  <h3>{{ localizedText(section.title) }}</h3>
-                  <div class="advanced-grid">
-                    <div
-                      v-for="field in section.fields"
-                      :key="field.key"
-                      class="advanced-item"
-                    >
-                      <label :for="`advanced-${field.key}`">
-                        {{ localizedText(field.label) }}
-                      </label>
-                      <Switch
-                        v-if="field.type === 'boolean'"
-                        :id="`advanced-${field.key}`"
-                        :checked="Boolean(advancedValue(field.key))"
-                        @update:checked="setAdvancedValue(field.key, $event)"
-                      />
-                      <InputNumber
-                        v-else-if="field.type === 'number'"
-                        :id="`advanced-${field.key}`"
-                        :max="field.max"
-                        :min="field.min"
-                        :value="Number(advancedValue(field.key))"
-                        class="advanced-input"
-                        @update:value="setAdvancedValue(field.key, $event)"
-                      />
-                      <Select
-                        v-else-if="field.type === 'select'"
-                        :id="`advanced-${field.key}`"
-                        :options="
-                          field.options?.map((option) => ({
-                            label: localizedText(option.label),
-                            value: option.value,
-                          }))
-                        "
-                        :value="advancedValue(field.key)"
-                        class="advanced-input"
-                        @update:value="setAdvancedValue(field.key, $event)"
-                      />
-                      <Input
-                        v-else
-                        :id="`advanced-${field.key}`"
-                        :value="String(advancedValue(field.key) ?? '')"
-                        class="advanced-input"
-                        @update:value="setAdvancedValue(field.key, $event)"
-                      />
+                  <section class="advanced-section">
+                    <div class="advanced-grid">
+                      <div
+                        v-for="field in section.fields"
+                        :key="field.key"
+                        class="advanced-item"
+                      >
+                        <label :for="`advanced-${field.key}`">
+                          {{ localizedText(field.label) }}
+                        </label>
+                        <Switch
+                          v-if="field.type === 'boolean'"
+                          :id="`advanced-${field.key}`"
+                          :checked="Boolean(advancedValue(field.key))"
+                          @update:checked="setAdvancedValue(field.key, $event)"
+                        />
+                        <InputNumber
+                          v-else-if="field.type === 'number'"
+                          :id="`advanced-${field.key}`"
+                          :max="field.max"
+                          :min="field.min"
+                          :value="Number(advancedValue(field.key))"
+                          class="advanced-input"
+                          @update:value="setAdvancedValue(field.key, $event)"
+                        />
+                        <Select
+                          v-else-if="field.type === 'select'"
+                          :id="`advanced-${field.key}`"
+                          :options="
+                            field.options?.map((option) => ({
+                              label: localizedText(option.label),
+                              value: option.value,
+                            }))
+                          "
+                          :value="advancedValue(field.key)"
+                          class="advanced-input"
+                          @update:value="setAdvancedValue(field.key, $event)"
+                        />
+                        <Input
+                          v-else
+                          :id="`advanced-${field.key}`"
+                          :value="String(advancedValue(field.key) ?? '')"
+                          class="advanced-input"
+                          @update:value="setAdvancedValue(field.key, $event)"
+                        />
+                      </div>
                     </div>
-                  </div>
-                </section>
-              </div>
+                  </section>
+                </TabPane>
+              </Tabs>
 
               <div v-else class="theme-list">
                 <div
@@ -739,9 +753,20 @@ onMounted(load);
   border-radius: 10px;
 }
 
-.advanced-sections {
-  display: grid;
-  gap: 20px;
+.advanced-tabs :deep(.ant-tabs-nav) {
+  margin-bottom: 16px;
+}
+
+.advanced-tabs :deep(.ant-tabs-nav-list) {
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.advanced-tabs :deep(.ant-tabs-tab) {
+  padding-right: 14px;
+  padding-left: 14px;
+  margin: 0 !important;
+  border-radius: 6px 6px 0 0 !important;
 }
 
 .advanced-section {
@@ -749,15 +774,6 @@ onMounted(load);
   border: 1px solid hsl(var(--border));
   border-radius: 10px;
   background: hsl(var(--background));
-}
-
-.advanced-section h3 {
-  padding: 16px 20px;
-  margin: 0;
-  font-size: 15px;
-  font-weight: 600;
-  border-bottom: 1px solid hsl(var(--border));
-  background: hsl(var(--muted) / 35%);
 }
 
 .advanced-grid {

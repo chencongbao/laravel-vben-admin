@@ -22,6 +22,7 @@
     "basic": {
       "title": "基本信息",
       "description": "维护您的管理员名称和头像信息。",
+      "nameDescription": "维护您的管理员姓名。点击左侧头像可以更换头像。",
       "name": "姓名",
       "namePlaceholder": "请输入姓名",
       "avatar": "头像地址",
@@ -31,6 +32,12 @@
       "defaultAvatars": "选择默认头像",
       "selectAvatar": "选择这个头像",
       "avatarUploaded": "头像上传成功",
+      "avatarSizeError": "头像文件不能超过 2 MB",
+      "avatarTypeError": "头像仅支持 JPG、PNG 或 WebP 格式",
+      "avatarUpdated": "头像已更新",
+      "avatarSetting": "头像设置",
+      "editAvatar": "更换头像",
+      "saveAvatar": "保存头像",
       "updated": "个人资料已更新"
     },
     "password": {
@@ -50,6 +57,15 @@
       "title": "账户安全",
       "description": "查看当前登录状态并管理其他设备的会话。",
       "sessionsTitle": "登录会话",
+      "clientType": "客户端类型",
+      "clientTypes": {
+        "desktop": "桌面端",
+        "mobile": "手机端",
+        "tablet": "平板端",
+        "api": "API 客户端",
+        "other": "其他客户端",
+        "unknown": "未知客户端"
+      },
       "ipAddress": "IP 地址",
       "signedInAt": "登录时间",
       "lastUsedAt": "最后使用",
@@ -66,9 +82,21 @@
       "revokeOthersConfirm": "确定让其他设备全部退出登录？",
       "revoked": "会话已撤销",
       "revokedOthers": "已撤销 {count} 个其他会话",
+      "twoFactorTitle": "Google 验证器",
+      "twoFactorDescription": "开启后，密码验证成功仍需通过 Google 动态验证码才能进入后台。首次登录会显示绑定二维码。",
+      "twoFactorActive": "已开启",
+      "twoFactorPending": "待绑定",
+      "twoFactorInactive": "未开启",
+      "twoFactorEnabledPending": "已开启，请退出后重新登录并绑定 Google 验证器",
+      "twoFactorDisabled": "Google 双因素认证已关闭",
+      "twoFactorDisableTitle": "关闭 Google 验证器",
+      "twoFactorDisableDescription": "请输入当前 Google Authenticator 动态验证码确认关闭。",
+      "twoFactorDisableConfirm": "确认关闭",
+      "twoFactorCodePlaceholder": "请输入 6 位动态验证码",
+      "twoFactorCodeTip": "请输入正确的 6 位动态验证码",
       "notesTitle": "安全能力说明",
       "passwordNote": "修改密码需要验证当前密码；成功后会撤销除当前会话外的其他令牌。",
-      "mfaNote": "MFA 尚未在基础包中实现，后续需要单独设计密钥加密、恢复码和强制策略。"
+      "mfaNote": "Google 双因素认证密钥采用加密存储；关闭已绑定的验证器时必须输入当前动态验证码。"
     }
   },
   "dashboard": {

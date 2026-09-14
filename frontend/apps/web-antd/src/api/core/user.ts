@@ -52,10 +52,9 @@ export async function getDefaultAvatarsApi() {
 }
 
 export async function uploadAvatarApi(file: File) {
-  const data = new FormData();
-  data.append('avatar', file);
+  const data = { avatar: file };
 
-  return requestClient.post<{ avatar: string }>('/auth/avatar', data);
+  return requestClient.upload<{ avatar: string }>('/auth/avatar', data);
 }
 
 export async function updatePasswordApi(data: {
@@ -67,6 +66,7 @@ export async function updatePasswordApi(data: {
 }
 
 export interface AdminSession {
+  client_type: 'api' | 'desktop' | 'mobile' | 'other' | 'tablet' | 'unknown';
   created_at: string;
   current: boolean;
   id: number;
@@ -85,4 +85,23 @@ export async function revokeSessionApi(id: number) {
 
 export async function revokeOtherSessionsApi() {
   return requestClient.delete<{ revoked_count: number }>('/auth/sessions');
+}
+
+export interface TwoFactorStatus {
+  confirmed: boolean;
+  enabled: boolean;
+}
+
+export async function getTwoFactorStatusApi() {
+  return requestClient.get<{ two_factor: TwoFactorStatus }>('/auth/two-factor');
+}
+
+export async function enableTwoFactorApi() {
+  return requestClient.post<{ message: string }>('/auth/two-factor/enable');
+}
+
+export async function disableTwoFactorApi(code?: string) {
+  return requestClient.post<{ message: string }>('/auth/two-factor/disable', {
+    code,
+  });
 }

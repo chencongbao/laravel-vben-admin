@@ -18,21 +18,35 @@ defineOptions({
 });
 
 withDefaults(defineProps<Props>(), {
+  avatarActionLabel: 'Edit avatar',
   title: '关于项目',
   tabs: () => [],
 });
 
 const tabsValue = defineModel<string>('modelValue');
+const emit = defineEmits<{ avatarClick: [] }>();
 </script>
 <template>
   <Page auto-content-height>
     <div class="flex size-full flex-col gap-4 lg:flex-row">
       <Card class="w-full flex-none overflow-hidden border lg:w-64">
         <div class="flex-col-center gap-3 px-6 py-8">
-          <VbenAvatar
-            :src="userInfo?.avatar ?? preferences.app.defaultAvatar"
-            class="size-24 ring-4 ring-primary/10"
-          />
+          <button
+            :aria-label="avatarActionLabel"
+            class="group relative rounded-full"
+            type="button"
+            @click="emit('avatarClick')"
+          >
+            <VbenAvatar
+              :src="userInfo?.avatar ?? preferences.app.defaultAvatar"
+              class="size-24 rounded-full transition group-hover:brightness-90"
+            />
+            <span
+              class="absolute inset-x-1 bottom-1 rounded-full bg-black/60 py-1 text-xs text-white opacity-0 transition group-hover:opacity-100"
+            >
+              {{ avatarActionLabel }}
+            </span>
+          </button>
           <span class="text-lg font-semibold">
             {{ userInfo?.realName ?? '' }}
           </span>

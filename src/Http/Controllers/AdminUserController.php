@@ -6,6 +6,8 @@ use Chencongbao\LaravelVbenAdmin\Contracts\AuditRecorder;
 use Chencongbao\LaravelVbenAdmin\Contracts\Authorizer;
 use Chencongbao\LaravelVbenAdmin\Models\AdminRole;
 use Chencongbao\LaravelVbenAdmin\Models\AdminUser;
+use Chencongbao\LaravelVbenAdmin\Services\LoginIpWhitelist;
+use Chencongbao\LaravelVbenAdmin\Services\TwoFactorAuthentication;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -16,7 +18,11 @@ use Illuminate\Validation\Rules\Password;
 
 final class AdminUserController extends Controller
 {
-    public function __construct(private readonly AuditRecorder $audit, private readonly Authorizer $authorizer) {}
+    public function __construct(
+        private readonly AuditRecorder $audit,
+        private readonly Authorizer $authorizer,
+        private readonly TwoFactorAuthentication $twoFactor,
+    ) {}
 
     public function index(Request $request): JsonResponse
     {
@@ -33,6 +39,13 @@ final class AdminUserController extends Controller
             'name' => ['required', 'string', 'max:120'],
             'password' => ['required', 'string', Password::min(12)->letters()->mixedCase()->numbers()],
             'is_active' => ['sometimes', 'boolean'],
+            'two_factor_enabled' => ['sometimes', 'boolean'],
+            'login_ip_whitelist' => ['sometimes', 'array', 'max:100'],
+            'login_ip_whitelist.*' => ['string', 'max:80', function (string $attribute, mixed $value, \Closure $fail): void {
+                if (! LoginIpWhitelist::isValidRule((string) $value)) {
+                    $fail('The login IP whitelist contains an invalid IP address or CIDR range.');
+                }
+            }],
             'role_ids' => ['sometimes', 'array'],
             'role_ids.*' => ['integer', Rule::exists(config('laravel-vben-admin.tables.roles', 'admin_roles'), 'id')->where('is_active', true)],
         ]);
@@ -42,7 +55,11 @@ final class AdminUserController extends Controller
         }
 
         $user = DB::transaction(function () use ($data, $request): AdminUser {
-            $user = AdminUser::query()->create(Arr::except($data, 'role_ids'));
+            $data['login_ip_whitelist'] = LoginIpWhitelist::normalize($data['login_ip_whitelist'] ?? []);
+            $user = AdminUser::query()->create(Arr::except($data, ['role_ids', 'two_factor_enabled']));
+            if ($data['two_factor_enabled'] ?? false) {
+                $this->twoFactor->enable($user);
+            }
             $user->roles()->sync($data['role_ids'] ?? []);
             $this->audit->record($request->user(), 'system.user.created', $user, ['after' => Arr::except($data, 'password')]);
 
@@ -64,6 +81,13 @@ final class AdminUserController extends Controller
             'name' => ['sometimes', 'string', 'max:120'],
             'password' => ['sometimes', 'string', Password::min(12)->letters()->mixedCase()->numbers()],
             'is_active' => ['sometimes', 'boolean'],
+            'two_factor_enabled' => ['sometimes', 'boolean'],
+            'login_ip_whitelist' => ['sometimes', 'array', 'max:100'],
+            'login_ip_whitelist.*' => ['string', 'max:80', function (string $attribute, mixed $value, \Closure $fail): void {
+                if (! LoginIpWhitelist::isValidRule((string) $value)) {
+                    $fail('The login IP whitelist contains an invalid IP address or CIDR range.');
+                }
+            }],
             'role_ids' => ['sometimes', 'array'],
             'role_ids.*' => ['integer', Rule::exists(config('laravel-vben-admin.tables.roles', 'admin_roles'), 'id')->where('is_active', true)],
         ]);
@@ -82,12 +106,19 @@ final class AdminUserController extends Controller
         }
 
         DB::transaction(function () use ($data, $request, $adminUser): void {
-            $before = $adminUser->only(['username', 'name', 'is_active']);
-            $adminUser->fill(Arr::except($data, 'role_ids'))->save();
+            $trackedFields = ['username', 'name', 'is_active', 'two_factor_enabled', 'login_ip_whitelist'];
+            $before = $adminUser->only($trackedFields);
+            if (array_key_exists('login_ip_whitelist', $data)) {
+                $data['login_ip_whitelist'] = LoginIpWhitelist::normalize($data['login_ip_whitelist']);
+            }
+            $adminUser->fill(Arr::except($data, ['role_ids', 'two_factor_enabled']))->save();
+            if (array_key_exists('two_factor_enabled', $data)) {
+                $data['two_factor_enabled'] ? $this->twoFactor->enable($adminUser) : $this->twoFactor->disable($adminUser);
+            }
             if (array_key_exists('role_ids', $data)) {
                 $adminUser->roles()->sync($data['role_ids']);
             }
-            $this->audit->record($request->user(), 'system.user.updated', $adminUser, ['before' => $before, 'after' => $adminUser->only(['username', 'name', 'is_active']), 'roles_changed' => array_key_exists('role_ids', $data)]);
+            $this->audit->record($request->user(), 'system.user.updated', $adminUser, ['before' => $before, 'after' => $adminUser->fresh()->only($trackedFields), 'roles_changed' => array_key_exists('role_ids', $data)]);
         });
 
         return response()->json(['user' => $adminUser->load('roles:id,code,name')]);

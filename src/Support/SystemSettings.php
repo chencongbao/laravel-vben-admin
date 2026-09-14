@@ -82,7 +82,12 @@ final class SystemSettings
                     'widget' => ['globalSearch' => true, 'fullscreen' => true, 'languageToggle' => true, 'notification' => true, 'themeToggle' => true, 'sidebarToggle' => true, 'lockScreen' => true],
                     'footer' => ['enable' => false, 'fixed' => false],
                     'copyright' => ['enable' => true, 'companyName' => '', 'companySiteLink' => '', 'date' => '2026', 'icp' => '', 'icpLink' => ''],
-                    'custom' => ['enableFormFullscreen' => true, 'tenantMode' => 'single', 'defaultTableSize' => 20, 'reportTitle' => ''],
+                    'custom' => [
+                        'enableFormFullscreen' => true,
+                        'tenantMode' => 'single',
+                        'defaultTableSize' => 20,
+                        'reportTitle' => '',
+                    ],
                 ],
             ],
         ];
@@ -103,6 +108,21 @@ final class SystemSettings
         }
 
         if ($setting !== null) {
+            if ($definition['type'] === 'json' && is_array($setting->value)) {
+                $value = array_replace_recursive($definition['default'], $setting->value);
+
+                if ($key === 'system.advanced_preferences') {
+                    unset(
+                        $value['custom']['boardTitle'],
+                        $value['custom']['defaultVisibleCount'],
+                        $value['custom']['showQuickActions'],
+                        $value['custom']['highlightStyle'],
+                    );
+                }
+
+                return $value;
+            }
+
             return $setting->value;
         }
 

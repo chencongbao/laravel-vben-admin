@@ -35,6 +35,10 @@ Public, read-only bootstrap data used before the login page initializes. It retu
 | GET | `/auth/me` | Authenticated administrator |
 | GET | `/auth/avatars` | Authenticated administrator; list built-in avatars |
 | POST | `/auth/avatar` | Authenticated administrator, rate limited; upload avatar |
+| GET | `/auth/two-factor` | Authenticated administrator; read Google 2FA status |
+| POST | `/auth/two-factor/enable` | Authenticated administrator; require setup at next login |
+| POST | `/auth/two-factor/disable` | Authenticated administrator; current TOTP required after setup |
+| POST | `/auth/two-factor/challenge` | Public, rate limited; complete the short-lived login challenge |
 | PATCH | `/auth/profile` | Authenticated administrator |
 | PUT | `/auth/password` | Authenticated administrator, rate limited |
 | GET | `/auth/sessions` | Authenticated administrator; own sessions only |
@@ -45,9 +49,15 @@ Public, read-only bootstrap data used before the login page initializes. It retu
 
 Login, profile updates, and `GET /auth/me` return the administrator's effective role summaries as `roles`, with each item containing `code` and `name`. The administration header uses the login username and localized built-in role name instead of demo account or subscription data.
 
-Profile updates accept `name` and an optional absolute avatar URL or a built-in avatar identifier such as `default:avatar-1`. Avatar uploads use multipart field `avatar`; accepted formats are JPEG, PNG and WebP, with a 2 MB limit and dimensions from 64x64 through 4096x4096. Uploaded files are stored on Laravel's `public` disk under an administrator-specific directory. Replacing an uploaded avatar removes that administrator's previous package-owned avatar file. Password updates require `current_password`, `password` and `password_confirmation`; the new password must contain upper- and lowercase letters and numbers with a minimum length of 12. A successful password change revokes the administrator's other tokens while preserving the current session.
+Profile updates accept `name` and an optional absolute avatar URL or one of 30 built-in avatar identifiers such as `default:avatar-1`. Avatar uploads use multipart field `avatar`; accepted formats are JPEG, PNG and WebP, with a 2 MB limit and dimensions from 64x64 through 4096x4096. Uploaded files are stored on Laravel's `public` disk under an administrator-specific directory. Replacing an uploaded avatar removes that administrator's previous package-owned avatar file. Password updates require `current_password`, `password` and `password_confirmation`; the new password must contain upper- and lowercase letters and numbers with a minimum length of 12. A successful password change revokes the administrator's other tokens while preserving the current session.
 
-Session endpoints are always scoped through the authenticated administrator's token relation. Each newly created access token records its login IP address and user agent. `GET /auth/sessions` returns `id`, `current`, `ip_address`, `user_agent`, `created_at`, and `last_used_at`; timestamps use Laravel's standard ISO-8601 serialization and the administration UI renders them using Laravel's `config('app.timezone')`. Tokens created before the session metadata migration may have null IP and user-agent values. The current token cannot be revoked through the session endpoint; normal logout must be used instead. Revocations are recorded in the audit log.
+Outside the `local` environment, every administrator must have a non-empty login IP whitelist containing the current request IP, either as an exact IPv4/IPv6 address or within a configured CIDR range. A non-empty list means the whitelist is enabled; an empty list means it is disabled. The whitelist is checked again when completing a 2FA challenge. A failed check returns HTTP 403 with `LOGIN_IP_NOT_ALLOWED` and writes a failed login log. When Google 2FA is enabled, a successful password and whitelist check returns HTTP 202 with a five-minute `challenge_token` instead of a Sanctum token. An unconfirmed user also receives an SVG QR data URL and manual secret. `POST /auth/two-factor/challenge` accepts the challenge and a six-digit TOTP; only a successful verification creates the administrator session. When Laravel is running with `APP_ENV=local`, login intentionally bypasses both the IP whitelist and 2FA checks without altering their saved configuration. Secrets are encrypted at rest and never appear in user payloads, audit changes, or ordinary logs.
+
+Session endpoints are always scoped through the authenticated administrator's token relation. Each newly created access token records its login IP address and user agent. `GET /auth/sessions` returns `id`, `current`, `ip_address`, `user_agent`, `client_type`, `created_at`, and `last_used_at`. `client_type` is derived from the saved user agent and is one of `desktop`, `mobile`, `tablet`, `api`, `other`, or `unknown`; timestamps use Laravel's standard ISO-8601 serialization and the administration UI renders them using Laravel's `config('app.timezone')`. Tokens created before the session metadata migration may have null IP and user-agent values. The current token cannot be revoked through the session endpoint; normal logout must be used instead. Revocations are recorded in the audit log.
+
+When any authenticated API request returns HTTP 401, the administration client treats the token as revoked or expired, clears all local authentication state, and immediately redirects to the login page. This forced local logout does not call `/auth/logout` again, preventing a recursive 401 loop when another session has already revoked the token. Concurrent 401 responses share one redirect operation.
+
+Authentication error responses expose stable codes such as `INVALID_CREDENTIALS`, `CAPTCHA_INVALID`, `LOGIN_IP_NOT_ALLOWED`, `TWO_FACTOR_CHALLENGE_INVALID`, and `TWO_FACTOR_CODE_INVALID`. The administration client translates these codes using its active locale instead of displaying the server's fallback message directly.
 
 ## Administrators
 
@@ -58,7 +68,7 @@ Session endpoints are always scoped through the authenticated administrator's to
 | GET | `/system/users/{adminUser}` | `system.user.view` |
 | PATCH | `/system/users/{adminUser}` | `system.user.update`; assigning roles additionally requires `system.user.assign-roles` |
 
-An administrator cannot disable their current account or remove their own super-administrator role.
+Administrator create and update requests also accept `two_factor_enabled` and `login_ip_whitelist`. The whitelist is an array of at most 100 exact IPv4/IPv6 addresses or CIDR ranges; no separate enable switch exists. Enabling 2FA generates an encrypted secret and requires binding at the next non-local login; disabling it clears the saved secret and confirmation. An administrator cannot disable their current account or remove their own super-administrator role.
 
 ## Roles
 

@@ -10,7 +10,13 @@ import { resetAllStores, useAccessStore, useUserStore } from '@vben/stores';
 import { notification } from 'ant-design-vue';
 import { defineStore } from 'pinia';
 
-import { getAccessCodesApi, getUserInfoApi, loginApi, logoutApi } from '#/api';
+import {
+  completeTwoFactorChallengeApi,
+  getAccessCodesApi,
+  getUserInfoApi,
+  loginApi,
+  logoutApi,
+} from '#/api';
 import { $t } from '#/locales';
 
 export const useAuthStore = defineStore('auth', () => {
@@ -33,7 +39,41 @@ export const useAuthStore = defineStore('auth', () => {
     let userInfo: null | UserInfo = null;
     try {
       loginLoading.value = true;
-      const { token: accessToken } = await loginApi(params);
+      const result = await loginApi(params);
+
+      if (result.two_factor_required) {
+        return { twoFactor: result, userInfo: null };
+      }
+
+      userInfo = await finishLogin(result.token, onSuccess);
+
+    } finally {
+      loginLoading.value = false;
+    }
+
+    return { twoFactor: null, userInfo };
+  }
+
+  async function completeTwoFactorLogin(
+    params: { challenge_token: string; code: string },
+    onSuccess?: () => Promise<void> | void,
+  ) {
+    try {
+      loginLoading.value = true;
+      const result = await completeTwoFactorChallengeApi(params);
+      const userInfo = await finishLogin(result.token, onSuccess);
+
+      return { userInfo };
+    } finally {
+      loginLoading.value = false;
+    }
+  }
+
+  async function finishLogin(
+    accessToken?: string,
+    onSuccess?: () => Promise<void> | void,
+  ) {
+    let userInfo: null | UserInfo = null;
 
       // 如果成功获取到 accessToken
       if (accessToken) {
@@ -60,28 +100,29 @@ export const useAuthStore = defineStore('auth', () => {
               );
         }
 
-        if (userInfo?.realName) {
+        const welcomeName = userInfo?.realName || userInfo?.username;
+        if (welcomeName) {
           notification.success({
-            description: `${$t('authentication.loginSuccessDesc')}:${userInfo?.realName}`,
+            description: `${$t('authentication.loginSuccessDesc')}：${welcomeName}`,
             duration: 3,
             message: $t('authentication.loginSuccess'),
           });
         }
       }
-    } finally {
-      loginLoading.value = false;
-    }
 
-    return {
-      userInfo,
-    };
+    return userInfo;
   }
 
-  async function logout(redirect: boolean = true) {
-    try {
-      await logoutApi();
-    } catch {
-      // 不做任何处理
+  async function logout(
+    redirect: boolean = true,
+    requestServer: boolean = true,
+  ) {
+    if (requestServer) {
+      try {
+        await logoutApi();
+      } catch {
+        // Token 已失效时仍继续清理本地登录状态。
+      }
     }
     resetAllStores();
     accessStore.setLoginExpired(false);
@@ -110,6 +151,7 @@ export const useAuthStore = defineStore('auth', () => {
   return {
     $reset,
     authLogin,
+    completeTwoFactorLogin,
     fetchUserInfo,
     loginLoading,
     logout,
