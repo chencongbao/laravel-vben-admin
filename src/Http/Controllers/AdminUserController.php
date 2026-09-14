@@ -26,8 +26,8 @@ final class AdminUserController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $validated = $request->validate(['keyword' => ['nullable', 'string', 'max:120'], 'status' => ['nullable', Rule::in(['active', 'disabled'])], 'per_page' => ['nullable', 'integer', 'min:1', 'max:100']]);
-        $users = AdminUser::query()->with('roles:id,code,name')->when($validated['keyword'] ?? null, fn ($query, $keyword) => $query->where(fn ($nested) => $nested->where('username', 'like', "%{$keyword}%")->orWhere('name', 'like', "%{$keyword}%")))->when(isset($validated['status']), fn ($query) => $query->where('is_active', $validated['status'] === 'active'))->latest('id')->paginate($validated['per_page'] ?? 20);
+        $validated = $request->validate(['id' => ['nullable', 'integer', 'min:1'], 'keyword' => ['nullable', 'string', 'max:120'], 'status' => ['nullable', Rule::in(['active', 'disabled'])], 'per_page' => ['nullable', 'integer', 'min:1', 'max:100']]);
+        $users = AdminUser::query()->with('roles:id,code,name')->when($validated['id'] ?? null, fn ($query, $id) => $query->whereKey($id))->when($validated['keyword'] ?? null, fn ($query, $keyword) => $query->where(fn ($nested) => $nested->where('username', 'like', "%{$keyword}%")->orWhere('name', 'like', "%{$keyword}%")))->when(isset($validated['status']), fn ($query) => $query->where('is_active', $validated['status'] === 'active'))->latest('id')->paginate($validated['per_page'] ?? 20);
 
         return response()->json($users);
     }

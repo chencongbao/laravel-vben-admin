@@ -29,6 +29,7 @@ import {
 } from '#/api/system';
 import AutoRefresh from '#/components/system/auto-refresh.vue';
 import ListToolbar from '#/components/system/list-toolbar.vue';
+import ListRefreshButton from '#/components/system/list-refresh-button.vue';
 import ListSearchPanel from '#/components/system/list-search-panel.vue';
 import ListSearchField from '#/components/system/list-search-field.vue';
 import PermissionButton from '#/components/system/permission-button.vue';
@@ -48,6 +49,7 @@ export interface ResourceSearchField {
   key: string;
   label: string;
   options?: Array<{ label: string; value: number | string }>;
+  type?: 'number' | 'text';
 }
 
 const props = defineProps<{
@@ -71,6 +73,12 @@ const form = reactive<Record<string, any>>({});
 const searchValues = reactive<Record<string, any>>({});
 const showFilters = ref(true);
 const viewPermission = computed(() => props.permissionPrefix ? `${props.permissionPrefix}.view` : undefined);
+const effectiveSearchFields = computed<ResourceSearchField[]>(() => {
+  const fields = props.searchFields ?? [];
+  return fields.some((field) => field.key === 'id')
+    ? fields
+    : [{ key: 'id', label: $t('common.fields.id'), type: 'number' }, ...fields];
+});
 const exportColumns = computed(() => props.fields
   .filter((field) => field.table !== false)
   .map((field) => ({ dataIndex: field.key, title: field.label })));
@@ -95,7 +103,10 @@ async function load() {
   try {
     if (props.collectionKey) {
       const result = await getCollection<Record<string, any>>(props.path);
-      rows.value = result[props.collectionKey] ?? [];
+      const collection = result[props.collectionKey] ?? [];
+      rows.value = searchValues.id
+        ? collection.filter((row: Record<string, any>) => Number(row.id) === Number(searchValues.id))
+        : collection;
       pagination.total = rows.value.length;
     } else {
       const result = await getResource(props.path, {
@@ -174,8 +185,8 @@ onMounted(load);
   <Page :description="description" :title="title">
     <ListToolbar>
       <template #left>
-        <PermissionButton icon="lucide:refresh-cw" :loading="loading" @click="load">{{ $t('common.actions.refresh') }}</PermissionButton>
-        <PermissionButton v-if="searchFields?.length" icon="lucide:filter" @click="showFilters = !showFilters">{{ $t('common.actions.filter') }}</PermissionButton>
+        <ListRefreshButton :loading="loading" />
+        <PermissionButton icon="lucide:filter" @click="showFilters = !showFilters">{{ $t('common.actions.filter') }}</PermissionButton>
         <AutoRefresh :loading="loading" :storage-key="path" @refresh="load" />
       </template>
       <template #right>
@@ -183,9 +194,10 @@ onMounted(load);
         <PermissionButton v-if="!readOnly" icon="lucide:plus" :permission="permissionPrefix ? `${permissionPrefix}.create` : undefined" type="primary" @click="openCreate">新增</PermissionButton>
       </template>
     </ListToolbar>
-    <ListSearchPanel v-if="showFilters && searchFields?.length">
-      <ListSearchField v-for="field in searchFields" :key="field.key" :label="field.label">
+    <ListSearchPanel v-if="showFilters">
+      <ListSearchField v-for="field in effectiveSearchFields" :key="field.key" :label="field.label">
         <Select v-if="field.options" v-model:value="searchValues[field.key]" allow-clear :options="field.options" :placeholder="field.label" class="w-full" />
+        <InputNumber v-else-if="field.type === 'number'" v-model:value="searchValues[field.key]" :min="1" :placeholder="field.label" />
         <Input v-else v-model:value="searchValues[field.key]" allow-clear :placeholder="field.label" @press-enter="search" />
       </ListSearchField>
       <template #actions>

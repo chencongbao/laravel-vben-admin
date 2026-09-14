@@ -12,9 +12,11 @@ final class AdminLogController extends Controller
     public function audit(Request $request): JsonResponse
     {
         $perPage = min(max($request->integer('per_page', 20), 1), 100);
+        $id = $request->validate(['id' => ['nullable', 'integer', 'min:1']])['id'] ?? null;
         $logs = Activity::query()
             ->where('log_name', config('laravel-vben-admin.activity_log.log_name', 'admin'))
             ->where('log_type', 'operation')
+            ->when($id, fn ($query) => $query->whereKey($id))
             ->when($request->string('action')->toString(), fn ($query, $action) => $query->where('event', $action))
             ->when($request->integer('actor_id'), fn ($query, $actorId) => $query->where('causer_id', $actorId))
             ->latest('id')
@@ -41,9 +43,11 @@ final class AdminLogController extends Controller
     public function login(Request $request): JsonResponse
     {
         $perPage = min(max($request->integer('per_page', 20), 1), 100);
+        $id = $request->validate(['id' => ['nullable', 'integer', 'min:1']])['id'] ?? null;
         $logs = Activity::query()
             ->where('log_name', config('laravel-vben-admin.activity_log.log_name', 'admin'))
             ->where('log_type', 'login')
+            ->when($id, fn ($query) => $query->whereKey($id))
             ->when($request->string('username')->toString(), fn ($query, $username) => $query->where('properties->username', 'like', "%{$username}%"))
             ->when($request->has('succeeded'), fn ($query) => $query->where('properties->succeeded', $request->boolean('succeeded')))
             ->latest('id')

@@ -68,6 +68,8 @@ Authentication error responses expose stable codes such as `INVALID_CREDENTIALS`
 | GET | `/system/users/{adminUser}` | `system.user.view` |
 | PATCH | `/system/users/{adminUser}` | `system.user.update`; assigning roles additionally requires `system.user.assign-roles` |
 
+`GET /system/users` accepts an optional positive integer `id` query parameter for exact identifier filtering. All paginated administration list endpoints follow the same default identifier-filter convention.
+
 Administrator create and update requests also accept `two_factor_enabled` and `login_ip_whitelist`. The whitelist is an array of at most 100 exact IPv4/IPv6 addresses or CIDR ranges; no separate enable switch exists. Enabling 2FA generates an encrypted secret and requires binding at the next non-local login; disabling it clears the saved secret and confirmation. An administrator cannot disable their current account or remove their own super-administrator role.
 
 ## Roles
@@ -82,6 +84,8 @@ Administrator create and update requests also accept `two_factor_enabled` and `l
 | PUT | `/system/roles/{adminRole}/access` | `system.role.assign-access` |
 
 Creating and updating a non-super role accepts `code`, `name`, `is_active`, `permission_ids`, and `menu_ids` in one atomic request. The built-in `administrator` role is immutable and has implicit full access. The built-in `manager` identity is protected, while its access assignments can be updated. A role assigned to administrators cannot be deleted.
+
+`GET /system/roles` and `GET /system/permissions` accept an optional positive integer `id` query parameter for exact identifier filtering.
 
 ## Permissions and menus
 
@@ -99,6 +103,8 @@ The effective menu API returns a tree. A non-super administrator only receives m
 | GET | `/system/audit-logs` | `system.audit.view` |
 
 Both endpoints read the shared Spatie Activitylog `activity_log` table. `log_type=login` identifies authentication events and `log_type=operation` identifies administration changes; the stable API paths remain unchanged so existing pages do not depend on Spatie's storage schema.
+
+Both log endpoints accept an optional positive integer `id` query parameter for exact activity identifier filtering. Their existing feature-specific filters remain available and are combined with `id` when supplied.
 
 Login-log items expose the existing `username`, `succeeded`, `failure_code`, `ip_address`, and `created_at` fields, plus `client_type` and `user_agent`. Audit-log items expose the existing actor, action, subject, changes, context, IP, and creation time fields, plus `description`, `method`, `path`, and `user_agent`. Timestamps use standard ISO-8601 serialization and are rendered as Beijing time by the administration client.
 

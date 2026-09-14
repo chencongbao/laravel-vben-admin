@@ -90,8 +90,10 @@ final class ActivityLogTest extends TestCase
         self::assertNotNull($succeeded->causer_id);
 
         Sanctum::actingAs($succeeded->causer, ['admin']);
-        $this->getJson('/api/admin/system/login-logs?username=admin&succeeded=0')
+        $this->getJson('/api/admin/system/login-logs?id='.$failed->getKey().'&username=admin&succeeded=0')
             ->assertOk()
+            ->assertJsonPath('total', 1)
+            ->assertJsonPath('data.0.id', $failed->getKey())
             ->assertJsonPath('data.0.failure_code', 'INVALID_CREDENTIALS')
             ->assertJsonPath('data.0.client_type', 'desktop');
     }
@@ -131,8 +133,10 @@ final class ActivityLogTest extends TestCase
         self::assertSame('/api/admin/system/settings', $activity->path);
 
         Sanctum::actingAs($actor, ['admin']);
-        $this->getJson('/api/admin/system/audit-logs?action=system.setting.updated')
+        $this->getJson('/api/admin/system/audit-logs?id='.$activity->getKey().'&action=system.setting.updated')
             ->assertOk()
+            ->assertJsonPath('total', 1)
+            ->assertJsonPath('data.0.id', $activity->getKey())
             ->assertJsonPath('data.0.method', 'PUT')
             ->assertJsonPath('data.0.path', '/api/admin/system/settings');
     }

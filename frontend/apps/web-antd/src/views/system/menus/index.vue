@@ -33,6 +33,7 @@ import {
   updateResource,
 } from '#/api/system';
 import ListToolbar from '#/components/system/list-toolbar.vue';
+import ListRefreshButton from '#/components/system/list-refresh-button.vue';
 import PermissionButton from '#/components/system/permission-button.vue';
 
 interface MenuItem {
@@ -294,7 +295,7 @@ onMounted(() => load());
       <Card :loading="loading" title="菜单树">
         <ListToolbar>
           <template #left>
-            <PermissionButton icon="lucide:refresh-cw" :loading="loading" @click="load()">{{ $t('common.actions.refresh') }}</PermissionButton>
+            <ListRefreshButton :loading="loading" />
             <PermissionButton icon="lucide:chevrons-down-up" @click="expandAll">展开</PermissionButton>
             <PermissionButton icon="lucide:chevrons-up-down" @click="collapseAll">收起</PermissionButton>
           </template>

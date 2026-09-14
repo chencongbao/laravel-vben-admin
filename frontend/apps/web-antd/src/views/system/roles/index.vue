@@ -5,9 +5,12 @@ import type { Key } from 'ant-design-vue/es/_util/type';
 import { computed, onMounted, reactive, ref } from 'vue';
 import { Page } from '@vben/common-ui';
 import { $t } from '@vben/locales';
-import { Card, Checkbox, Form, FormItem, Input, message, Modal, Popconfirm, Space, Switch, Table, Tag, Tree } from 'ant-design-vue';
+import { Card, Checkbox, Form, FormItem, Input, InputNumber, message, Modal, Popconfirm, Space, Switch, Table, Tag, Tree } from 'ant-design-vue';
 import { createResource, deleteResource, getCollection, getResource, getResourceDetail, updateResource } from '#/api/system';
 import ListToolbar from '#/components/system/list-toolbar.vue';
+import ListRefreshButton from '#/components/system/list-refresh-button.vue';
+import ListSearchField from '#/components/system/list-search-field.vue';
+import ListSearchPanel from '#/components/system/list-search-panel.vue';
 import PermissionButton from '#/components/system/permission-button.vue';
 import { formatBeijingDateTime } from '#/utils/datetime';
 
@@ -20,6 +23,7 @@ const loading = ref(false); const visible = ref(false); const saving = ref(false
 const editingRole = ref<Role>(); const roles = ref<Role[]>([]); const permissions = ref<PermissionItem[]>([]); const menus = ref<MenuItem[]>([]);
 const checkedKeys = ref<Key[]>([]); const expandedKeys = ref<Key[]>([]); const expandAll = ref(true);
 const pagination = reactive({ current: 1, pageSize: 20, total: 0 });
+const searchId = ref<number>(); const showFilters = ref(true);
 const form = reactive({ code: '', is_active: true, name: '' });
 const columns: TableColumnsType = [
   { dataIndex: 'code', title: '角色标识' }, { dataIndex: 'name', title: '角色名称' },
@@ -68,7 +72,7 @@ const checkIndeterminate = computed(() => checkedKeys.value.length > 0 && checke
 async function load() {
   loading.value = true;
   try {
-    const result = await getResource('/system/roles', { page: pagination.current, per_page: pagination.pageSize });
+    const result = await getResource('/system/roles', { id: searchId.value, page: pagination.current, per_page: pagination.pageSize });
     roles.value = result.data as Role[]; pagination.total = result.total;
   } finally { loading.value = false; }
 }
@@ -119,13 +123,16 @@ async function saveRole() {
 async function remove(role: any) { await deleteResource('/system/roles', role.id); message.success('角色已删除'); await load(); }
 function toggleExpand(checked: boolean) { expandAll.value = checked; expandedKeys.value = checked ? [...allTreeKeys.value] : []; }
 function changePage(page: { current?: number; pageSize?: number }) { pagination.current = page.current ?? 1; pagination.pageSize = page.pageSize ?? 20; void load(); }
+function search() { pagination.current = 1; void load(); }
+function resetSearch() { searchId.value = undefined; search(); }
 function handleModalOk() { if (isProtected.value) visible.value = false; else void saveRole(); }
 onMounted(load);
 </script>
 
 <template>
   <Page :description="$t('system.rolesDescription')" :title="$t('system.roles')">
-    <ListToolbar><template #left><PermissionButton icon="lucide:refresh-cw" :loading="loading" @click="load">{{ $t('common.actions.refresh') }}</PermissionButton></template><template #right><PermissionButton icon="lucide:shield-plus" permission="system.role.create" type="primary" @click="openEdit()">新增角色</PermissionButton></template></ListToolbar>
+    <ListToolbar><template #left><ListRefreshButton :loading="loading" /><PermissionButton icon="lucide:filter" @click="showFilters = !showFilters">{{ $t('common.actions.filter') }}</PermissionButton></template><template #right><PermissionButton icon="lucide:shield-plus" permission="system.role.create" type="primary" @click="openEdit()">新增角色</PermissionButton></template></ListToolbar>
+    <ListSearchPanel v-if="showFilters"><ListSearchField :label="$t('common.fields.id')"><InputNumber v-model:value="searchId" :min="1" :placeholder="$t('common.fields.id')" @press-enter="search" /></ListSearchField><template #actions><PermissionButton icon="lucide:search" type="primary" @click="search">{{ $t('common.actions.search') }}</PermissionButton><PermissionButton icon="lucide:rotate-ccw" @click="resetSearch">{{ $t('common.actions.reset') }}</PermissionButton></template></ListSearchPanel>
     <Card :body-style="{ padding: 0 }" class="admin-table-card">
       <Table bordered class="admin-data-table" :columns="columns" :data-source="roles" :loading="loading" :pagination="pagination" :scroll="{ x: 1100 }" row-key="id" @change="changePage">
         <template #bodyCell="{ column, record, text }">

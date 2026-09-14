@@ -17,8 +17,9 @@ final class AdminRoleController extends Controller
     public function index(Request $request): JsonResponse
     {
         $perPage = min(max($request->integer('per_page', 20), 1), 100);
+        $id = $request->validate(['id' => ['nullable', 'integer', 'min:1']])['id'] ?? null;
 
-        return response()->json(AdminRole::query()->withCount('permissions', 'menus')->orderBy('id')->paginate($perPage));
+        return response()->json(AdminRole::query()->withCount('permissions', 'menus')->when($id, fn ($query) => $query->whereKey($id))->orderBy('id')->paginate($perPage));
     }
 
     public function store(Request $request): JsonResponse

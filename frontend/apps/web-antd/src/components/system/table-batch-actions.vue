@@ -82,17 +82,3 @@ function handleMenuClick(key: string | number) {
     </Dropdown>
   </div>
 </template>
-
-<style scoped>
-.admin-table-batch-actions {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.admin-table-batch-actions__count {
-  color: hsl(var(--muted-foreground));
-  font-size: 13px;
-  white-space: nowrap;
-}
-</style>

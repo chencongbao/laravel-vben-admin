@@ -68,10 +68,3 @@ const overflowActions = computed(() => allowedActions.value.slice(props.maxDirec
     </Dropdown>
   </div>
 </template>
-
-<style scoped>
-.admin-table-row-actions, .admin-table-row-actions__direct { display: inline-flex; align-items: center; gap: 2px; }
-.admin-table-row-actions__more { width: 32px; height: 32px; padding: 0; border-radius: 0; }
-.admin-table-row-actions__mobile { display: none; }
-@media (max-width: 640px) { .admin-table-row-actions__direct, .admin-table-row-actions > :not(.admin-table-row-actions__mobile) { display: none; } .admin-table-row-actions__mobile { display: inline-flex; } }
-</style>

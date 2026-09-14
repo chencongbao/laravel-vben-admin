@@ -1,9 +1,27 @@
 .admin-table-card,
 .admin-table-card .ant-card-body,
+.admin-data-table,
+.admin-data-table .ant-table-wrapper,
 .admin-data-table .ant-table,
 .admin-data-table .ant-table-container,
-.admin-data-table .ant-table-content {
+.admin-data-table .ant-table-content,
+.admin-data-table table {
   border-radius: 0 !important;
+  border-start-start-radius: 0 !important;
+  border-start-end-radius: 0 !important;
+}
+
+.admin-data-table .ant-table-thead > tr:first-child > th:first-child,
+.admin-data-table .ant-table-thead > tr:first-child > th:last-child,
+.admin-data-table .ant-table-thead > tr:first-child > td:first-child,
+.admin-data-table .ant-table-thead > tr:first-child > td:last-child,
+.admin-data-table .ant-table-cell-fix-left-first,
+.admin-data-table .ant-table-cell-fix-left-last,
+.admin-data-table .ant-table-cell-fix-right-first,
+.admin-data-table .ant-table-cell-fix-right-last {
+  border-radius: 0 !important;
+  border-start-start-radius: 0 !important;
+  border-start-end-radius: 0 !important;
 }
 
 .admin-data-table .ant-table-thead > tr > th {

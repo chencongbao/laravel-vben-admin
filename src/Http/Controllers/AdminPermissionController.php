@@ -16,8 +16,9 @@ final class AdminPermissionController extends Controller
     public function index(Request $request): JsonResponse
     {
         $perPage = min(max($request->integer('per_page', 20), 1), 100);
+        $id = $request->validate(['id' => ['nullable', 'integer', 'min:1']])['id'] ?? null;
 
-        return response()->json(AdminPermission::query()->orderBy('code')->paginate($perPage));
+        return response()->json(AdminPermission::query()->when($id, fn ($query) => $query->whereKey($id))->orderBy('code')->paginate($perPage));
     }
 
     public function store(Request $request): JsonResponse

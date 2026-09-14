@@ -2,9 +2,12 @@
 import { onMounted, reactive, ref } from 'vue';
 import type { TableColumnsType } from 'ant-design-vue';
 import { Page } from '@vben/common-ui';
-import { Card, Form, FormItem, Input, message, Modal, Select, Space, Switch, Table, Tag } from 'ant-design-vue';
+import { Card, Form, FormItem, Input, InputNumber, message, Modal, Select, Space, Switch, Table, Tag } from 'ant-design-vue';
 import { createResource, getResource, updateResource } from '#/api/system';
 import ListToolbar from '#/components/system/list-toolbar.vue';
+import ListRefreshButton from '#/components/system/list-refresh-button.vue';
+import ListSearchField from '#/components/system/list-search-field.vue';
+import ListSearchPanel from '#/components/system/list-search-panel.vue';
 import PermissionButton from '#/components/system/permission-button.vue';
 import { $t } from '#/locales';
 import { formatBeijingDateTime } from '#/utils/datetime';
@@ -30,6 +33,7 @@ const editingId = ref<number>();
 const users = ref<AdminUser[]>([]);
 const roles = ref<Role[]>([]);
 const pagination = reactive({ current: 1, pageSize: 20, total: 0 });
+const searchId = ref<number>(); const showFilters = ref(true);
 const form = reactive({
   is_active: true,
   login_ip_whitelist: '',
@@ -53,7 +57,7 @@ async function load() {
   loading.value = true;
   try {
     const [userResult, roleResult] = await Promise.all([
-      getResource('/system/users', { page: pagination.current, per_page: pagination.pageSize }),
+      getResource('/system/users', { id: searchId.value, page: pagination.current, per_page: pagination.pageSize }),
       getResource('/system/roles', { per_page: 100 }),
     ]);
     users.value = userResult.data as AdminUser[];
@@ -91,12 +95,15 @@ async function save() {
 function changePage(page: { current?: number; pageSize?: number }) {
   pagination.current = page.current ?? 1; pagination.pageSize = page.pageSize ?? 20; void load();
 }
+function search() { pagination.current = 1; void load(); }
+function resetSearch() { searchId.value = undefined; search(); }
 onMounted(load);
 </script>
 
 <template>
   <Page :description="$t('system.usersDescription')" :title="$t('system.administrators')">
-    <ListToolbar><template #left><PermissionButton icon="lucide:refresh-cw" :loading="loading" @click="load">{{ $t('common.actions.refresh') }}</PermissionButton></template><template #right><PermissionButton icon="lucide:user-plus" permission="system.user.create" type="primary" @click="open()">新增用户</PermissionButton></template></ListToolbar>
+    <ListToolbar><template #left><ListRefreshButton :loading="loading" /><PermissionButton icon="lucide:filter" @click="showFilters = !showFilters">{{ $t('common.actions.filter') }}</PermissionButton></template><template #right><PermissionButton icon="lucide:user-plus" permission="system.user.create" type="primary" @click="open()">新增用户</PermissionButton></template></ListToolbar>
+    <ListSearchPanel v-if="showFilters"><ListSearchField :label="$t('common.fields.id')"><InputNumber v-model:value="searchId" :min="1" :placeholder="$t('common.fields.id')" @press-enter="search" /></ListSearchField><template #actions><PermissionButton icon="lucide:search" type="primary" @click="search">{{ $t('common.actions.search') }}</PermissionButton><PermissionButton icon="lucide:rotate-ccw" @click="resetSearch">{{ $t('common.actions.reset') }}</PermissionButton></template></ListSearchPanel>
     <Card :body-style="{ padding: 0 }" class="admin-table-card">
       <Table bordered class="admin-data-table" :columns="columns" :data-source="users" :loading="loading" :pagination="pagination" row-key="id" :scroll="{ x: 1250 }" @change="changePage">
         <template #bodyCell="{ column, record, text }">

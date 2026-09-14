@@ -1,10 +1,11 @@
 <script lang="ts" setup>
-import { onMounted, reactive, ref } from 'vue';
+import { computed, onMounted, reactive, ref } from 'vue';
 import { Page } from '@vben/common-ui';
-import { Card, Input, Select, Table, Tag } from 'ant-design-vue';
+import { Card, Input, InputNumber, Select, Table, Tag } from 'ant-design-vue';
 import { getResource } from '#/api/system';
 import AutoRefresh from '#/components/system/auto-refresh.vue';
 import ListToolbar from '#/components/system/list-toolbar.vue';
+import ListRefreshButton from '#/components/system/list-refresh-button.vue';
 import ListSearchPanel from '#/components/system/list-search-panel.vue';
 import ListSearchField from '#/components/system/list-search-field.vue';
 import PermissionButton from '#/components/system/permission-button.vue';
@@ -12,10 +13,17 @@ import TableExportButton from '#/components/system/table-export-button.vue';
 import { $t } from '#/locales';
 import { formatBeijingDateTime, isDateTimeField } from '#/utils/datetime';
 
+interface LogFilter {
+  key: string;
+  label: string;
+  options?: Array<{ label: string; value: number | string }>;
+  type?: 'number' | 'text';
+}
+
 const props = defineProps<{
   columns: Array<{ dataIndex: string; title: string }>;
   description?: string;
-  filters: Array<{ key: string; label: string; options?: Array<{ label: string; value: number | string }> }>;
+  filters: LogFilter[];
   path: string;
   permission?: string;
   title: string;
@@ -24,6 +32,9 @@ const loading = ref(false); const rows = ref<Record<string, any>[]>([]);
 const showFilters = ref(true);
 const values = reactive<Record<string, any>>({});
 const pagination = reactive({ current: 1, pageSize: 20, total: 0 });
+const effectiveFilters = computed<LogFilter[]>(() => props.filters.some((filter) => filter.key === 'id')
+  ? props.filters
+  : [{ key: 'id', label: $t('common.fields.id'), type: 'number' }, ...props.filters]);
 
 async function load() {
   loading.value = true;
@@ -43,7 +54,7 @@ onMounted(load);
   <Page :description="description" :title="title">
     <ListToolbar>
       <template #left>
-        <PermissionButton icon="lucide:refresh-cw" :loading="loading" @click="load">{{ $t('common.actions.refresh') }}</PermissionButton>
+        <ListRefreshButton :loading="loading" />
         <PermissionButton icon="lucide:filter" @click="showFilters = !showFilters">{{ $t('common.actions.filter') }}</PermissionButton>
         <AutoRefresh :loading="loading" :storage-key="path" @refresh="load" />
       </template>
@@ -53,8 +64,9 @@ onMounted(load);
       </template>
     </ListToolbar>
     <ListSearchPanel v-if="showFilters">
-      <ListSearchField v-for="filter in filters" :key="filter.key" :label="filter.label">
+      <ListSearchField v-for="filter in effectiveFilters" :key="filter.key" :label="filter.label">
         <Select v-if="filter.options" v-model:value="values[filter.key]" allow-clear :options="filter.options" :placeholder="filter.label" class="w-full" />
+        <InputNumber v-else-if="filter.type === 'number'" v-model:value="values[filter.key]" :min="1" :placeholder="filter.label" />
         <Input v-else v-model:value="values[filter.key]" allow-clear :placeholder="filter.label" @press-enter="search" />
       </ListSearchField>
       <template #actions>
