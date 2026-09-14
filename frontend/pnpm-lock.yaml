@@ -30,9 +30,6 @@ catalogs:
     '@eslint/js':
       specifier: ^10.0.1
       version: 10.0.1
-    '@faker-js/faker':
-      specifier: ^10.4.0
-      version: 10.4.0
     '@iconify/json':
       specifier: ^2.2.476
       version: 2.2.476
@@ -54,12 +51,6 @@ catalogs:
     '@manypkg/get-packages':
       specifier: ^3.1.0
       version: 3.1.0
-    '@nolebase/vitepress-plugin-git-changelog':
-      specifier: ^2.18.2
-      version: 2.18.2
-    '@playwright/test':
-      specifier: ^1.60.0
-      version: 1.60.0
     '@pnpm/workspace.read-manifest':
       specifier: ^1000.3.1
       version: 1000.3.1
@@ -72,9 +63,6 @@ catalogs:
     '@tailwindcss/vite':
       specifier: ^4.3.0
       version: 4.3.0
-    '@tanstack/vue-query':
-      specifier: ^5.100.11
-      version: 5.100.11
     '@tanstack/vue-store':
       specifier: ^0.11.0
       version: 0.11.0
@@ -126,9 +114,6 @@ catalogs:
     '@types/json-bigint':
       specifier: ^1.0.4
       version: 1.0.4
-    '@types/jsonwebtoken':
-      specifier: ^9.0.10
-      version: 9.0.10
     '@types/lodash.clonedeep':
       specifier: ^4.5.9
       version: 4.5.9
@@ -156,9 +141,6 @@ catalogs:
     '@vee-validate/zod':
       specifier: ^4.15.1
       version: 4.15.1
-    '@vite-pwa/vitepress':
-      specifier: ^1.1.0
-      version: 1.1.0
     '@vitejs/plugin-vue':
       specifier: ^6.0.7
       version: 6.0.7
@@ -183,9 +165,6 @@ catalogs:
     ant-design-vue:
       specifier: ^4.2.6
       version: 4.2.6
-    antdv-next:
-      specifier: ^1.3.0
-      version: 1.3.0
     archiver:
       specifier: ^7.0.1
       version: 7.0.1
@@ -240,9 +219,6 @@ catalogs:
     echarts:
       specifier: ^6.1.0
       version: 6.1.0
-    element-plus:
-      specifier: ^2.14.0
-      version: 2.14.0
     es-toolkit:
       specifier: ^1.46.1
       version: 1.46.1
@@ -291,9 +267,6 @@ catalogs:
     globals:
       specifier: ^17.6.0
       version: 17.6.0
-    h3:
-      specifier: ^1.15.11
-      version: 1.15.11
     happy-dom:
       specifier: ^20.9.0
       version: 20.9.0
@@ -306,9 +279,6 @@ catalogs:
     json-bigint:
       specifier: ^1.0.0
       version: 1.0.0
-    jsonwebtoken:
-      specifier: ^9.0.3
-      version: 9.0.3
     knip:
       specifier: ^6.14.1
       version: 6.14.1
@@ -321,12 +291,6 @@ catalogs:
     lucide-vue-next:
       specifier: ^0.577.0
       version: 0.577.0
-    medium-zoom:
-      specifier: ^1.1.0
-      version: 1.1.0
-    naive-ui:
-      specifier: ^2.44.1
-      version: 2.44.1
     nitropack:
       specifier: ^2.13.4
       version: 2.13.4
@@ -429,9 +393,6 @@ catalogs:
     tailwindcss:
       specifier: ^4.3.0
       version: 4.3.0
-    tdesign-vue-next:
-      specifier: ^1.20.0
-      version: 1.20.0
     theme-colors:
       specifier: ^0.1.0
       version: 0.1.0
@@ -453,9 +414,6 @@ catalogs:
     unplugin-dts:
       specifier: ^1.0.1
       version: 1.0.1
-    unplugin-element-plus:
-      specifier: ^0.11.2
-      version: 0.11.2
     unplugin-vue:
       specifier: ^7.2.0
       version: 7.2.0
@@ -477,12 +435,6 @@ catalogs:
     vite-plugin-vue-devtools:
       specifier: ^8.1.2
       version: 8.1.2
-    vitepress:
-      specifier: ^2.0.0-alpha.17
-      version: 2.0.0-alpha.17
-    vitepress-plugin-group-icons:
-      specifier: ^1.7.5
-      version: 1.7.5
     vitest:
       specifier: ^4.1.7
       version: 4.1.7
@@ -658,6 +610,9 @@ importers:
 
   apps/web-antd:
     dependencies:
+      '@he-tree/vue':
+        specifier: 2.10.5
+        version: 2.10.5(vue@3.5.34(typescript@6.0.3))
       '@vben/access':
         specifier: workspace:*
         version: link:../../packages/effects/access
@@ -3823,6 +3778,22 @@ packages:
   '@floating-ui/vue@1.1.11':
     resolution: {integrity: sha512-HzHKCNVxnGS35r9fCHBc3+uCnjw9IWIlCPL683cGgM9Kgj2BiAl8x1mS7vtvP6F9S/e/q4O6MApwSHj8hNLGfw==}
 
+  '@he-tree/dnd-utils@0.1.0-alpha.4':
+    resolution: {integrity: sha512-DuxkFOQ8eztoHrX1/VelqOnQphQbRszemfMKSKlAEEhVjqR/IkaOE2QSRlAdj6OC6AfMvHDPvIZOiEPFwP6/ZQ==}
+
+  '@he-tree/tree-utils@0.1.0-alpha.8':
+    resolution: {integrity: sha512-4M4BzXbjCg2uY/GDPUGzq1EFGgna5L7NGFF85fF2pSnCIUkWOZY18eaSqvvlOFtyD5DWkkDqxzu0GHFlp/Zb4g==}
+
+  '@he-tree/vue@2.10.5':
+    resolution: {integrity: sha512-+/C3FxoGb1WpkElQA0kASSe0W9EUXTQSzg/1c7+1ucheiX4uFc8m1mSuD74lO7FXr6PWWbVRX2lzo/hxoUOTzA==}
+    engines: {node: '>=12'}
+    peerDependencies:
+      '@vue/composition-api': ^1.4.6
+      vue: ^3.5.34
+    peerDependenciesMeta:
+      '@vue/composition-api':
+        optional: true
+
   '@humanfs/core@0.19.2':
     resolution: {integrity: sha512-UhXNm+CFMWcbChXywFwkmhqjs3PRCmcSa/hfBgLIb7oQ5HNb1wS0icWsGtSAUNgefHeI+eBrA8I1fxmbHsGdvA==}
     engines: {node: '>=18.18.0'}
@@ -5903,6 +5874,16 @@ packages:
     engines: {node: '>=20'}
     hasBin: true
 
+  '@virtual-list/vue@1.2.1':
+    resolution: {integrity: sha512-sVangNRLgHJsrwjf2EeXuc8mUExbLRJO39J9/FXFWXXQkue/FBT4ZWN7GH5+GJTeVaEEfHW1W2UuVaf3LEB3jQ==}
+    engines: {node: '>=12'}
+    peerDependencies:
+      '@vue/composition-api': ^1.4.6
+      vue: ^3.5.34
+    peerDependenciesMeta:
+      '@vue/composition-api':
+        optional: true
+
   '@vite-pwa/vitepress@1.1.0':
     resolution: {integrity: sha512-enif5C2JmepS69Ak7PSr6K3Eimsg7VyryZo1Z6NiIPNDnjXFlOqxwBYaq8R/d0M7akArJsjos7KmQnEfNFf5nA==}
     peerDependencies:
@@ -7079,6 +7060,9 @@ packages:
     resolution: {integrity: sha512-IrPdXQsk2BbzvCBGBOTmmSH5SodmqZNt4ERAZDmW4CT+tL8VtvinqywuANaFu4bOMWki16nqf0e4oC0QIaDr/g==}
     engines: {node: '>=10'}
 
+  drag-event-service@2.0.0:
+    resolution: {integrity: sha512-JVEnOEbbNDS3RrWd+tVVIDu2SHQZ9luhEFGSQ1hXMjl+ABw0PxhHmnkGjzPVE836Tsg+k7rkm5GM9Ln/UgbYpA==}
+
   dts-resolver@3.0.0:
     resolution: {integrity: sha512-1T1f+z+4tl9XD+m+0HBgWoL/nm0bOIffyWaUuUSBlFg/86IWvfx+wjNaO/ybU0AJzG9/Mi5hBUgGV6zCmWEN7Q==}
     engines: {node: ^22.18.0 || >=24.0.0}
@@ -7845,6 +7829,9 @@ packages:
 
   hast-util-whitespace@3.0.0:
     resolution: {integrity: sha512-88JUN06ipLwsnv+dVn+OIYOvAuvBMy/Qoi6O7mQHxdPXpjy+Cd6xRkWwux7DKO+4sYILtLBRIKgsdpS2gQc7qw==}
+
+  helper-js@3.1.7:
+    resolution: {integrity: sha512-GTvMTs/W7A5YKuMyPKPOuL7GVEDgPajFtI05pjwfiG/nzxFbyobOUwHlnf5AVT+JIEaNp0LsDDINSKToJ5Pwow==}
 
   hey-listen@1.0.8:
     resolution: {integrity: sha512-COpmrF2NOg4TBWUJ5UVyaCU2A88wEMkUPK4hNqyCkqHbxT92BbvfjoSozkAIIm6XhicGlJHhFdullInrdhwU8Q==}
@@ -12983,6 +12970,27 @@ snapshots:
       - '@vue/composition-api'
       - vue
 
+  '@he-tree/dnd-utils@0.1.0-alpha.4':
+    dependencies:
+      '@babel/runtime': 7.29.2
+      drag-event-service: 2.0.0
+      helper-js: 3.1.7
+
+  '@he-tree/tree-utils@0.1.0-alpha.8':
+    dependencies:
+      '@babel/runtime': 7.29.2
+      drag-event-service: 2.0.0
+      helper-js: 3.1.7
+
+  '@he-tree/vue@2.10.5(vue@3.5.34(typescript@6.0.3))':
+    dependencies:
+      '@he-tree/dnd-utils': 0.1.0-alpha.4
+      '@he-tree/tree-utils': 0.1.0-alpha.8
+      '@virtual-list/vue': 1.2.1(vue@3.5.34(typescript@6.0.3))
+      helper-js: 3.1.7
+      vue: 3.5.34(typescript@6.0.3)
+      vue-demi: 0.14.10(vue@3.5.34(typescript@6.0.3))
+
   '@humanfs/core@0.19.2':
     dependencies:
       '@humanfs/types': 0.15.0
@@ -14819,6 +14827,12 @@ snapshots:
       - rollup
       - supports-color
 
+  '@virtual-list/vue@1.2.1(vue@3.5.34(typescript@6.0.3))':
+    dependencies:
+      helper-js: 3.1.7
+      vue: 3.5.34(typescript@6.0.3)
+      vue-demi: 0.14.10(vue@3.5.34(typescript@6.0.3))
+
   '@vite-pwa/vitepress@1.1.0(vite-plugin-pwa@1.3.0(vite@8.0.13(@types/node@25.9.1)(esbuild@0.28.0)(jiti@2.7.0)(less@4.6.4)(sass-embedded@1.99.0)(sass@1.99.0)(terser@5.47.1)(yaml@2.9.0))(workbox-build@7.4.1)(workbox-window@7.4.1))':
     dependencies:
       vite-plugin-pwa: 1.3.0(vite@8.0.13(@types/node@25.9.1)(esbuild@0.28.0)(jiti@2.7.0)(less@4.6.4)(sass-embedded@1.99.0)(sass@1.99.0)(terser@5.47.1)(yaml@2.9.0))(workbox-build@7.4.1)(workbox-window@7.4.1)
@@ -16137,6 +16151,11 @@ snapshots:
 
   dotenv@8.6.0: {}
 
+  drag-event-service@2.0.0:
+    dependencies:
+      '@babel/runtime': 7.29.2
+      helper-js: 3.1.7
+
   dts-resolver@3.0.0(oxc-resolver@11.19.1(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)):
     optionalDependencies:
       oxc-resolver: 11.19.1(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)
@@ -17119,6 +17138,10 @@ snapshots:
   hast-util-whitespace@3.0.0:
     dependencies:
       '@types/hast': 3.0.4
+
+  helper-js@3.1.7:
+    dependencies:
+      '@babel/runtime': 7.29.2
 
   hey-listen@1.0.8: {}
 

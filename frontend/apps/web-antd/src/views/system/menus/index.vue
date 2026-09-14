@@ -1,12 +1,12 @@
 <script lang="ts" setup>
-import type { Key } from 'ant-design-vue/es/_util/type';
-import type { TreeProps } from 'ant-design-vue';
-
 import { computed, onMounted, reactive, ref } from 'vue';
 
+import { useAccess } from '@vben/access';
 import { Page } from '@vben/common-ui';
+import { IconifyIcon } from '@vben/icons';
 import { $t } from '@vben/locales';
 
+import { Draggable } from '@he-tree/vue';
 import {
   Button,
   Card,
@@ -20,7 +20,6 @@ import {
   Select,
   Space,
   Switch,
-  Tree,
   TreeSelect,
 } from 'ant-design-vue';
 
@@ -32,9 +31,11 @@ import {
   reorderMenus,
   updateResource,
 } from '#/api/system';
-import ListToolbar from '#/components/system/list-toolbar.vue';
 import ListRefreshButton from '#/components/system/list-refresh-button.vue';
+import ListToolbar from '#/components/system/list-toolbar.vue';
 import PermissionButton from '#/components/system/permission-button.vue';
+
+import '@he-tree/vue/style/default.css';
 
 interface MenuItem {
   code: string;
@@ -70,13 +71,35 @@ interface MenuOrderItem {
   sort: number;
 }
 
+interface MenuTreeController {
+  closeAll: () => void;
+  getStat: (node: MenuTreeNode) => MenuTreeStat;
+  openAll: () => void;
+}
+
+interface MenuParentOption {
+  children: MenuParentOption[];
+  label: string;
+  value: string;
+}
+
+interface MenuTreeStat {
+  children: MenuTreeStat[];
+  data: MenuTreeNode;
+  open: boolean;
+}
+
 const loading = ref(false);
 const saving = ref(false);
 const menus = ref<MenuItem[]>([]);
+const draggableMenus = ref<MenuTreeNode[]>([]);
 const permissions = ref<Permission[]>([]);
 const editing = ref<MenuItem>();
-const selectedKeys = ref<Key[]>([]);
-const expandedKeys = ref<Key[]>([]);
+const selectedCode = ref<string>();
+const draggedCode = ref<string>();
+const menuTreeRef = ref<MenuTreeController>();
+const { hasAccessByCodes } = useAccess();
+const canReorder = computed(() => hasAccessByCodes(['system.menu.update']));
 const form = reactive({
   code: '',
   icon: '',
@@ -92,9 +115,9 @@ const form = reactive({
   view_key: '',
 });
 
-const treeMenus = computed<MenuTreeNode[]>(() => {
+function buildMenuTree(items: MenuItem[]) {
   const nodes = new Map<string, MenuTreeNode>();
-  menus.value.forEach((item) => nodes.set(item.code, { ...item, children: [], key: item.code }));
+  items.forEach((item) => nodes.set(item.code, { ...item, children: [], key: item.code }));
   const roots: MenuTreeNode[] = [];
   nodes.forEach((item) => {
     const parent = item.parent_code ? nodes.get(item.parent_code) : undefined;
@@ -102,9 +125,9 @@ const treeMenus = computed<MenuTreeNode[]>(() => {
     else roots.push(item);
   });
   return roots;
-});
+}
 
-const allMenuKeys = computed(() => menus.value.map((item) => item.code));
+const treeMenus = computed<MenuTreeNode[]>(() => buildMenuTree(menus.value));
 
 function descendantCodes(code: string) {
   const descendants = new Set<string>();
@@ -121,15 +144,21 @@ function descendantCodes(code: string) {
 const parentTree = computed(() => {
   const excluded = editing.value ? descendantCodes(editing.value.code) : new Set<string>();
   if (editing.value) excluded.add(editing.value.code);
-  const mapNode = (node: MenuTreeNode): Record<string, any> | undefined => {
+  const mapNode = (node: MenuTreeNode): MenuParentOption | undefined => {
     if (excluded.has(node.code)) return undefined;
     return {
-      children: node.children.map(mapNode).filter((item): item is Record<string, any> => Boolean(item)),
+      children: node.children.flatMap((child) => {
+        const item = mapNode(child);
+        return item ? [item] : [];
+      }),
       label: `${$t(node.title)}（${node.code}）`,
       value: node.code,
     };
   };
-  return treeMenus.value.map(mapNode).filter((item): item is Record<string, any> => Boolean(item));
+  return treeMenus.value.flatMap((node) => {
+    const item = mapNode(node);
+    return item ? [item] : [];
+  });
 });
 
 const formTitle = computed(() => editing.value ? `编辑：${$t(editing.value.title)}` : '新增菜单');
@@ -142,8 +171,8 @@ async function load(selectCode?: string) {
       getResource('/system/permissions', { per_page: 100 }),
     ]);
     menus.value = menuResult.menus;
+    draggableMenus.value = buildMenuTree(menus.value);
     permissions.value = permissionResult.data as Permission[];
-    if (expandedKeys.value.length === 0) expandedKeys.value = [...allMenuKeys.value];
     if (selectCode) {
       const selected = menus.value.find((item) => item.code === selectCode);
       if (selected) selectMenu(selected);
@@ -155,7 +184,7 @@ async function load(selectCode?: string) {
 
 function resetForm(parentCode?: string) {
   editing.value = undefined;
-  selectedKeys.value = [];
+  selectedCode.value = undefined;
   Object.assign(form, {
     code: '', icon: '', is_active: true, is_hidden: false,
     parent_code: parentCode, permission_code: undefined, route_name: '',
@@ -165,7 +194,7 @@ function resetForm(parentCode?: string) {
 
 function selectMenu(item: MenuItem) {
   editing.value = item;
-  selectedKeys.value = [item.code];
+  selectedCode.value = item.code;
   Object.assign(form, {
     code: item.code, icon: item.icon ?? '', is_active: item.is_active,
     is_hidden: item.is_hidden, parent_code: item.parent_code ?? undefined,
@@ -175,14 +204,10 @@ function selectMenu(item: MenuItem) {
   });
 }
 
-function selectByKeys(keys: Key[]) {
-  const item = menus.value.find((menu) => menu.code === String(keys[0] ?? ''));
-  if (item) selectMenu(item);
-}
-
-function addChild(item: MenuItem) {
+function addChild(item: MenuTreeNode) {
   resetForm(item.code);
-  if (!expandedKeys.value.includes(item.code)) expandedKeys.value.push(item.code);
+  const tree = menuTreeRef.value;
+  if (tree) tree.getStat(item).open = true;
 }
 
 async function save() {
@@ -200,8 +225,7 @@ async function save() {
       route_path: form.route_path || null,
       view_key: form.view_key || null,
     };
-    if (editing.value) await updateResource('/system/menus', editing.value.id, payload);
-    else await createResource('/system/menus', payload);
+    await (editing.value ? updateResource('/system/menus', editing.value.id, payload) : createResource('/system/menus', payload));
     message.success('菜单保存成功');
     await load(form.code);
   } finally {
@@ -217,38 +241,11 @@ async function remove(item: MenuItem) {
 }
 
 function expandAll() {
-  expandedKeys.value = [...allMenuKeys.value];
+  menuTreeRef.value?.openAll();
 }
 
 function collapseAll() {
-  expandedKeys.value = [];
-}
-
-function removeTreeNode(nodes: MenuTreeNode[], key: Key): MenuTreeNode | undefined {
-  for (let index = 0; index < nodes.length; index += 1) {
-    if (nodes[index]?.key === key) return nodes.splice(index, 1)[0];
-    const removed = removeTreeNode(nodes[index]?.children ?? [], key);
-    if (removed) return removed;
-  }
-  return undefined;
-}
-
-function findTreeNode(nodes: MenuTreeNode[], key: Key): MenuTreeNode | undefined {
-  for (const node of nodes) {
-    if (node.key === key) return node;
-    const found = findTreeNode(node.children, key);
-    if (found) return found;
-  }
-  return undefined;
-}
-
-function findSiblings(nodes: MenuTreeNode[], key: Key): MenuTreeNode[] | undefined {
-  if (nodes.some((node) => node.key === key)) return nodes;
-  for (const node of nodes) {
-    const found = findSiblings(node.children, key);
-    if (found) return found;
-  }
-  return undefined;
+  menuTreeRef.value?.closeAll();
 }
 
 function flattenOrder(nodes: MenuTreeNode[], parentCode: null | string = null): MenuOrderItem[] {
@@ -258,33 +255,27 @@ function flattenOrder(nodes: MenuTreeNode[], parentCode: null | string = null): 
   ]);
 }
 
-const handleDrop: TreeProps['onDrop'] = async (info) => {
-  const roots = structuredClone(treeMenus.value);
-  const dragged = removeTreeNode(roots, info.dragNode.key);
-  if (!dragged) return;
+function handleDragStart(stat: MenuTreeStat) {
+  draggedCode.value = stat.data.code;
+}
 
-  if (!info.dropToGap) {
-    const target = findTreeNode(roots, info.node.key);
-    if (!target) return;
-    target.children.push(dragged);
-  } else {
-    const siblings = findSiblings(roots, info.node.key);
-    if (!siblings) return;
-    const targetIndex = siblings.findIndex((node) => node.key === info.node.key);
-    const relativePosition = info.dropPosition - Number((info.node.pos ?? '0').split('-').at(-1));
-    siblings.splice(relativePosition < 0 ? targetIndex : targetIndex + 1, 0, dragged);
-  }
+function menuNodeKey(stat: MenuTreeStat) {
+  return stat.data.code;
+}
 
+async function handleTreeChange() {
+  if (!canReorder.value || loading.value) return;
   loading.value = true;
   try {
-    await reorderMenus(flattenOrder(roots));
+    await reorderMenus(flattenOrder(draggableMenus.value));
     message.success('菜单层级和排序已保存');
   } catch {
     message.error('菜单拖动保存失败，已恢复原顺序');
   } finally {
-    await load(String(dragged.key));
+    await load(draggedCode.value);
+    draggedCode.value = undefined;
   }
-};
+}
 
 onMounted(() => load());
 </script>
@@ -304,33 +295,56 @@ onMounted(() => load());
           </template>
         </ListToolbar>
 
-        <Tree
-          v-if="treeMenus.length"
-          v-model:expanded-keys="expandedKeys"
-          v-model:selected-keys="selectedKeys"
-          :tree-data="treeMenus"
-          block-node
-          draggable
-          show-line
-          @drop="handleDrop"
-          @select="selectByKeys"
+        <Draggable
+          v-if="draggableMenus.length > 0"
+          ref="menuTreeRef"
+          v-model="draggableMenus"
+          aria-label="菜单层级与排序"
+          class="admin-menu-tree"
+          :disable-drag="!canReorder || loading"
+          :disable-drop="!canReorder || loading"
+          drag-open
+          :drag-open-delay="600"
+          :indent="24"
+          keep-placeholder
+          :node-key="menuNodeKey"
+          tree-line
+          :trigger-class="['admin-menu-tree__drag-handle', 'admin-menu-tree__label']"
+          @before-drag-start="handleDragStart"
+          @change="handleTreeChange"
         >
-          <template #title="item">
-            <div class="group flex min-w-0 flex-1 items-center justify-between gap-3 pr-1">
-              <button class="min-w-0 flex-1 truncate text-left" type="button" @click.stop="selectMenu(item)">
-                <span>{{ $t(item.title) }}</span>
-                <span class="ml-2 text-xs text-gray-400">{{ item.route_path || item.code }}</span>
+          <template #default="{ node, stat }">
+            <div class="admin-menu-tree__node" :class="[{ 'is-selected': selectedCode === node.code }]">
+              <button
+                v-if="stat.children.length > 0"
+                :aria-label="stat.open ? '收起子菜单' : '展开子菜单'"
+                class="admin-menu-tree__toggle"
+                type="button"
+                @click.stop="stat.open = !stat.open"
+              >
+                <IconifyIcon :class="{ 'is-open': stat.open }" icon="lucide:chevron-right" />
+              </button>
+              <span v-else class="admin-menu-tree__toggle-placeholder"></span>
+              <span v-if="canReorder" aria-hidden="true" class="admin-menu-tree__drag-handle" title="按住拖动菜单">
+                <IconifyIcon icon="lucide:grip-vertical" />
+              </span>
+              <button class="admin-menu-tree__label" type="button" @click.stop="selectMenu(node)">
+                <span class="truncate">{{ $t(node.title) }}</span>
+                <span class="admin-menu-tree__route">{{ node.route_path || node.code }}</span>
               </button>
               <Space size="small">
-                <PermissionButton icon="lucide:plus" icon-only permission="system.menu.create" tooltip="新增子级" type="text" @click.stop="addChild(item)" />
-                <Popconfirm v-if="!item.is_system" v-access:code="'system.menu.delete'" title="确定删除该菜单？" @confirm="remove(item)">
+                <PermissionButton icon="lucide:plus" icon-only permission="system.menu.create" tooltip="新增子级" type="text" @click.stop="addChild(node)" />
+                <Popconfirm v-if="!node.is_system" v-access:code="'system.menu.delete'" title="确定删除该菜单？" @confirm="remove(node)">
                   <PermissionButton danger icon="lucide:trash-2" icon-only permission="system.menu.delete" tooltip="删除菜单" type="text" @click.stop />
                 </Popconfirm>
                 <PermissionButton v-else danger disabled icon="lucide:lock-keyhole" icon-only tooltip="系统菜单不可删除" type="text" @click.stop />
               </Space>
             </div>
           </template>
-        </Tree>
+          <template #placeholder>
+            <div class="admin-menu-tree__drop-placeholder"></div>
+          </template>
+        </Draggable>
         <Empty v-else description="暂无菜单" />
       </Card>
 
