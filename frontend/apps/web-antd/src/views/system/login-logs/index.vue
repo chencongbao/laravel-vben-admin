@@ -11,4 +11,4 @@ const filters = [
   { key: 'succeeded', label: '登录结果', options: [{ label: '成功', value: '1' }, { label: '失败', value: '0' }] },
 ];
 </script>
-<template><LogPage :columns="columns" :filters="filters" path="/system/login-logs" title="登录日志" /></template>
+<template><LogPage :columns="columns" :filters="filters" path="/system/login-logs" permission="system.login-log.view" title="登录日志" /></template>

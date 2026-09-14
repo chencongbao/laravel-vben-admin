@@ -18,6 +18,7 @@ import {
   Switch,
   Table,
   Tag,
+  Select,
 } from 'ant-design-vue';
 
 import {
@@ -27,8 +28,11 @@ import {
   getResource,
   updateResource,
 } from '#/api/system';
+import AutoRefresh from '#/components/system/auto-refresh.vue';
 import ListToolbar from '#/components/system/list-toolbar.vue';
+import ListSearchPanel from '#/components/system/list-search-panel.vue';
 import PermissionButton from '#/components/system/permission-button.vue';
+import TableExportButton from '#/components/system/table-export-button.vue';
 import { formatBeijingDateTime, isDateTimeField } from '#/utils/datetime';
 
 export interface ResourceField {
@@ -39,6 +43,12 @@ export interface ResourceField {
   type?: 'boolean' | 'number' | 'password' | 'text';
 }
 
+export interface ResourceSearchField {
+  key: string;
+  label: string;
+  options?: Array<{ label: string; value: number | string }>;
+}
+
 const props = defineProps<{
   collectionKey?: string;
   description?: string;
@@ -46,6 +56,7 @@ const props = defineProps<{
   path: string;
   permissionPrefix?: string;
   readOnly?: boolean;
+  searchFields?: ResourceSearchField[];
   title: string;
 }>();
 
@@ -56,6 +67,12 @@ const editingId = ref<number>();
 const rows = ref<Record<string, any>[]>([]);
 const pagination = reactive({ current: 1, pageSize: 20, total: 0 });
 const form = reactive<Record<string, any>>({});
+const searchValues = reactive<Record<string, any>>({});
+const showFilters = ref(false);
+const viewPermission = computed(() => props.permissionPrefix ? `${props.permissionPrefix}.view` : undefined);
+const exportColumns = computed(() => props.fields
+  .filter((field) => field.table !== false)
+  .map((field) => ({ dataIndex: field.key, title: field.label })));
 
 const columns = computed<TableColumnsType>(() => {
   const items: TableColumnsType = props.fields
@@ -81,6 +98,7 @@ async function load() {
       pagination.total = rows.value.length;
     } else {
       const result = await getResource(props.path, {
+        ...Object.fromEntries(Object.entries(searchValues).filter(([, value]) => value !== '' && value !== undefined)),
         page: pagination.current,
         per_page: pagination.pageSize,
       });
@@ -90,6 +108,16 @@ async function load() {
   } finally {
     loading.value = false;
   }
+}
+
+function search() {
+  pagination.current = 1;
+  void load();
+}
+
+function resetSearch() {
+  Object.keys(searchValues).forEach((key) => delete searchValues[key]);
+  search();
 }
 
 function openCreate() {
@@ -144,9 +172,26 @@ onMounted(load);
 <template>
   <Page :description="description" :title="title">
     <ListToolbar>
-      <template #left><PermissionButton icon="lucide:refresh-cw" :loading="loading" @click="load">刷新</PermissionButton></template>
-      <template v-if="!readOnly" #right><PermissionButton icon="lucide:plus" :permission="`${permissionPrefix}.create`" type="primary" @click="openCreate">新增</PermissionButton></template>
+      <template #left>
+        <PermissionButton icon="lucide:refresh-cw" :loading="loading" @click="load">刷新</PermissionButton>
+        <PermissionButton v-if="searchFields?.length" icon="lucide:filter" @click="showFilters = !showFilters">筛选</PermissionButton>
+        <AutoRefresh :loading="loading" :storage-key="path" @refresh="load" />
+      </template>
+      <template #right>
+        <TableExportButton :columns="exportColumns" :filename="title" :permission="viewPermission" :rows="rows" />
+        <PermissionButton v-if="!readOnly" icon="lucide:plus" :permission="permissionPrefix ? `${permissionPrefix}.create` : undefined" type="primary" @click="openCreate">新增</PermissionButton>
+      </template>
     </ListToolbar>
+    <ListSearchPanel v-if="showFilters && searchFields?.length">
+      <FormItem v-for="field in searchFields" :key="field.key" :label="field.label" class="mb-0">
+        <Select v-if="field.options" v-model:value="searchValues[field.key]" allow-clear :options="field.options" :placeholder="`请选择${field.label}`" class="w-full" />
+        <Input v-else v-model:value="searchValues[field.key]" allow-clear :placeholder="`请输入${field.label}`" @press-enter="search" />
+      </FormItem>
+      <template #actions>
+        <PermissionButton icon="lucide:search" type="primary" @click="search">查询</PermissionButton>
+        <PermissionButton icon="lucide:rotate-ccw" @click="resetSearch">重置</PermissionButton>
+      </template>
+    </ListSearchPanel>
     <Card :body-style="{ padding: 0 }">
       <Table
         bordered

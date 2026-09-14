@@ -246,6 +246,10 @@ $this->audit->record(
 - 默认数据表使用中等紧凑密度：表头单元格内边距为 `10px 12px`，数据单元格为 `9px 12px`，普通行视觉高度约44px；除触控专用页面或复杂多行内容外，不得自行放大行高。
 - 行操作只有一至两项时可以直接展示；三项及以上时保留一个高频主操作，其余收入“更多”菜单。菜单按业务操作、辅助操作、危险操作分组，危险操作置底并二次确认；复杂流程进入详情抽屉，不继续扩大操作列。
 - Table行操作使用 `PermissionButton` 的 `icon-only` 模式，点击区域固定为 `32px × 32px`，并必须提供 `tooltip`（该值同时作为 `aria-label`）。桌面端最多直显三个高频图标和一个“更多”图标；移动端只保留“更多”。删除、强制下线等危险操作使用危险色并二次确认，不得只用颜色表达含义。
+- 列表搜索条件使用 `list-search-panel.vue`，由工具栏左侧“筛选”按钮展开；字段采用自适应网格，标签放在输入框上方，查询和重置固定在搜索区右侧。不要把多个输入框直接塞进工具栏，也不要让搜索条件改变表格宽度。
+- 需要定时更新的页面使用 `auto-refresh.vue`。组件按页面 `storageKey` 保存开关和间隔，页面不可见或请求尚未结束时暂停倒计时；触发时只调用列表加载方法，不刷新整个浏览器页面。
+- 小数据和当前页导出使用 `table-export-button.vue`，导出按钮放工具栏右侧并传入查看或导出权限。组件会添加 UTF-8 BOM、转义 CSV 内容并防止公式注入。大数据导出不得把全部记录一次性拉到浏览器，应参考异步任务模式：保存当前筛选条件、队列分块生成文件、限制同一管理员并发任务、提供进度和历史下载，并增加独立服务端导出权限。
+- 统一行操作可使用 `table-row-actions.vue`。调用方按显示优先级传入动作：前三个在桌面端显示为图标，其余进入“更多”；移动端全部进入“更多”。组件负责权限过滤和布局，危险操作的确认弹窗及服务端权限仍由业务页面负责。
 - 表单必须考虑新增、编辑、服务端验证失败、重复提交和保存后的数据刷新。
 - 不直接修改 `node_modules`；共享包只有被多个页面真实复用时才修改。
 
@@ -285,6 +289,29 @@ import PermissionButton from '#/components/system/permission-button.vue';
 cd frontend/apps/web-antd
 ../../node_modules/.bin/vue-tsc --noEmit --skipLibCheck
 ```
+
+列表工具组件示例：
+
+```vue
+<ListToolbar>
+  <template #left>
+    <PermissionButton icon="lucide:refresh-cw" @click="load">刷新</PermissionButton>
+    <PermissionButton icon="lucide:filter" @click="showFilters = !showFilters">筛选</PermissionButton>
+    <AutoRefresh :loading="loading" storage-key="match-list" @refresh="load" />
+  </template>
+  <template #right>
+    <TableExportButton
+      :columns="exportColumns"
+      filename="比赛列表"
+      permission="match.view"
+      :rows="rows"
+    />
+    <PermissionButton icon="lucide:plus" permission="match.create" type="primary">新增</PermissionButton>
+  </template>
+</ListToolbar>
+```
+
+这里的前端导出只包含传入的 `rows`。如果产品文案是“导出全部”，必须实现有权限校验的服务端异步导出接口，不能用当前页导出冒充全量导出。
 
 生产构建和发布：
 

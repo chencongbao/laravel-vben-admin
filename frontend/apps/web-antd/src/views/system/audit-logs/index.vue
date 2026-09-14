@@ -9,4 +9,4 @@ const columns = [
 ];
 const filters = [{ key: 'action', label: '操作标识' }, { key: 'actor_id', label: '操作人 ID' }];
 </script>
-<template><LogPage :columns="columns" :filters="filters" path="/system/audit-logs" title="审计日志" /></template>
+<template><LogPage :columns="columns" :filters="filters" path="/system/audit-logs" permission="system.audit.view" title="审计日志" /></template>
