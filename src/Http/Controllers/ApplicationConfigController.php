@@ -3,6 +3,7 @@
 namespace Chencongbao\LaravelVbenAdmin\Http\Controllers;
 
 use Chencongbao\LaravelVbenAdmin\Support\AdminLocale;
+use Chencongbao\LaravelVbenAdmin\Support\AdminPagination;
 use Chencongbao\LaravelVbenAdmin\Support\SystemSettings;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Routing\Controller;
@@ -16,6 +17,7 @@ final class ApplicationConfigController extends Controller
             'locale' => AdminLocale::fromLaravel(),
             'supported_locales' => AdminLocale::SUPPORTED,
             'timezone' => 'Asia/Shanghai',
+            'page_size' => AdminPagination::defaultPageSize(),
             'login_remember_me' => SystemSettings::value('system.login_remember_me'),
             'login_description' => SystemSettings::value('system.login_description'),
             'login_theme' => SystemSettings::value('system.login_theme'),

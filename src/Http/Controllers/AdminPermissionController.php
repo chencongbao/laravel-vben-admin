@@ -4,6 +4,7 @@ namespace Chencongbao\LaravelVbenAdmin\Http\Controllers;
 
 use Chencongbao\LaravelVbenAdmin\Contracts\AuditRecorder;
 use Chencongbao\LaravelVbenAdmin\Models\AdminPermission;
+use Chencongbao\LaravelVbenAdmin\Support\AdminPagination;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -15,8 +16,9 @@ final class AdminPermissionController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $perPage = min(max($request->integer('per_page', 20), 1), 100);
-        $id = $request->validate(['id' => ['nullable', 'integer', 'min:1']])['id'] ?? null;
+        $validated = $request->validate(['id' => ['nullable', 'integer', 'min:1'], 'per_page' => ['nullable', 'integer', 'min:1', 'max:100']]);
+        $perPage = AdminPagination::perPage($validated['per_page'] ?? null);
+        $id = $validated['id'] ?? null;
 
         return response()->json(AdminPermission::query()->when($id, fn ($query) => $query->whereKey($id))->orderBy('code')->paginate($perPage));
     }

@@ -18,6 +18,7 @@ import {
 import { useAccessStore, useUserStore } from '@vben/stores';
 
 import { $t } from '#/locales';
+import { useAdminIdentity } from '#/composables/use-admin-identity';
 import { getAdminAppearance, LOGIN_THEME_COLORS } from '#/preferences';
 import { useAuthStore } from '#/store';
 import LoginForm from '#/views/_core/authentication/login.vue';
@@ -79,6 +80,7 @@ const router = useRouter();
 const userStore = useUserStore();
 const authStore = useAuthStore();
 const accessStore = useAccessStore();
+const { displayName, roleName } = useAdminIdentity();
 const adminAppearance = getAdminAppearance();
 const themeModeStorageKey = 'laravel-vben-admin:theme-mode';
 const storedThemeMode = localStorage.getItem(themeModeStorageKey);
@@ -117,18 +119,6 @@ const menus = computed(() => [
 
 const avatar = computed(() => {
   return userStore.userInfo?.avatar ?? preferences.app.defaultAvatar;
-});
-
-const roleName = computed(() => {
-  const roles = userStore.userInfo?.roles || [];
-  if (roles.includes('administrator')) {
-    return $t('auth.roles.administrator');
-  }
-  if (roles.includes('manager')) {
-    return $t('auth.roles.manager');
-  }
-
-  return userStore.userInfo?.desc || $t('auth.roles.unassigned');
 });
 
 async function handleLogout() {
@@ -189,8 +179,8 @@ function navigateTo(
       <UserDropdown
         :avatar
         :menus
-        :description="roleName"
-        :text="userStore.userInfo?.username"
+        :description="displayName"
+        :text="roleName"
         @logout="handleLogout"
         @clear-preferences-and-logout="handleLogout"
       />

@@ -7,7 +7,9 @@ use Chencongbao\LaravelVbenAdmin\Contracts\Authorizer;
 use Chencongbao\LaravelVbenAdmin\Models\AdminRole;
 use Chencongbao\LaravelVbenAdmin\Models\AdminUser;
 use Chencongbao\LaravelVbenAdmin\Services\LoginIpWhitelist;
+use Chencongbao\LaravelVbenAdmin\Services\PrivilegeAssignmentGuard;
 use Chencongbao\LaravelVbenAdmin\Services\TwoFactorAuthentication;
+use Chencongbao\LaravelVbenAdmin\Support\AdminPagination;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -21,13 +23,14 @@ final class AdminUserController extends Controller
     public function __construct(
         private readonly AuditRecorder $audit,
         private readonly Authorizer $authorizer,
+        private readonly PrivilegeAssignmentGuard $privilegeGuard,
         private readonly TwoFactorAuthentication $twoFactor,
     ) {}
 
     public function index(Request $request): JsonResponse
     {
         $validated = $request->validate(['id' => ['nullable', 'integer', 'min:1'], 'keyword' => ['nullable', 'string', 'max:120'], 'status' => ['nullable', Rule::in(['active', 'disabled'])], 'per_page' => ['nullable', 'integer', 'min:1', 'max:100']]);
-        $users = AdminUser::query()->with('roles:id,code,name')->when($validated['id'] ?? null, fn ($query, $id) => $query->whereKey($id))->when($validated['keyword'] ?? null, fn ($query, $keyword) => $query->where(fn ($nested) => $nested->where('username', 'like', "%{$keyword}%")->orWhere('name', 'like', "%{$keyword}%")))->when(isset($validated['status']), fn ($query) => $query->where('is_active', $validated['status'] === 'active'))->latest('id')->paginate($validated['per_page'] ?? 20);
+        $users = AdminUser::query()->with('roles:id,code,name')->when($validated['id'] ?? null, fn ($query, $id) => $query->whereKey($id))->when($validated['keyword'] ?? null, fn ($query, $keyword) => $query->where(fn ($nested) => $nested->where('username', 'like', "%{$keyword}%")->orWhere('name', 'like', "%{$keyword}%")))->when(isset($validated['status']), fn ($query) => $query->where('is_active', $validated['status'] === 'active'))->latest('id')->paginate(AdminPagination::perPage($validated['per_page'] ?? null));
 
         return response()->json($users);
     }
@@ -46,12 +49,15 @@ final class AdminUserController extends Controller
                     $fail('The login IP whitelist contains an invalid IP address or CIDR range.');
                 }
             }],
-            'role_ids' => ['sometimes', 'array'],
-            'role_ids.*' => ['integer', Rule::exists(config('laravel-vben-admin.tables.roles', 'admin_roles'), 'id')->where('is_active', true)],
+            'role_ids' => ['sometimes', 'array', 'max:100'],
+            'role_ids.*' => ['integer', 'distinct', Rule::exists(config('laravel-vben-admin.tables.roles', 'admin_roles'), 'id')->where('is_active', true)],
         ]);
 
         if (array_key_exists('role_ids', $data) && ! $this->authorizer->allows($request->user(), 'system.user.assign-roles')) {
             return response()->json(['message' => 'Role assignment is not allowed.', 'code' => 'ADMIN_PERMISSION_DENIED'], 403);
+        }
+        if (array_key_exists('role_ids', $data) && ! $this->privilegeGuard->canAssignRoles($request->user(), $data['role_ids'])) {
+            return response()->json(['message' => 'Role assignment exceeds your authority.', 'code' => 'ADMIN_PRIVILEGE_ESCALATION_DENIED'], 403);
         }
 
         $user = DB::transaction(function () use ($data, $request): AdminUser {
@@ -88,15 +94,21 @@ final class AdminUserController extends Controller
                     $fail('The login IP whitelist contains an invalid IP address or CIDR range.');
                 }
             }],
-            'role_ids' => ['sometimes', 'array'],
-            'role_ids.*' => ['integer', Rule::exists(config('laravel-vben-admin.tables.roles', 'admin_roles'), 'id')->where('is_active', true)],
+            'role_ids' => ['sometimes', 'array', 'max:100'],
+            'role_ids.*' => ['integer', 'distinct', Rule::exists(config('laravel-vben-admin.tables.roles', 'admin_roles'), 'id')->where('is_active', true)],
         ]);
 
+        if (! $this->privilegeGuard->canManageUser($request->user(), $adminUser)) {
+            return response()->json(['message' => 'This administrator exceeds your authority.', 'code' => 'ADMIN_PRIVILEGE_ESCALATION_DENIED'], 403);
+        }
         if ($adminUser->is($request->user()) && array_key_exists('is_active', $data) && ! $data['is_active']) {
             return response()->json(['message' => 'You cannot disable your own account.', 'code' => 'ADMIN_SELF_DISABLE_DENIED'], 422);
         }
         if (array_key_exists('role_ids', $data) && ! $this->authorizer->allows($request->user(), 'system.user.assign-roles')) {
             return response()->json(['message' => 'Role assignment is not allowed.', 'code' => 'ADMIN_PERMISSION_DENIED'], 403);
+        }
+        if (array_key_exists('role_ids', $data) && ! $this->privilegeGuard->canAssignRoles($request->user(), $data['role_ids'])) {
+            return response()->json(['message' => 'Role assignment exceeds your authority.', 'code' => 'ADMIN_PRIVILEGE_ESCALATION_DENIED'], 403);
         }
         if ($adminUser->is($request->user()) && array_key_exists('role_ids', $data)) {
             $superRoleIds = AdminRole::query()->where('is_super_admin', true)->pluck('id')->all();

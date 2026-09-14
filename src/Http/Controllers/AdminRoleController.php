@@ -4,6 +4,8 @@ namespace Chencongbao\LaravelVbenAdmin\Http\Controllers;
 
 use Chencongbao\LaravelVbenAdmin\Contracts\AuditRecorder;
 use Chencongbao\LaravelVbenAdmin\Models\AdminRole;
+use Chencongbao\LaravelVbenAdmin\Services\PrivilegeAssignmentGuard;
+use Chencongbao\LaravelVbenAdmin\Support\AdminPagination;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -12,12 +14,13 @@ use Illuminate\Validation\Rule;
 
 final class AdminRoleController extends Controller
 {
-    public function __construct(private readonly AuditRecorder $audit) {}
+    public function __construct(private readonly AuditRecorder $audit, private readonly PrivilegeAssignmentGuard $privilegeGuard) {}
 
     public function index(Request $request): JsonResponse
     {
-        $perPage = min(max($request->integer('per_page', 20), 1), 100);
-        $id = $request->validate(['id' => ['nullable', 'integer', 'min:1']])['id'] ?? null;
+        $validated = $request->validate(['id' => ['nullable', 'integer', 'min:1'], 'per_page' => ['nullable', 'integer', 'min:1', 'max:100']]);
+        $perPage = AdminPagination::perPage($validated['per_page'] ?? null);
+        $id = $validated['id'] ?? null;
 
         return response()->json(AdminRole::query()->withCount('permissions', 'menus')->when($id, fn ($query) => $query->whereKey($id))->orderBy('id')->paginate($perPage));
     }
@@ -26,6 +29,9 @@ final class AdminRoleController extends Controller
     {
         $data = $this->validateRole($request);
         $access = $this->validateAccess($request);
+        if (! $this->privilegeGuard->canAssignPermissions($request->user(), $access['permission_ids'])) {
+            return response()->json(['message' => 'Permission assignment exceeds your authority.', 'code' => 'ADMIN_PRIVILEGE_ESCALATION_DENIED'], 403);
+        }
 
         $role = DB::transaction(function () use ($access, $data, $request): AdminRole {
             $role = AdminRole::query()->create($data + ['is_system' => false, 'is_super_admin' => false]);
@@ -52,6 +58,9 @@ final class AdminRoleController extends Controller
 
         $data = $this->validateRole($request, $adminRole);
         $access = $this->validateAccess($request);
+        if (! $this->privilegeGuard->canAssignPermissions($request->user(), $access['permission_ids'])) {
+            return response()->json(['message' => 'Permission assignment exceeds your authority.', 'code' => 'ADMIN_PRIVILEGE_ESCALATION_DENIED'], 403);
+        }
         $before = $adminRole->only(['code', 'name', 'is_active']);
         if ($adminRole->is_system) {
             unset($data['code'], $data['name'], $data['is_active']);
@@ -94,9 +103,12 @@ final class AdminRoleController extends Controller
         }
 
         $data = $request->validate([
-            'permission_ids' => ['required', 'array'], 'permission_ids.*' => ['integer', Rule::exists(config('laravel-vben-admin.tables.permissions', 'admin_permissions'), 'id')->where('is_active', true)],
-            'menu_ids' => ['required', 'array'], 'menu_ids.*' => ['integer', Rule::exists(config('laravel-vben-admin.tables.menus', 'admin_menus'), 'id')->where('is_active', true)],
+            'permission_ids' => ['required', 'array', 'max:500'], 'permission_ids.*' => ['integer', 'distinct', Rule::exists(config('laravel-vben-admin.tables.permissions', 'admin_permissions'), 'id')->where('is_active', true)],
+            'menu_ids' => ['required', 'array', 'max:500'], 'menu_ids.*' => ['integer', 'distinct', Rule::exists(config('laravel-vben-admin.tables.menus', 'admin_menus'), 'id')->where('is_active', true)],
         ]);
+        if (! $this->privilegeGuard->canAssignPermissions($request->user(), $data['permission_ids'])) {
+            return response()->json(['message' => 'Permission assignment exceeds your authority.', 'code' => 'ADMIN_PRIVILEGE_ESCALATION_DENIED'], 403);
+        }
 
         DB::transaction(function () use ($data, $request, $adminRole): void {
             $adminRole->permissions()->sync($data['permission_ids']);
@@ -119,10 +131,10 @@ final class AdminRoleController extends Controller
     private function validateAccess(Request $request): array
     {
         return $request->validate([
-            'permission_ids' => ['required', 'array', 'min:1'],
-            'permission_ids.*' => ['integer', Rule::exists(config('laravel-vben-admin.tables.permissions', 'admin_permissions'), 'id')->where('is_active', true)],
-            'menu_ids' => ['required', 'array', 'min:1'],
-            'menu_ids.*' => ['integer', Rule::exists(config('laravel-vben-admin.tables.menus', 'admin_menus'), 'id')->where('is_active', true)],
+            'permission_ids' => ['required', 'array', 'min:1', 'max:500'],
+            'permission_ids.*' => ['integer', 'distinct', Rule::exists(config('laravel-vben-admin.tables.permissions', 'admin_permissions'), 'id')->where('is_active', true)],
+            'menu_ids' => ['required', 'array', 'min:1', 'max:500'],
+            'menu_ids.*' => ['integer', 'distinct', Rule::exists(config('laravel-vben-admin.tables.menus', 'admin_menus'), 'id')->where('is_active', true)],
         ]);
     }
 }

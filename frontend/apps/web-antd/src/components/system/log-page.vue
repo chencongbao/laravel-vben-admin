@@ -13,6 +13,8 @@ import TableExportButton from '#/components/system/table-export-button.vue';
 import TableBatchActions from '#/components/system/table-batch-actions.vue';
 import { $t } from '#/locales';
 import { formatBeijingDateTime, isDateTimeField } from '#/utils/datetime';
+import { createAdminPagination } from '#/utils/pagination';
+import { useAdminTableScrollY } from '#/utils/table';
 
 interface LogFilter {
   key: string;
@@ -31,9 +33,10 @@ const props = defineProps<{
   title: string;
 }>();
 const loading = ref(false); const rows = ref<Record<string, any>[]>([]);
+const { setTableRef, tableScrollY } = useAdminTableScrollY();
 const showFilters = ref(true);
 const values = reactive<Record<string, any>>({});
-const pagination = reactive({ current: 1, pageSize: 20, total: 0 });
+const pagination = reactive(createAdminPagination());
 const selectedRowKeys = ref<number[]>([]);
 const effectiveFilters = computed<LogFilter[]>(() => props.filters.some((filter) => filter.key === 'id')
   ? props.filters
@@ -49,7 +52,7 @@ async function load() {
 }
 function search() { pagination.current = 1; void load(); }
 function reset() { Object.keys(values).forEach((key) => delete values[key]); search(); }
-function changePage(page: { current?: number; pageSize?: number }) { pagination.current = page.current ?? 1; pagination.pageSize = page.pageSize ?? 20; void load(); }
+function changePage(page: { current?: number; pageSize?: number }) { pagination.current = page.current ?? 1; pagination.pageSize = page.pageSize ?? pagination.pageSize; void load(); }
 function batchAction(key: string) {
   if (key !== 'delete' || selectedRowKeys.value.length === 0) return;
   Modal.confirm({
@@ -98,7 +101,7 @@ onMounted(load);
       </template>
     </ListSearchPanel>
     <Card :body-style="{ padding: 0 }" :bordered="false" class="admin-table-card">
-      <Table bordered class="admin-data-table" :columns="columns" :data-source="rows" :loading="loading" :pagination="pagination" :row-selection="batchDeletePermission ? { selectedRowKeys, onChange: (keys: (number | string)[]) => selectedRowKeys = keys.map(Number) } : undefined" row-key="id" @change="changePage">
+      <Table :ref="setTableRef" bordered class="admin-data-table" :columns="columns" :data-source="rows" :loading="loading" :pagination="pagination" :row-selection="batchDeletePermission ? { selectedRowKeys, onChange: (keys: (number | string)[]) => selectedRowKeys = keys.map(Number) } : undefined" row-key="id" :scroll="{ y: tableScrollY }" @change="changePage">
         <template #bodyCell="{ column, text }">
           <Tag v-if="column.dataIndex === 'succeeded'" :color="text ? 'green' : 'red'">{{ text ? '成功' : '失败' }}</Tag>
           <span v-else-if="isDateTimeField(String(column.dataIndex ?? ''))">{{ formatBeijingDateTime(text) }}</span>

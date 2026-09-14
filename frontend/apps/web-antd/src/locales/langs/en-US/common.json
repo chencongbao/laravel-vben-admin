@@ -14,8 +14,11 @@
   "batch": {
     "confirmDelete": "Delete",
     "deleteConfirm": "Delete the selected {count} login logs? This cannot be undone.",
-    "deleteSelected": "Delete Selected Logs",
+    "deleteSelected": "Batch Delete",
     "deleteTitle": "Delete Login Logs"
+  },
+  "errors": {
+    "privilegeEscalationDenied": "You cannot assign or modify roles and permissions beyond your authority."
   },
   "fields": {
     "createdAt": "Created At",

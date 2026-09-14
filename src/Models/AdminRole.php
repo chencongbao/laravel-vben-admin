@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class AdminRole extends Model
 {
-    protected $guarded = [];
+    protected $fillable = ['code', 'name', 'is_active', 'is_system', 'is_super_admin'];
 
     protected function casts(): array
     {

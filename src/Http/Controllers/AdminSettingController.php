@@ -80,7 +80,7 @@ final class AdminSettingController extends Controller
 
     private function updateSettings(Request $request, array $keys, callable $response): JsonResponse
     {
-        $data = $request->validate(['settings' => ['required', 'array'], 'settings.*.key' => ['required', 'string'], 'settings.*.value' => ['present']]);
+        $data = $request->validate(['settings' => ['required', 'array', 'max:100'], 'settings.*.key' => ['required', 'string', 'max:160', 'distinct'], 'settings.*.value' => ['present']]);
         $definitions = array_intersect_key(SystemSettings::definitions(), array_flip($keys));
         $normalized = [];
 
@@ -125,18 +125,18 @@ final class AdminSettingController extends Controller
         return match ($definition['type']) {
             'string' => $this->stringValue($key, $value),
             'integer' => $this->integerValue($key, $value, $definition),
-            'boolean' => filter_var($value, FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE) ?? throw ValidationException::withMessages(['settings' => ["Setting [{$key}] must be boolean."]]),
-            'timezone' => in_array($value, DateTimeZone::listIdentifiers(), true) ? $value : throw ValidationException::withMessages(['settings' => ["Setting [{$key}] must be an IANA timezone."]]),
-            'enum' => is_string($value) && in_array($value, $definition['values'] ?? [], true) ? $value : throw ValidationException::withMessages(['settings' => ["Setting [{$key}] has an invalid option."]]),
+            'boolean' => filter_var($value, FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE) ?? throw ValidationException::withMessages(["settings.{$key}" => ["Setting [{$key}] must be boolean."]]),
+            'timezone' => in_array($value, DateTimeZone::listIdentifiers(), true) ? $value : throw ValidationException::withMessages(["settings.{$key}" => ["Setting [{$key}] must be an IANA timezone."]]),
+            'enum' => is_string($value) && in_array($value, $definition['values'] ?? [], true) ? $value : throw ValidationException::withMessages(["settings.{$key}" => ["Setting [{$key}] has an invalid option."]]),
             'json' => $this->jsonValue($key, $value),
-            default => throw ValidationException::withMessages(['settings' => ["Setting [{$key}] has an unsupported type."]]),
+            default => throw ValidationException::withMessages(["settings.{$key}" => ["Setting [{$key}] has an unsupported type."]]),
         };
     }
 
     private function jsonValue(string $key, mixed $value): array
     {
         if (! is_array($value) || strlen((string) json_encode($value)) > 20000) {
-            throw ValidationException::withMessages(['settings' => ["Setting [{$key}] must be a JSON object up to 20 KB."]]);
+            throw ValidationException::withMessages(["settings.{$key}" => ["Setting [{$key}] must be a JSON object up to 20 KB."]]);
         }
 
         if ($key === 'system.advanced_preferences') {
@@ -154,7 +154,7 @@ final class AdminSettingController extends Controller
     private function stringValue(string $key, mixed $value): string
     {
         if (! is_string($value) || mb_strlen($value) > 500) {
-            throw ValidationException::withMessages(['settings' => ["Setting [{$key}] must be a string up to 500 characters."]]);
+            throw ValidationException::withMessages(["settings.{$key}" => ["Setting [{$key}] must be a string up to 500 characters."]]);
         }
 
         return $value;
@@ -163,11 +163,11 @@ final class AdminSettingController extends Controller
     private function integerValue(string $key, mixed $value, array $definition): int
     {
         if (filter_var($value, FILTER_VALIDATE_INT) === false) {
-            throw ValidationException::withMessages(['settings' => ["Setting [{$key}] must be an integer."]]);
+            throw ValidationException::withMessages(["settings.{$key}" => ["Setting [{$key}] must be an integer."]]);
         }
         $value = (int) $value;
         if ($value < ($definition['min'] ?? PHP_INT_MIN) || $value > ($definition['max'] ?? PHP_INT_MAX)) {
-            throw ValidationException::withMessages(['settings' => ["Setting [{$key}] is outside the allowed range."]]);
+            throw ValidationException::withMessages(["settings.{$key}" => ["Setting [{$key}] is outside the allowed range."]]);
         }
 
         return $value;

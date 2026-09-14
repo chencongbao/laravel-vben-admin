@@ -11,6 +11,8 @@ import ListSearchPanel from '#/components/system/list-search-panel.vue';
 import PermissionButton from '#/components/system/permission-button.vue';
 import { $t } from '#/locales';
 import { formatBeijingDateTime } from '#/utils/datetime';
+import { createAdminPagination } from '#/utils/pagination';
+import { useAdminTableScrollY } from '#/utils/table';
 
 interface Role { code: string; id: number; name: string }
 interface AdminUser {
@@ -27,12 +29,13 @@ interface AdminUser {
 }
 
 const loading = ref(false);
+const { setTableRef, tableScrollY } = useAdminTableScrollY();
 const saving = ref(false);
 const visible = ref(false);
 const editingId = ref<number>();
 const users = ref<AdminUser[]>([]);
 const roles = ref<Role[]>([]);
-const pagination = reactive({ current: 1, pageSize: 20, total: 0 });
+const pagination = reactive(createAdminPagination());
 const searchId = ref<number>(); const showFilters = ref(true);
 const form = reactive({
   is_active: true,
@@ -93,7 +96,7 @@ async function save() {
 }
 
 function changePage(page: { current?: number; pageSize?: number }) {
-  pagination.current = page.current ?? 1; pagination.pageSize = page.pageSize ?? 20; void load();
+  pagination.current = page.current ?? 1; pagination.pageSize = page.pageSize ?? pagination.pageSize; void load();
 }
 function search() { pagination.current = 1; void load(); }
 function resetSearch() { searchId.value = undefined; search(); }
@@ -105,7 +108,7 @@ onMounted(load);
     <ListToolbar><template #left><ListRefreshButton :loading="loading" /><PermissionButton icon="lucide:filter" @click="showFilters = !showFilters">{{ $t('common.actions.filter') }}</PermissionButton></template><template #right><PermissionButton icon="lucide:user-plus" permission="system.user.create" type="primary" @click="open()">新增用户</PermissionButton></template></ListToolbar>
     <ListSearchPanel v-if="showFilters"><ListSearchField :label="$t('common.fields.id')"><InputNumber v-model:value="searchId" :min="1" :placeholder="$t('common.fields.id')" @press-enter="search" /></ListSearchField><template #actions><PermissionButton icon="lucide:search" type="primary" @click="search">{{ $t('common.actions.search') }}</PermissionButton><PermissionButton icon="lucide:rotate-ccw" @click="resetSearch">{{ $t('common.actions.reset') }}</PermissionButton></template></ListSearchPanel>
     <Card :body-style="{ padding: 0 }" class="admin-table-card">
-      <Table bordered class="admin-data-table" :columns="columns" :data-source="users" :loading="loading" :pagination="pagination" row-key="id" :scroll="{ x: 1250 }" @change="changePage">
+      <Table :ref="setTableRef" bordered class="admin-data-table" :columns="columns" :data-source="users" :loading="loading" :pagination="pagination" row-key="id" :scroll="{ x: 1250, y: tableScrollY }" @change="changePage">
         <template #bodyCell="{ column, record, text }">
           <Space v-if="column.dataIndex === 'roles'" wrap><Tag v-for="role in record.roles" :key="role.id">{{ role.name }}</Tag></Space>
           <Tag v-else-if="column.dataIndex === 'is_active'" :color="text ? 'green' : 'default'">{{ text ? '启用' : '禁用' }}</Tag>

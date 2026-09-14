@@ -15,10 +15,12 @@ import {
   type AdvancedPreferencesConfig,
   createOverridesPreferences,
 } from './preferences';
+import { setAdminDefaultPageSize } from './utils/pagination';
 
 interface LaravelApplicationConfig {
   locale: SupportedLanguagesType;
   name: string;
+  pageSize: number;
   timezone: string;
   loginLayout: AuthPageLayoutType;
   loginTheme: BuiltinThemeType;
@@ -32,6 +34,7 @@ interface LaravelApplicationConfig {
 const fallbackApplicationConfig: LaravelApplicationConfig = {
   locale: 'zh-CN',
   name: import.meta.env.VITE_APP_TITLE,
+  pageSize: 20,
   timezone: 'Asia/Shanghai',
   loginLayout: 'panel-right',
   loginTheme: 'default',
@@ -66,6 +69,7 @@ async function resolveLaravelApplicationConfig(): Promise<LaravelApplicationConf
     const data = (await response.json()) as {
       locale?: string;
       name?: string;
+      page_size?: number;
       timezone?: string;
       login_layout?: string;
       login_theme?: string;
@@ -90,6 +94,12 @@ async function resolveLaravelApplicationConfig(): Promise<LaravelApplicationConf
     return {
       locale: data.locale === 'en-US' ? 'en-US' : 'zh-CN',
       name: data.name || fallbackApplicationConfig.name,
+      pageSize:
+        typeof data.page_size === 'number' &&
+        data.page_size >= 10 &&
+        data.page_size <= 100
+          ? data.page_size
+          : fallbackApplicationConfig.pageSize,
       timezone: data.timezone || 'Asia/Shanghai',
       loginLayout: ['panel-left', 'panel-center', 'panel-right'].includes(
         data.login_layout || '',
@@ -206,10 +216,13 @@ async function initApplication() {
     loginLayout,
     loginTheme,
     name,
+    pageSize,
     timezone,
     tabbar,
     advancedPreferences,
   } = await resolveLaravelApplicationConfig();
+
+  setAdminDefaultPageSize(pageSize);
 
   // app偏好设置初始化
   await initPreferences({

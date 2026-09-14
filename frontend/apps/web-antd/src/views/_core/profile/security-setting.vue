@@ -26,8 +26,10 @@ import {
 } from '#/api';
 import { $t } from '#/locales';
 import { formatBeijingDateTime } from '#/utils/datetime';
+import { useAdminTableScrollY } from '#/utils/table';
 
 const loading = ref(false);
+const { setTableRef, tableScrollY } = useAdminTableScrollY();
 const sessions = ref<AdminSession[]>([]);
 const twoFactor = ref({ confirmed: false, enabled: false });
 const twoFactorCode = ref('');
@@ -164,6 +166,7 @@ onMounted(load);
       </template>
 
       <Table
+        :ref="setTableRef"
         bordered
         class="admin-data-table"
         :columns="columns"
@@ -171,7 +174,7 @@ onMounted(load);
         :loading="loading"
         :pagination="{ pageSize: 8, showSizeChanger: false }"
         row-key="id"
-        :scroll="{ x: 760 }"
+        :scroll="{ x: 760, y: tableScrollY }"
       >
         <template #bodyCell="{ column, record, text }">
           <Tag v-if="column.dataIndex === 'client_type'" color="blue">

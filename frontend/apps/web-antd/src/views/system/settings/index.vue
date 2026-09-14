@@ -17,6 +17,7 @@ import {
 
 import { getCollection, type SettingItem, updateSettings } from '#/api/system';
 import { $t } from '#/locales';
+import { setAdminDefaultPageSize } from '#/utils/pagination';
 
 const loading = ref(false);
 const saving = ref(false);
@@ -84,6 +85,9 @@ async function save() {
     if (typeof systemName === 'string' && systemName) {
       updatePreferences({ app: { name: systemName } });
     }
+    setAdminDefaultPageSize(
+      settings.value.find(({ key }) => key === 'system.page_size')?.value,
+    );
     message.success($t('system.settingsForm.messages.saved'));
   } finally {
     saving.value = false;

@@ -10,7 +10,7 @@ class AdminUser extends Authenticatable
 {
     use HasApiTokens;
 
-    protected $guarded = [];
+    protected $fillable = ['username', 'password', 'name', 'avatar', 'is_active', 'last_login_at', 'last_login_ip', 'remember_token', 'login_ip_whitelist', 'two_factor_enabled', 'two_factor_secret', 'two_factor_confirmed_at'];
 
     protected $hidden = ['password', 'remember_token', 'two_factor_secret'];
 

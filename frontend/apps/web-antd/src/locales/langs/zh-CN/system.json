@@ -76,7 +76,12 @@
       }
     },
     "messages": {
-      "saved": "系统设置已保存"
+      "invalid": "系统配置格式不正确，请检查后重试",
+      "loginDescriptionInvalid": "登录页宣传语必须是文本，且不能超过 500 个字符",
+      "loginRememberMeInvalid": "“显示记住账号”配置格式不正确",
+      "pageSizeInvalid": "默认分页数量必须是 10 至 100 之间的整数",
+      "saved": "系统设置已保存",
+      "systemNameInvalid": "系统名称必须是文本，且不能超过 500 个字符"
     }
   },
   "logsTitle": "系统日志"

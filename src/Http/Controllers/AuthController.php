@@ -270,7 +270,13 @@ final class AuthController extends Controller
         ]);
 
         if (! Hash::check($data['current_password'], $user->password)) {
-            throw ValidationException::withMessages(['current_password' => ['The current password is incorrect.']]);
+            return response()->json([
+                'message' => 'The current password is incorrect.',
+                'code' => 'CURRENT_PASSWORD_INCORRECT',
+                'errors' => [
+                    'current_password' => ['The current password is incorrect.'],
+                ],
+            ], 422);
         }
 
         $user->forceFill(['password' => $data['password']])->save();

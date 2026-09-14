@@ -36,6 +36,8 @@ import PermissionButton from '#/components/system/permission-button.vue';
 import TableExportButton from '#/components/system/table-export-button.vue';
 import { $t } from '#/locales';
 import { formatBeijingDateTime, isDateTimeField } from '#/utils/datetime';
+import { createAdminPagination } from '#/utils/pagination';
+import { useAdminTableScrollY } from '#/utils/table';
 
 export interface ResourceField {
   key: string;
@@ -64,11 +66,12 @@ const props = defineProps<{
 }>();
 
 const loading = ref(false);
+const { setTableRef, tableScrollY } = useAdminTableScrollY();
 const saving = ref(false);
 const visible = ref(false);
 const editingId = ref<number>();
 const rows = ref<Record<string, any>[]>([]);
-const pagination = reactive({ current: 1, pageSize: 20, total: 0 });
+const pagination = reactive(createAdminPagination());
 const form = reactive<Record<string, any>>({});
 const searchValues = reactive<Record<string, any>>({});
 const showFilters = ref(true);
@@ -174,7 +177,7 @@ async function remove(id: number) {
 
 function onTableChange(page: { current?: number; pageSize?: number }) {
   pagination.current = page.current ?? 1;
-  pagination.pageSize = page.pageSize ?? 20;
+  pagination.pageSize = page.pageSize ?? pagination.pageSize;
   void load();
 }
 
@@ -207,6 +210,7 @@ onMounted(load);
     </ListSearchPanel>
     <Card :body-style="{ padding: 0 }" :bordered="false" class="admin-table-card">
       <Table
+        :ref="setTableRef"
         bordered
         class="admin-data-table"
         :columns="columns"
@@ -214,6 +218,7 @@ onMounted(load);
         :loading="loading"
         :pagination="pagination"
         row-key="id"
+        :scroll="{ y: tableScrollY }"
         @change="onTableChange"
       >
         <template #bodyCell="{ column, record, text }">

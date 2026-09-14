@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class AdminMenu extends Model
 {
-    protected $guarded = [];
+    protected $fillable = ['code', 'parent_code', 'title', 'type', 'route_name', 'route_path', 'view_key', 'permission_code', 'icon', 'sort', 'is_active', 'is_hidden', 'is_system'];
 
     protected function casts(): array
     {

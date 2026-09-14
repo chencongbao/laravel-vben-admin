@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class AdminSetting extends Model
 {
-    protected $guarded = [];
+    protected $fillable = ['key', 'type', 'value', 'is_system'];
 
     protected function casts(): array
     {

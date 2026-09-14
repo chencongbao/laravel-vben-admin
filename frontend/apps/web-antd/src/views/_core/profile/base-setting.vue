@@ -4,7 +4,7 @@ import type { Recordable } from '@vben/types';
 
 import { computed, onMounted, ref } from 'vue';
 
-import { ProfileBaseSetting } from '@vben/common-ui';
+import { ProfileBaseSetting, z } from '@vben/common-ui';
 import { useUserStore } from '@vben/stores';
 
 import { message } from 'ant-design-vue';
@@ -22,6 +22,11 @@ const formSchema = computed((): VbenFormSchema[] => [
     },
     fieldName: 'name',
     label: $t('profile.basic.name'),
+    rules: z
+      .string()
+      .trim()
+      .min(1, { message: $t('profile.basic.nameRequired') })
+      .max(120, { message: $t('profile.basic.nameTooLong') }),
   },
 ]);
 onMounted(async () => {

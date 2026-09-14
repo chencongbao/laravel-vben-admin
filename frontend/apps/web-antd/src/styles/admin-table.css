@@ -44,6 +44,66 @@
   background: hsl(var(--card));
 }
 
+.admin-data-table .ant-table-thead > tr > .ant-table-cell-fix-right,
+.admin-data-table .ant-table-tbody > tr > .ant-table-cell-fix-right {
+  padding-inline: 4px;
+  text-align: center;
+}
+
 .admin-data-table .ant-table-tbody > tr:hover > .ant-table-cell-fix-right {
   background: hsl(var(--accent) / 55%);
+}
+
+.admin-data-table.ant-table-wrapper .ant-table-pagination.ant-pagination {
+  justify-content: center;
+}
+
+.ant-pagination .ant-pagination-options-size-changer.ant-select {
+  min-width: 96px;
+}
+
+.ant-pagination
+  .ant-pagination-options-size-changer
+  .ant-select-selection-item {
+  font-size: 0;
+  padding-inline-end: 0 !important;
+  text-align: center;
+}
+
+html:lang(zh)
+  .ant-pagination
+  .ant-pagination-options-size-changer
+  .ant-select-selection-item::before {
+  display: inline-block;
+  content: attr(title) ' 条/页';
+  font-size: 14px;
+  margin-inline-end: 12px;
+}
+
+html:lang(en)
+  .ant-pagination
+  .ant-pagination-options-size-changer
+  .ant-select-selection-item::before {
+  display: inline-block;
+  content: attr(title) ' / page';
+  font-size: 14px;
+  margin-inline-end: 12px;
+}
+
+.admin-data-table:not(.admin-data-table--scrollable-y) .ant-table-body {
+  overflow-y: auto !important;
+}
+
+.admin-data-table:not(.admin-data-table--scrollable-y)
+  .ant-table-cell-scrollbar {
+  display: none;
+}
+
+.admin-data-table:not(.admin-data-table--scrollable-y)
+  .ant-table-cell-fix-right {
+  right: 0 !important;
+}
+
+.admin-data-table .ant-table-body::-webkit-scrollbar {
+  height: 0;
 }

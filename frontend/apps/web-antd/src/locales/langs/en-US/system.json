@@ -76,7 +76,12 @@
       }
     },
     "messages": {
-      "saved": "System settings saved"
+      "invalid": "The system settings are invalid. Check them and try again.",
+      "loginDescriptionInvalid": "The login description must be text with no more than 500 characters.",
+      "loginRememberMeInvalid": "The Show Remember Me setting is invalid.",
+      "pageSizeInvalid": "The default page size must be an integer from 10 to 100.",
+      "saved": "System settings saved",
+      "systemNameInvalid": "The system name must be text with no more than 500 characters."
     }
   },
   "logsTitle": "System Logs"

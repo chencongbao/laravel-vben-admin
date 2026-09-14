@@ -19,6 +19,9 @@ const formSchema = computed((): VbenFormSchema[] => [
     },
     fieldName: 'currentPassword',
     label: $t('profile.password.current'),
+    rules: z
+      .string()
+      .min(1, { message: $t('profile.password.currentRequired') }),
   },
   {
     component: 'VbenInputPassword',
@@ -28,6 +31,12 @@ const formSchema = computed((): VbenFormSchema[] => [
     },
     fieldName: 'newPassword',
     label: $t('profile.password.new'),
+    rules: z
+      .string()
+      .min(1, { message: $t('profile.password.newRequired') })
+      .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{12,}$/, {
+        message: $t('profile.password.requirements'),
+      }),
   },
   {
     component: 'VbenInputPassword',

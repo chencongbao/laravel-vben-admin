@@ -21,12 +21,27 @@ import { useAuthStore } from '#/store';
 const { apiURL } = useAppConfig(import.meta.env, import.meta.env.PROD);
 
 const localizedErrorKeys: Record<string, string> = {
+  ADMIN_PRIVILEGE_ESCALATION_DENIED: 'common.errors.privilegeEscalationDenied',
   CAPTCHA_INVALID: 'authentication.errors.captchaInvalid',
+  CURRENT_PASSWORD_INCORRECT: 'profile.password.currentIncorrect',
   INVALID_CREDENTIALS: 'authentication.errors.invalidCredentials',
   LOGIN_IP_NOT_ALLOWED: 'authentication.errors.loginIpNotAllowed',
   TWO_FACTOR_CHALLENGE_INVALID:
     'authentication.errors.twoFactorChallengeInvalid',
   TWO_FACTOR_CODE_INVALID: 'authentication.errors.twoFactorCodeInvalid',
+};
+
+const validationErrorKeys: Record<string, string> = {
+  current_password: 'profile.password.currentRequired',
+  name: 'profile.basic.nameInvalid',
+  password: 'profile.password.requirements',
+  password_confirmation: 'profile.password.mismatch',
+  'settings.system.login_description':
+    'system.settingsForm.messages.loginDescriptionInvalid',
+  'settings.system.login_remember_me':
+    'system.settingsForm.messages.loginRememberMeInvalid',
+  'settings.system.name': 'system.settingsForm.messages.systemNameInvalid',
+  'settings.system.page_size': 'system.settingsForm.messages.pageSizeInvalid',
 };
 
 function createRequestClient(baseURL: string, options?: RequestClientOptions) {
@@ -105,9 +120,22 @@ function createRequestClient(baseURL: string, options?: RequestClientOptions) {
       const localizedKey = responseCode
         ? localizedErrorKeys[responseCode]
         : undefined;
+      const validationErrors = responseData?.errors as
+        | Record<string, string[]>
+        | undefined;
+      const validationFields = validationErrors
+        ? Object.keys(validationErrors)
+        : [];
+      const validationKey = validationFields
+        .map((field) => validationErrorKeys[field])
+        .find(Boolean)
+        ?? (validationFields.some((field) => field.startsWith('settings.'))
+          ? 'system.settingsForm.messages.invalid'
+          : undefined);
+      const messageKey = localizedKey ?? validationKey;
       const errorMessage = responseData?.error ?? responseData?.message ?? '';
       // 如果没有错误信息，则会根据状态码进行提示
-      message.error(localizedKey ? $t(localizedKey) : errorMessage || msg);
+      message.error(messageKey ? $t(messageKey) : errorMessage || msg);
     }),
   );
 

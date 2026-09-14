@@ -13,6 +13,8 @@ import ListSearchField from '#/components/system/list-search-field.vue';
 import ListSearchPanel from '#/components/system/list-search-panel.vue';
 import PermissionButton from '#/components/system/permission-button.vue';
 import { formatBeijingDateTime } from '#/utils/datetime';
+import { createAdminPagination } from '#/utils/pagination';
+import { useAdminTableScrollY } from '#/utils/table';
 
 interface MenuItem { code: string; id: number; parent_code?: null | string; permission_code?: null | string; title: string }
 interface PermissionItem { code: string; id: number; name: string }
@@ -20,9 +22,10 @@ interface Role { code: string; created_at: string; id: number; is_active: boolea
 interface AccessTreeNode { children?: AccessTreeNode[]; key: string; title: string }
 
 const loading = ref(false); const visible = ref(false); const saving = ref(false);
+const { setTableRef, tableScrollY } = useAdminTableScrollY();
 const editingRole = ref<Role>(); const roles = ref<Role[]>([]); const permissions = ref<PermissionItem[]>([]); const menus = ref<MenuItem[]>([]);
 const checkedKeys = ref<Key[]>([]); const expandedKeys = ref<Key[]>([]); const expandAll = ref(true);
-const pagination = reactive({ current: 1, pageSize: 20, total: 0 });
+const pagination = reactive(createAdminPagination());
 const searchId = ref<number>(); const showFilters = ref(true);
 const form = reactive({ code: '', is_active: true, name: '' });
 const columns: TableColumnsType = [
@@ -122,7 +125,7 @@ async function saveRole() {
 }
 async function remove(role: any) { await deleteResource('/system/roles', role.id); message.success('角色已删除'); await load(); }
 function toggleExpand(checked: boolean) { expandAll.value = checked; expandedKeys.value = checked ? [...allTreeKeys.value] : []; }
-function changePage(page: { current?: number; pageSize?: number }) { pagination.current = page.current ?? 1; pagination.pageSize = page.pageSize ?? 20; void load(); }
+function changePage(page: { current?: number; pageSize?: number }) { pagination.current = page.current ?? 1; pagination.pageSize = page.pageSize ?? pagination.pageSize; void load(); }
 function search() { pagination.current = 1; void load(); }
 function resetSearch() { searchId.value = undefined; search(); }
 function handleModalOk() { if (isProtected.value) visible.value = false; else void saveRole(); }
@@ -134,7 +137,7 @@ onMounted(load);
     <ListToolbar><template #left><ListRefreshButton :loading="loading" /><PermissionButton icon="lucide:filter" @click="showFilters = !showFilters">{{ $t('common.actions.filter') }}</PermissionButton></template><template #right><PermissionButton icon="lucide:shield-plus" permission="system.role.create" type="primary" @click="openEdit()">新增角色</PermissionButton></template></ListToolbar>
     <ListSearchPanel v-if="showFilters"><ListSearchField :label="$t('common.fields.id')"><InputNumber v-model:value="searchId" :min="1" :placeholder="$t('common.fields.id')" @press-enter="search" /></ListSearchField><template #actions><PermissionButton icon="lucide:search" type="primary" @click="search">{{ $t('common.actions.search') }}</PermissionButton><PermissionButton icon="lucide:rotate-ccw" @click="resetSearch">{{ $t('common.actions.reset') }}</PermissionButton></template></ListSearchPanel>
     <Card :body-style="{ padding: 0 }" class="admin-table-card">
-      <Table bordered class="admin-data-table" :columns="columns" :data-source="roles" :loading="loading" :pagination="pagination" :scroll="{ x: 1100 }" row-key="id" @change="changePage">
+      <Table :ref="setTableRef" bordered class="admin-data-table" :columns="columns" :data-source="roles" :loading="loading" :pagination="pagination" :scroll="{ x: 1100, y: tableScrollY }" row-key="id" @change="changePage">
         <template #bodyCell="{ column, record, text }">
           <Tag v-if="column.dataIndex === 'code'" color="blue">{{ text }}</Tag>
           <span

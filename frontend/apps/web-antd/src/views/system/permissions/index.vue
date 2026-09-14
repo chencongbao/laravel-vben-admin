@@ -10,10 +10,13 @@ import ListSearchField from '#/components/system/list-search-field.vue';
 import ListSearchPanel from '#/components/system/list-search-panel.vue';
 import PermissionButton from '#/components/system/permission-button.vue';
 import { $t } from '#/locales';
+import { createAdminPagination } from '#/utils/pagination';
+import { useAdminTableScrollY } from '#/utils/table';
 
 interface Permission { code: string; id: number; is_active: boolean; is_sensitive: boolean; is_system: boolean; name: string }
 const loading = ref(false); const saving = ref(false); const visible = ref(false); const editingId = ref<number>();
-const permissions = ref<Permission[]>([]); const pagination = reactive({ current: 1, pageSize: 20, total: 0 });
+const { setTableRef, tableScrollY } = useAdminTableScrollY();
+const permissions = ref<Permission[]>([]); const pagination = reactive(createAdminPagination());
 const searchId = ref<number>(); const showFilters = ref(true);
 const form = reactive({ code: '', is_active: true, is_sensitive: false, name: '' });
 const columns: TableColumnsType = [
@@ -44,7 +47,7 @@ async function save() {
   } finally { saving.value = false; }
 }
 async function remove(item: Record<string, any>) { await deleteResource('/system/permissions', Number(item.id)); message.success('权限已删除'); await load(); }
-function changePage(page: { current?: number; pageSize?: number }) { pagination.current = page.current ?? 1; pagination.pageSize = page.pageSize ?? 20; void load(); }
+function changePage(page: { current?: number; pageSize?: number }) { pagination.current = page.current ?? 1; pagination.pageSize = page.pageSize ?? pagination.pageSize; void load(); }
 function search() { pagination.current = 1; void load(); }
 function resetSearch() { searchId.value = undefined; search(); }
 onMounted(load);
@@ -55,7 +58,7 @@ onMounted(load);
     <ListToolbar><template #left><ListRefreshButton :loading="loading" /><PermissionButton icon="lucide:filter" @click="showFilters = !showFilters">{{ $t('common.actions.filter') }}</PermissionButton></template><template #right><PermissionButton icon="lucide:key-round" permission="system.permission.create" type="primary" @click="open()">新增权限</PermissionButton></template></ListToolbar>
     <ListSearchPanel v-if="showFilters"><ListSearchField :label="$t('common.fields.id')"><InputNumber v-model:value="searchId" :min="1" :placeholder="$t('common.fields.id')" @press-enter="search" /></ListSearchField><template #actions><PermissionButton icon="lucide:search" type="primary" @click="search">{{ $t('common.actions.search') }}</PermissionButton><PermissionButton icon="lucide:rotate-ccw" @click="resetSearch">{{ $t('common.actions.reset') }}</PermissionButton></template></ListSearchPanel>
     <Card :body-style="{ padding: 0 }" class="admin-table-card">
-      <Table bordered class="admin-data-table" :columns="columns" :data-source="permissions" :loading="loading" :pagination="pagination" row-key="id" @change="changePage">
+      <Table :ref="setTableRef" bordered class="admin-data-table" :columns="columns" :data-source="permissions" :loading="loading" :pagination="pagination" row-key="id" :scroll="{ y: tableScrollY }" @change="changePage">
         <template #bodyCell="{ column, record, text }">
           <Tag v-if="column.dataIndex === 'is_sensitive'" :color="text ? 'red' : 'default'">{{ text ? '敏感' : '普通' }}</Tag>
           <Tag v-else-if="column.dataIndex === 'is_system'" :color="text ? 'blue' : 'default'">{{ text ? '系统' : '自定义' }}</Tag>

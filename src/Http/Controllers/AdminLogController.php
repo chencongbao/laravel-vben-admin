@@ -3,6 +3,7 @@
 namespace Chencongbao\LaravelVbenAdmin\Http\Controllers;
 
 use Chencongbao\LaravelVbenAdmin\Contracts\AuditRecorder;
+use Chencongbao\LaravelVbenAdmin\Support\AdminPagination;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -16,14 +17,15 @@ final class AdminLogController extends Controller
 
     public function audit(Request $request): JsonResponse
     {
-        $perPage = min(max($request->integer('per_page', 20), 1), 100);
-        $id = $request->validate(['id' => ['nullable', 'integer', 'min:1']])['id'] ?? null;
+        $filters = $request->validate(['id' => ['nullable', 'integer', 'min:1'], 'action' => ['nullable', 'string', 'max:160'], 'actor_id' => ['nullable', 'integer', 'min:1'], 'per_page' => ['nullable', 'integer', 'min:1', 'max:100']]);
+        $perPage = AdminPagination::perPage($filters['per_page'] ?? null);
+        $id = $filters['id'] ?? null;
         $logs = Activity::query()
             ->where('log_name', config('laravel-vben-admin.activity_log.log_name', 'admin'))
             ->where('log_type', 'operation')
             ->when($id, fn ($query) => $query->whereKey($id))
-            ->when($request->string('action')->toString(), fn ($query, $action) => $query->where('event', $action))
-            ->when($request->integer('actor_id'), fn ($query, $actorId) => $query->where('causer_id', $actorId))
+            ->when($filters['action'] ?? null, fn ($query, $action) => $query->where('event', $action))
+            ->when($filters['actor_id'] ?? null, fn ($query, $actorId) => $query->where('causer_id', $actorId))
             ->latest('id')
             ->paginate($perPage)
             ->through(fn (Activity $activity) => [
@@ -47,14 +49,18 @@ final class AdminLogController extends Controller
 
     public function login(Request $request): JsonResponse
     {
-        $perPage = min(max($request->integer('per_page', 20), 1), 100);
-        $id = $request->validate(['id' => ['nullable', 'integer', 'min:1']])['id'] ?? null;
+        $filters = $request->validate(['id' => ['nullable', 'integer', 'min:1'], 'username' => ['nullable', 'string', 'max:120'], 'succeeded' => ['nullable', 'boolean'], 'per_page' => ['nullable', 'integer', 'min:1', 'max:100']]);
+        if (array_key_exists('succeeded', $filters)) {
+            $filters['succeeded'] = $request->boolean('succeeded');
+        }
+        $perPage = AdminPagination::perPage($filters['per_page'] ?? null);
+        $id = $filters['id'] ?? null;
         $logs = Activity::query()
             ->where('log_name', config('laravel-vben-admin.activity_log.log_name', 'admin'))
             ->where('log_type', 'login')
             ->when($id, fn ($query) => $query->whereKey($id))
-            ->when($request->string('username')->toString(), fn ($query, $username) => $query->where('properties->username', 'like', "%{$username}%"))
-            ->when($request->has('succeeded'), fn ($query) => $query->where('properties->succeeded', $request->boolean('succeeded')))
+            ->when($filters['username'] ?? null, fn ($query, $username) => $query->where('properties->username', 'like', "%{$username}%"))
+            ->when(array_key_exists('succeeded', $filters), fn ($query) => $query->where('properties->succeeded', $filters['succeeded']))
             ->latest('id')
             ->paginate($perPage)
             ->through(fn (Activity $activity) => [
