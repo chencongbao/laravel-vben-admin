@@ -2,6 +2,8 @@
 
 本文说明如何把 `chencongbao/laravel-vben-admin` 安装到 Laravel 13 项目，并访问已经编译的 Vben Admin 5.7 后台。
 
+安装完成后如需开发新的数据库、API、权限、菜单或Vue页面，请继续阅读 [二次开发指南](development.zh-CN.md)。该指南同时作为Codex/AI Agent的实现约束；直接开发包源码时由包根目录 `AGENTS.md` 约束，在宿主项目中开发时应按指南提供的片段接入宿主项目 `AGENTS.md`。
+
 ## 1. 环境要求
 
 - PHP 8.4

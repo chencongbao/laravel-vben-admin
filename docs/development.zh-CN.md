@@ -1,0 +1,328 @@
+# Laravel Vben Admin 二次开发指南
+
+本文面向安装 `chencongbao/laravel-vben-admin` 后继续开发后台功能的开发者与 AI Agent。目标是让新增功能遵循现有 Laravel/Vben 架构、权限、安全、审计和交付规则，而不是只做到“页面能打开”。
+
+## 让 Codex 在宿主项目中自动遵守本指南
+
+包仓库根目录的 `AGENTS.md` 会自动约束直接在包源码中进行的开发，但 Composer 安装后的 `vendor` 目录不是宿主项目规则的作用域。为了让 Codex 在宿主项目开发新功能时也自动读取本指南，请在宿主项目根目录的 `AGENTS.md` 中加入：
+
+```md
+## Laravel Vben Admin 开发规则
+
+- 开发任何后台数据库、API、权限、菜单或 Vue 页面前，必须完整阅读 `vendor/chencongbao/laravel-vben-admin/docs/development.zh-CN.md`。
+- 同时遵守该包 `AGENTS.md` 中的架构边界、安全规则、验证要求和完成报告要求。
+- 如果使用 Composer Path Repository，请按实际包路径读取上述两个文件；不得直接修改普通 Composer 安装产生的 `vendor` 文件。
+```
+
+若团队不提交 `vendor`，仍可在安装依赖后读取上述路径。建议把这一段随宿主项目代码一起提交，以确保后续每次 Codex 任务都能发现规则，而不是依赖开发者临时提醒。
+
+## 1. 先判断功能应该放在哪里
+
+系统分成“通用后台包”和“宿主业务项目”两层。
+
+### 应放在本包的能力
+
+- 管理员认证、Google 2FA、登录 IP 白名单和会话管理；
+- 管理员、角色、权限、菜单、系统设置；
+- 通用操作审计、登录日志；
+- 所有安装该包的 Laravel 项目都需要且语义一致的后台基础能力。
+
+### 应放在宿主项目的能力
+
+- 比赛、联赛、球队、直播源、媒体处理等业务实体；
+- 业务状态机和业务权限；
+- 只属于某个部署或某个平台的页面、接口和任务；
+- 第三方业务接口、业务凭据和业务配置。
+
+判断标准：如果另一个完全不同业务的 Laravel 项目安装本包后不应该自动拥有该功能，它通常就不属于本包。
+
+禁止直接修改 `vendor/chencongbao/laravel-vben-admin`。需要共同维护包时使用 Composer Path Repository；仅开发业务功能时，把 PHP 代码放在宿主项目 `app/Admin`，前端页面放在宿主项目约定的可编辑后台源码中。
+
+## 2. 开发前检查清单
+
+开始修改前依次确认：
+
+1. 阅读根目录 `AGENTS.md`、本文件、`architecture.md` 和 `api.md`。
+2. 使用 `git status --short` 确认已有改动，保留不属于当前任务的文件。
+3. 搜索现有控制器、模型、migration、权限代码、菜单 `view_key` 和前端页面，优先复用已有结构。
+4. 明确本次是否涉及数据库、API、权限、审计、配置、状态变化和前端构建。
+5. 涉及数据库或认证状态时，先写清字段、默认值、兼容方式、回滚方式和防锁死方案，再执行修改。
+
+推荐先定义一个可验证目标，例如：“有 `match.publish` 权限的管理员可以发布比赛；无权限请求服务端返回403并记录审计”。不要把多个无关模块塞进同一个任务。
+
+## 3. 目录与所有权
+
+```text
+config/                         包配置，仅放部署级配置
+database/migrations/            包拥有的数据结构变更
+routes/admin.php                固定 /api/admin 下的包路由
+src/Contracts/                  宿主扩展契约
+src/Definitions/                权限和菜单定义值对象
+src/Http/Controllers/           包通用后台控制器
+src/Http/Middleware/            认证、权限、超级管理员中间件
+src/Models/                     包通用模型
+src/Services/                   可测试的领域服务
+src/Support/                    无状态支持类和系统设置定义
+frontend/apps/web-antd/src/     Vben后台应用源码
+frontend/packages/              Vben共享包；只有真正通用时才修改
+tests/Unit/                     纯逻辑单元测试
+tests/Feature/                  Laravel/Testbench接口和安装测试
+docs/                           架构、API、安装和开发文档
+```
+
+控制器负责请求验证、权限边界和响应编排；可复用或容易出错的逻辑放进 `Services`，避免堆进 Vue 页面或控制器私有方法。
+
+## 4. 新增一个业务后台模块
+
+下面顺序适用于比赛、订单、内容等宿主业务模块。
+
+### 4.1 定义权限
+
+权限代码使用稳定的“领域.动作”语义，不使用 URL 或中文名称。例如：
+
+```text
+match.view
+match.create
+match.update
+match.publish
+```
+
+查询权限一般不是敏感权限；发布、删除、退款、密钥和权限分配等操作应标记为敏感。前端可用 `v-access:code` 控制展示，但服务端路由必须同时校验：
+
+```php
+Route::post('/api/admin/matches/{match}/publish', PublishMatchController::class)
+    ->middleware([
+        'auth:sanctum',
+        'admin.user',
+        'admin.permission:match.publish',
+    ]);
+```
+
+### 4.2 注册模块和菜单
+
+宿主项目实现 `AdminModule`，通过 `ModuleRegistry` 注册权限与菜单。菜单记录只保存稳定 `view_key`，不保存任意 Vue 文件路径。
+
+注册后先预览，再同步：
+
+```bash
+php artisan vben-admin:sync --dry-run
+php artisan vben-admin:sync
+```
+
+同步是幂等的，不应删除自定义记录，也不应重置角色分配。
+
+### 4.3 增加前端页面映射
+
+后端菜单返回 `view_key` 后，必须在：
+
+```text
+frontend/apps/web-antd/src/api/core/menu.ts
+```
+
+把该键显式映射到本地页面组件。未知键保持进入404/兜底页，禁止将数据库值直接传给动态 `import()`。
+
+页面中的操作按钮继续使用与服务端相同的权限代码。按钮隐藏只改善体验，不能作为安全控制。
+
+## 5. 数据库开发规则
+
+### 必须遵守
+
+- 每次结构变化新增 migration；已经被其他环境执行的 migration 不回写、不改名。
+- 表名通过 `config('laravel-vben-admin.tables.*')` 获取，不在模型、外键或验证规则里散落硬编码。
+- 布尔字段写明确默认值；JSON字段在模型中声明 `array` cast；时间字段使用 `datetime` cast。
+- 外键、唯一约束、查询索引和回滚逻辑必须与真实访问方式一致。
+- 多表写入使用 `DB::transaction()`。
+- migration 执行前查看 `php artisan migrate:status`；正式环境先备份并在测试环境演练。
+
+### 数据迁移兼容性
+
+新增强制安全字段时，要避免让现有管理员全部无法登录。必须说明旧数据默认行为、初始化方式和上线顺序。不得通过修改生产数据库或手写 SQL 绕过 migration。
+
+## 6. API约定
+
+后台API固定使用 `/api/admin`，不要根据 `VBEN_ADMIN_PATH` 改动API前缀。浏览器路径和API路径是两套独立概念。
+
+### 请求验证
+
+- 所有输入通过 Laravel Validator 校验；不要把前端校验当成可信边界。
+- 数组需要同时验证数组本身和每个元素。
+- 更新接口使用 `sometimes` 明确部分更新语义。
+- 密码使用 Laravel `Password` 规则；上传文件限制类型、大小和尺寸。
+
+### 响应与错误
+
+- 成功响应保持稳定数据结构。
+- 可处理的业务错误同时返回稳定 `code` 和兜底 `message`。
+- 前端根据 `code` 使用当前语言翻译，不能把服务端英文信息直接展示给中文用户。
+- 未认证返回401，无权限返回403，验证失败返回422；不要全部包装成HTTP 200。
+
+示例：
+
+```json
+{
+  "code": "MATCH_NOT_PUBLISHABLE",
+  "message": "The match cannot be published."
+}
+```
+
+如果API有变化，同一个任务中更新 `docs/api.md`。
+
+## 7. 权限与审计
+
+每个写接口至少回答四个问题：
+
+1. 哪个权限代码允许执行？
+2. 是否属于超级管理员专属操作？
+3. 是否需要事务？
+4. 审计记录哪些变更？
+
+审计应包含操作者、动作、对象、修改前后值和请求上下文。以下内容不得进入审计变更、普通日志或API用户信息：
+
+- 密码及密码确认；
+- Sanctum Token、挑战Token；
+- Google 2FA密钥；
+- API Key、Authorization头和第三方凭据。
+
+敏感按钮必须同时具备服务端权限中间件；只加 `v-access` 不算完成。
+
+## 8. 认证和会话不可破坏规则
+
+- Token撤销或过期后，前端收到401必须清理本地认证并跳转登录页，不能再次用失效Token调用退出接口。
+- 多个并发401只能触发一次退出跳转。
+- 管理员会话只允许查询和撤销自己的Token。
+- 当前会话不能通过“撤销其他会话”接口删除，正常退出走 `/auth/logout`。
+- 非 `local` 环境必须先命中管理员IP白名单，才能进入Google 2FA绑定或验证。
+- IP白名单有内容即开启，留空即未开启；支持IPv4、IPv6和CIDR。
+- `APP_ENV=local` 跳过IP白名单和Google 2FA，但不删除或修改已保存配置。
+- 认证错误使用稳定错误码并跟随前端语言显示。
+
+修改这些行为时必须覆盖成功、拒绝、Token失效、并发请求和非本地环境分支。
+
+## 9. 系统设置开发
+
+需要后台动态修改的非敏感通用设置使用 `admin_settings` 和 `SystemSettings` 定义，不要随意增加 `.env`。部署必须在启动前确定、涉及基础设施或密钥的值才放配置文件/环境变量。
+
+系统设置需要明确：键名、类型、默认值、验证规则、公开启动配置是否可见、管理权限和刷新后生效方式。密钥和凭据不得进入通用设置接口。
+
+## 10. Vben前端开发规则
+
+- 页面优先放在 `frontend/apps/web-antd/src/views`，API封装放在 `src/api`。
+- 复用Vben和Ant Design Vue现有组件、主题变量和布局，不写只适配一张截图的固定定位。
+- 文案同时维护 `zh-CN` 和 `en-US`；错误优先按稳定API错误码翻译。
+- 日期时间按后端返回的ISO时间解析，并使用应用配置时区展示。
+- 表格必须考虑加载、空数据、分页、窄屏横向滚动和操作权限。
+- 表单必须考虑新增、编辑、服务端验证失败、重复提交和保存后的数据刷新。
+- 不直接修改 `node_modules`；共享包只有被多个页面真实复用时才修改。
+
+修改源码后至少运行：
+
+```bash
+cd frontend/apps/web-antd
+../../node_modules/.bin/vue-tsc --noEmit --skipLibCheck
+```
+
+生产构建和发布：
+
+```bash
+cd frontend
+VITE_BASE=/admin/ corepack pnpm \
+  --filter=@chencongbao/laravel-vben-admin-web run build
+
+cd /path/to/laravel-host
+php artisan vben-admin:publish-assets --force
+```
+
+如果配置了其他 `VBEN_ADMIN_PATH`，`VITE_BASE` 必须使用相同路径并带首尾 `/`。
+
+## 11. 测试与验证分层
+
+不要把一种检查说成另一种证明。
+
+### 静态检查
+
+```bash
+php -l path/to/file.php
+vendor/bin/pint --test
+cd frontend/apps/web-antd
+../../node_modules/.bin/vue-tsc --noEmit --skipLibCheck
+```
+
+静态检查只能证明语法、格式或类型，不能证明接口和页面真的可用。
+
+### 自动化测试
+
+- 纯逻辑类放 `tests/Unit`；
+- 路由、认证、权限、数据库和命令放 `tests/Feature`；
+- 至少覆盖成功、无权限、无效输入和关键边界；
+- migration需要验证全新安装和已有数据库升级两条路径。
+
+包安装开发依赖后运行：
+
+```bash
+composer install
+vendor/bin/phpunit
+```
+
+### 运行时验证
+
+- 在Laravel宿主中执行migration并检查状态；
+- 使用真实HTTP请求验证状态码、错误码和数据库结果；
+- 构建并发布前端后在浏览器检查页面、刷新、错误提示和权限；
+- 外部服务、真实邮件、真实支付或真实设备没有验证时必须明确标为未验证。
+
+## 12. 新功能标准流程
+
+1. 确认功能属于包还是宿主项目。
+2. 写清目标、范围、不包含内容和验收标准。
+3. 检查现有代码、文档、数据库和Git状态。
+4. 设计数据结构、API、权限、审计、错误码和页面状态。
+5. 数据库变化先写migration。
+6. 实现服务端验证、授权、事务和审计。
+7. 实现前端API封装、页面、权限展示和中英文文案。
+8. 同步API、安装或架构文档。
+9. 执行静态检查、单元/功能测试和运行时验证。
+10. 构建并发布静态资源，确认浏览器加载的是新Hash资源。
+11. 输出修改文件、数据库/API/配置变化、部署步骤、测试结果和未完成项。
+
+## 13. 任务说明模板
+
+后续交给开发者或Codex时，建议使用以下模板：
+
+```markdown
+# 功能名称
+
+## 目标
+一句话描述可验证结果。
+
+## 范围
+- 允许修改的后端、前端和文档模块。
+
+## 不包含
+- 本次不开发的相邻能力。
+
+## 数据库
+- 新增字段、索引、默认值、旧数据处理和回滚。
+
+## API
+- 方法、路径、认证、权限、请求、响应和稳定错误码。
+
+## 页面
+- 入口、字段、操作以及加载/空/错误/权限状态。
+
+## 权限与审计
+- 权限代码、敏感级别和审计内容。
+
+## 验收标准
+- 成功场景。
+- 无权限场景。
+- 无效输入和失败恢复。
+- 刷新、重新登录和多语言场景。
+
+## 验证
+- 静态检查。
+- 自动化测试。
+- Laravel运行时请求。
+- 浏览器运行时检查。
+```
+
+使用此模板不代表需求自动成立；如果需求与现有代码、API文档或宿主业务规则冲突，必须先列出冲突并确认，不能擅自选择一种实现。

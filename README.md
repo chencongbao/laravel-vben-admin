@@ -62,6 +62,8 @@ php artisan vben-admin:publish-assets
 
 完整的中文安装、启动、Path 仓库联调和前端构建说明见 [安装文档](docs/installation.zh-CN.md)。
 
+安装后继续开发权限、菜单、API、数据库和Vben页面时，请先阅读 [二次开发指南](docs/development.zh-CN.md)。使用Codex或其他AI Agent开发本包时，仓库根目录的 [AGENTS.md](AGENTS.md) 会要求其遵守相同架构和验收规则；在宿主项目中开发时，请按二次开发指南提供的片段把规则接入宿主项目的 `AGENTS.md`。
+
 ```bash
 composer require chencongbao/laravel-vben-admin
 

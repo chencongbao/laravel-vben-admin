@@ -37,7 +37,7 @@ const form = reactive({
 const columns = [
   { dataIndex: 'id', title: 'ID' }, { dataIndex: 'username', title: '用户名' },
   { dataIndex: 'name', title: '姓名' }, { dataIndex: 'roles', title: '角色' },
-  { dataIndex: 'two_factor_enabled', title: '2FA' },
+  { dataIndex: 'two_factor_enabled', title: 'Google 2FA' },
   { dataIndex: 'login_ip_whitelist', title: '登录白名单' },
   { dataIndex: 'last_login_ip', title: '最近登录 IP' },
   { dataIndex: 'last_login_at', title: '最近登录时间' },
