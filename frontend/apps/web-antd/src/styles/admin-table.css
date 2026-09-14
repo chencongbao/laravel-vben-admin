@@ -1,0 +1,23 @@
+.admin-data-table .ant-table-thead > tr > th {
+  color: hsl(var(--foreground));
+  background: hsl(var(--muted) / 70%);
+  font-weight: 600;
+  padding: 10px 12px;
+}
+
+.admin-data-table .ant-table-tbody > tr > td {
+  background: hsl(var(--card));
+  padding: 9px 12px;
+}
+
+.admin-data-table .ant-table-tbody > tr:hover > td {
+  background: hsl(var(--accent) / 55%);
+}
+
+.admin-data-table .ant-table-cell-fix-right {
+  background: hsl(var(--card));
+}
+
+.admin-data-table .ant-table-tbody > tr:hover > .ant-table-cell-fix-right {
+  background: hsl(var(--accent) / 55%);
+}

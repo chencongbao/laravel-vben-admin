@@ -3,8 +3,6 @@ import type { AdminSession } from '#/api';
 
 import { computed, onMounted, ref } from 'vue';
 
-import { preferences } from '@vben/preferences';
-
 import {
   Button,
   Card,
@@ -27,6 +25,7 @@ import {
   revokeSessionApi,
 } from '#/api';
 import { $t } from '#/locales';
+import { formatBeijingDateTime } from '#/utils/datetime';
 
 const loading = ref(false);
 const sessions = ref<AdminSession[]>([]);
@@ -42,26 +41,6 @@ const columns = computed(() => [
   { dataIndex: 'current', title: $t('page.profile.security.session') },
   { dataIndex: 'action', title: $t('page.profile.security.actions') },
 ]);
-
-function formatBeijingTime(value?: null | string) {
-  if (!value) return $t('page.profile.security.neverUsed');
-
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-
-  return new Intl.DateTimeFormat('zh-CN', {
-    day: '2-digit',
-    hour: '2-digit',
-    hour12: false,
-    minute: '2-digit',
-    month: '2-digit',
-    second: '2-digit',
-    timeZone: preferences.app.timezone,
-    year: 'numeric',
-  })
-    .format(date)
-    .replaceAll('/', '-');
-}
 
 function clientTypeLabel(type: AdminSession['client_type']) {
   return $t(`page.profile.security.clientTypes.${type}`);
@@ -185,6 +164,8 @@ onMounted(load);
       </template>
 
       <Table
+        bordered
+        class="admin-data-table"
         :columns="columns"
         :data-source="sessions"
         :loading="loading"
@@ -213,7 +194,7 @@ onMounted(load);
             "
             class="session-time"
           >
-            {{ formatBeijingTime(text) }}
+            {{ text ? formatBeijingDateTime(text) : $t('page.profile.security.neverUsed') }}
           </span>
           <span
             v-else-if="column.dataIndex === 'ip_address'"

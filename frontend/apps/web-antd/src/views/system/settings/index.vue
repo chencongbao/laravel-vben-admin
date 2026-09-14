@@ -94,7 +94,7 @@ onMounted(load);
 </script>
 
 <template>
-  <Page>
+  <Page :title="$t('page.system.settings')">
     <Card :bordered="false" :loading="loading" class="settings-card">
       <Form layout="vertical">
         <div class="settings-list">

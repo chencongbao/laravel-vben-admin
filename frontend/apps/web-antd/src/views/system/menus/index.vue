@@ -32,6 +32,7 @@ import {
   reorderMenus,
   updateResource,
 } from '#/api/system';
+import ListToolbar from '#/components/system/list-toolbar.vue';
 
 interface MenuItem {
   code: string;
@@ -290,14 +291,16 @@ onMounted(() => load());
   <Page description="左侧维护菜单层级，右侧新增或编辑当前菜单。" title="菜单管理">
     <div class="grid min-h-[680px] grid-cols-1 gap-4 xl:grid-cols-[minmax(360px,0.9fr)_minmax(560px,1.4fr)]">
       <Card :loading="loading" title="菜单树">
-        <template #extra>
-          <Space>
+        <ListToolbar>
+          <template #left>
+            <Button size="small" @click="load()">刷新</Button>
             <Button size="small" @click="expandAll">展开</Button>
             <Button size="small" @click="collapseAll">收起</Button>
-            <Button size="small" @click="load()">刷新</Button>
+          </template>
+          <template #right>
             <Button v-access:code="'system.menu.create'" size="small" type="primary" @click="resetForm()">新增根菜单</Button>
-          </Space>
-        </template>
+          </template>
+        </ListToolbar>
 
         <Tree
           v-if="treeMenus.length"

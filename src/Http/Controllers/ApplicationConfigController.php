@@ -15,7 +15,7 @@ final class ApplicationConfigController extends Controller
             'name' => SystemSettings::value('system.name'),
             'locale' => AdminLocale::fromLaravel(),
             'supported_locales' => AdminLocale::SUPPORTED,
-            'timezone' => (string) config('app.timezone', 'UTC'),
+            'timezone' => 'Asia/Shanghai',
             'login_remember_me' => SystemSettings::value('system.login_remember_me'),
             'login_description' => SystemSettings::value('system.login_description'),
             'login_theme' => SystemSettings::value('system.login_theme'),

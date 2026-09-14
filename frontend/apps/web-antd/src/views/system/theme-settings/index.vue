@@ -475,7 +475,7 @@ onMounted(load);
 </script>
 
 <template>
-  <Page>
+  <Page :title="$t('page.configuration.themeSettings')">
     <Card :bordered="false" :loading="loading" class="theme-card">
       <Form layout="vertical">
         <Tabs v-model:active-key="activeGroup" class="theme-tabs">

@@ -26,6 +26,8 @@ import {
   getResource,
   updateResource,
 } from '#/api/system';
+import ListToolbar from '#/components/system/list-toolbar.vue';
+import { formatBeijingDateTime, isDateTimeField } from '#/utils/datetime';
 
 export interface ResourceField {
   key: string;
@@ -139,11 +141,14 @@ onMounted(load);
 
 <template>
   <Page :description="description" :title="title">
-    <Card>
-      <div v-if="!readOnly" class="mb-4 flex justify-end">
-        <Button v-access:code="`${permissionPrefix}.create`" type="primary" @click="openCreate">新增</Button>
-      </div>
+    <ListToolbar>
+      <template #left><Button :loading="loading" @click="load">刷新</Button></template>
+      <template v-if="!readOnly" #right><Button v-access:code="`${permissionPrefix}.create`" type="primary" @click="openCreate">新增</Button></template>
+    </ListToolbar>
+    <Card :body-style="{ padding: 0 }">
       <Table
+        bordered
+        class="admin-data-table"
         :columns="columns"
         :data-source="rows"
         :loading="loading"
@@ -163,6 +168,7 @@ onMounted(load);
           <Tag v-else-if="typeof text === 'boolean'" :color="text ? 'green' : 'default'">
             {{ text ? '启用' : '禁用' }}
           </Tag>
+          <span v-else-if="isDateTimeField(String(column.key))">{{ formatBeijingDateTime(text) }}</span>
           <span v-else-if="typeof text === 'object'">{{ JSON.stringify(text) }}</span>
         </template>
       </Table>

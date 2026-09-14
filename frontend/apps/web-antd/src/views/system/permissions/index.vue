@@ -3,6 +3,7 @@ import { onMounted, reactive, ref } from 'vue';
 import { Page } from '@vben/common-ui';
 import { Button, Card, Form, FormItem, Input, message, Modal, Popconfirm, Space, Switch, Table, Tag } from 'ant-design-vue';
 import { createResource, deleteResource, getResource, updateResource } from '#/api/system';
+import ListToolbar from '#/components/system/list-toolbar.vue';
 
 interface Permission { code: string; id: number; is_active: boolean; is_sensitive: boolean; is_system: boolean; name: string }
 const loading = ref(false); const saving = ref(false); const visible = ref(false); const editingId = ref<number>();
@@ -42,9 +43,9 @@ onMounted(load);
 
 <template>
   <Page description="权限编码是稳定的服务端授权标识；标记为敏感的权限应谨慎分配。" title="权限管理">
-    <Card>
-      <div class="mb-4 flex justify-end"><Button v-access:code="'system.permission.create'" type="primary" @click="open()">新增权限</Button></div>
-      <Table :columns="columns" :data-source="permissions" :loading="loading" :pagination="pagination" row-key="id" @change="changePage">
+    <ListToolbar><template #left><Button :loading="loading" @click="load">刷新</Button></template><template #right><Button v-access:code="'system.permission.create'" type="primary" @click="open()">新增权限</Button></template></ListToolbar>
+    <Card :body-style="{ padding: 0 }">
+      <Table bordered class="admin-data-table" :columns="columns" :data-source="permissions" :loading="loading" :pagination="pagination" row-key="id" @change="changePage">
         <template #bodyCell="{ column, record, text }">
           <Tag v-if="column.dataIndex === 'is_sensitive'" :color="text ? 'red' : 'default'">{{ text ? '敏感' : '普通' }}</Tag>
           <Tag v-else-if="column.dataIndex === 'is_system'" :color="text ? 'blue' : 'default'">{{ text ? '系统' : '自定义' }}</Tag>

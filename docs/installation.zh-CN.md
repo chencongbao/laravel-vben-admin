@@ -16,7 +16,7 @@
 
 后台支持简体中文和英文。初始语言读取 Laravel 的 `config('app.locale')`；推荐默认配置：
 
-后台时区读取 Laravel 的 `config('app.timezone')`，不在 `laravel-vben-admin.php` 中重复配置。
+数据库时间继续按UTC保存，API使用标准ISO-8601时间；管理后台所有时间统一转换为 `Asia/Shanghai`（北京时间，UTC+8）展示，不随服务器、浏览器或操作系统时区变化。
 
 ```dotenv
 APP_LOCALE=zh_CN

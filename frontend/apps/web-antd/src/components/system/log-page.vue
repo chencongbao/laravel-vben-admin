@@ -1,8 +1,10 @@
 <script lang="ts" setup>
 import { onMounted, reactive, ref } from 'vue';
 import { Page } from '@vben/common-ui';
-import { Button, Card, Input, Select, Space, Table, Tag } from 'ant-design-vue';
+import { Button, Card, Input, Select, Table, Tag } from 'ant-design-vue';
 import { getResource } from '#/api/system';
+import ListToolbar from '#/components/system/list-toolbar.vue';
+import { formatBeijingDateTime, isDateTimeField } from '#/utils/datetime';
 
 const props = defineProps<{
   columns: Array<{ dataIndex: string; title: string }>;
@@ -30,17 +32,22 @@ onMounted(load);
 
 <template>
   <Page :title="title">
-    <Card>
-      <Space class="mb-4" wrap>
+    <ListToolbar>
+      <template #left>
+        <Button :loading="loading" @click="load">刷新</Button>
         <template v-for="filter in filters" :key="filter.key">
           <Select v-if="filter.options" v-model:value="values[filter.key]" allow-clear :options="filter.options" :placeholder="filter.label" class="w-40" />
           <Input v-else v-model:value="values[filter.key]" :placeholder="filter.label" class="w-48" @press-enter="search" />
         </template>
-        <Button type="primary" @click="search">查询</Button><Button @click="reset">重置</Button>
-      </Space>
-      <Table :columns="columns" :data-source="rows" :loading="loading" :pagination="pagination" row-key="id" @change="changePage">
+        <Button type="primary" @click="search">筛选</Button><Button @click="reset">重置</Button>
+      </template>
+      <template #right><slot name="actions" /></template>
+    </ListToolbar>
+    <Card :body-style="{ padding: 0 }">
+      <Table bordered class="admin-data-table" :columns="columns" :data-source="rows" :loading="loading" :pagination="pagination" row-key="id" @change="changePage">
         <template #bodyCell="{ column, text }">
           <Tag v-if="column.dataIndex === 'succeeded'" :color="text ? 'green' : 'red'">{{ text ? '成功' : '失败' }}</Tag>
+          <span v-else-if="isDateTimeField(String(column.dataIndex ?? ''))">{{ formatBeijingDateTime(text) }}</span>
           <code v-else-if="column.dataIndex === 'changes' || column.dataIndex === 'context'">{{ JSON.stringify(text) }}</code>
         </template>
       </Table>

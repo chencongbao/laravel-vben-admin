@@ -15,6 +15,7 @@ import { initComponentAdapter } from './adapter/component';
 import { initSetupVbenForm } from './adapter/form';
 import App from './app.vue';
 import { router } from './router';
+import './styles/admin-table.css';
 
 async function bootstrap(namespace: string) {
   // 初始化组件适配器

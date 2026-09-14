@@ -6,14 +6,14 @@ The default prefix is `/api/admin`. Except for login, routes require a Sanctum B
 
 ### `GET /api/admin/application`
 
-Public, read-only bootstrap data used before the login page initializes. It returns the database-backed system name and login settings, the Vben locale mapped from Laravel's `config('app.locale')`, the supported locale list, and the timezone from Laravel's `config('app.timezone')`. Before the settings table is available, values fall back to their registered defaults.
+Public, read-only bootstrap data used before the login page initializes. It returns the database-backed system name and login settings, the Vben locale mapped from Laravel's `config('app.locale')`, the supported locale list, and the fixed administration display timezone `Asia/Shanghai`. Before the settings table is available, values fall back to their registered defaults.
 
 ```json
 {
   "name": "Laravel Vben Admin",
   "locale": "zh-CN",
   "supported_locales": ["zh-CN", "en-US"],
-  "timezone": "UTC",
+  "timezone": "Asia/Shanghai",
   "login_remember_me": true,
   "login_description": "安全、高效、易扩展的后台管理平台",
   "advanced_preferences": {
@@ -53,7 +53,7 @@ Profile updates accept `name` and an optional absolute avatar URL or one of 30 b
 
 Outside the `local` environment, every administrator must have a non-empty login IP whitelist containing the current request IP, either as an exact IPv4/IPv6 address or within a configured CIDR range. A non-empty list means the whitelist is enabled; an empty list means it is disabled. The whitelist is checked again when completing a 2FA challenge. A failed check returns HTTP 403 with `LOGIN_IP_NOT_ALLOWED` and writes a failed login log. When Google 2FA is enabled, a successful password and whitelist check returns HTTP 202 with a five-minute `challenge_token` instead of a Sanctum token. An unconfirmed user also receives an SVG QR data URL and manual secret. `POST /auth/two-factor/challenge` accepts the challenge and a six-digit TOTP; only a successful verification creates the administrator session. When Laravel is running with `APP_ENV=local`, login intentionally bypasses both the IP whitelist and 2FA checks without altering their saved configuration. Secrets are encrypted at rest and never appear in user payloads, audit changes, or ordinary logs.
 
-Session endpoints are always scoped through the authenticated administrator's token relation. Each newly created access token records its login IP address and user agent. `GET /auth/sessions` returns `id`, `current`, `ip_address`, `user_agent`, `client_type`, `created_at`, and `last_used_at`. `client_type` is derived from the saved user agent and is one of `desktop`, `mobile`, `tablet`, `api`, `other`, or `unknown`; timestamps use Laravel's standard ISO-8601 serialization and the administration UI renders them using Laravel's `config('app.timezone')`. Tokens created before the session metadata migration may have null IP and user-agent values. The current token cannot be revoked through the session endpoint; normal logout must be used instead. Revocations are recorded in the audit log.
+Session endpoints are always scoped through the authenticated administrator's token relation. Each newly created access token records its login IP address and user agent. `GET /auth/sessions` returns `id`, `current`, `ip_address`, `user_agent`, `client_type`, `created_at`, and `last_used_at`. `client_type` is derived from the saved user agent and is one of `desktop`, `mobile`, `tablet`, `api`, `other`, or `unknown`; timestamps use Laravel's standard ISO-8601 serialization and the administration UI renders them in `Asia/Shanghai`. Tokens created before the session metadata migration may have null IP and user-agent values. The current token cannot be revoked through the session endpoint; normal logout must be used instead. Revocations are recorded in the audit log.
 
 When any authenticated API request returns HTTP 401, the administration client treats the token as revoked or expired, clears all local authentication state, and immediately redirects to the login page. This forced local logout does not call `/auth/logout` again, preventing a recursive 401 loop when another session has already revoked the token. Concurrent 401 responses share one redirect operation.
 

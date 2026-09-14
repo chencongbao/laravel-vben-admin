@@ -7,6 +7,8 @@ import { Page } from '@vben/common-ui';
 import { $t } from '@vben/locales';
 import { Button, Card, Checkbox, Form, FormItem, Input, message, Modal, Popconfirm, Space, Switch, Table, Tag, Tree } from 'ant-design-vue';
 import { createResource, deleteResource, getCollection, getResource, getResourceDetail, updateResource } from '#/api/system';
+import ListToolbar from '#/components/system/list-toolbar.vue';
+import { formatBeijingDateTime } from '#/utils/datetime';
 
 interface MenuItem { code: string; id: number; parent_code?: null | string; permission_code?: null | string; title: string }
 interface PermissionItem { code: string; id: number; name: string }
@@ -122,9 +124,9 @@ onMounted(load);
 
 <template>
   <Page description="创建或编辑角色时直接分配菜单和操作权限。" title="角色管理">
-    <Card>
-      <div class="mb-4 flex justify-end"><Button v-access:code="'system.role.create'" type="primary" @click="openEdit()">新增角色</Button></div>
-      <Table :columns="columns" :data-source="roles" :loading="loading" :pagination="pagination" :scroll="{ x: 1100 }" row-key="id" @change="changePage">
+    <ListToolbar><template #left><Button :loading="loading" @click="load">刷新</Button></template><template #right><Button v-access:code="'system.role.create'" type="primary" @click="openEdit()">新增角色</Button></template></ListToolbar>
+    <Card :body-style="{ padding: 0 }">
+      <Table bordered class="admin-data-table" :columns="columns" :data-source="roles" :loading="loading" :pagination="pagination" :scroll="{ x: 1100 }" row-key="id" @change="changePage">
         <template #bodyCell="{ column, record, text }">
           <Tag v-if="column.dataIndex === 'code'" color="blue">{{ text }}</Tag>
           <span
@@ -135,6 +137,7 @@ onMounted(load);
             "
           >全部</span>
           <Tag v-else-if="column.dataIndex === 'is_active'" :color="text ? 'green' : 'default'">{{ text ? '启用' : '禁用' }}</Tag>
+          <span v-else-if="column.dataIndex === 'created_at' || column.dataIndex === 'updated_at'">{{ formatBeijingDateTime(text) }}</span>
           <Space v-else-if="column.dataIndex === 'action'">
             <Button v-access:code="'system.role.update'" size="small" type="link" @click="openEdit(record)">{{ record.is_super_admin ? '查看' : '编辑与授权' }}</Button>
             <Popconfirm v-if="!record.is_system" v-access:code="'system.role.delete'" title="确定删除该角色？" @confirm="remove(record)"><Button danger size="small" type="link">删除</Button></Popconfirm>

@@ -33,7 +33,7 @@ interface LaravelApplicationConfig {
 const fallbackApplicationConfig: LaravelApplicationConfig = {
   locale: 'zh-CN',
   name: import.meta.env.VITE_APP_TITLE,
-  timezone: 'UTC',
+  timezone: 'Asia/Shanghai',
   loginLayout: 'panel-right',
   loginTheme: 'default',
   adminTheme: 'default',
@@ -91,7 +91,7 @@ async function resolveLaravelApplicationConfig(): Promise<LaravelApplicationConf
     return {
       locale: data.locale === 'en-US' ? 'en-US' : 'zh-CN',
       name: data.name || fallbackApplicationConfig.name,
-      timezone: data.timezone || 'UTC',
+      timezone: data.timezone || 'Asia/Shanghai',
       loginLayout: ['panel-left', 'panel-center', 'panel-right'].includes(
         data.login_layout || '',
       )
