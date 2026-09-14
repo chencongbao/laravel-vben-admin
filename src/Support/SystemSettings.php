@@ -71,23 +71,15 @@ final class SystemSettings
             'system.advanced_preferences' => [
                 'type' => 'json',
                 'default' => [
-                    'app' => ['dynamicTitle' => true, 'contentCompact' => 'wide', 'watermark' => false, 'watermarkContent' => '', 'colorGrayMode' => false, 'colorWeakMode' => false],
+                    'app' => ['dynamicTitle' => true, 'contentCompact' => 'wide', 'colorGrayMode' => false, 'colorWeakMode' => false],
                     'theme' => ['radius' => '0.5', 'fontSize' => 16, 'semiDarkHeader' => false, 'semiDarkSidebar' => false, 'semiDarkSidebarSub' => false],
                     'sidebar' => ['enable' => true, 'width' => 224, 'draggable' => true, 'collapsedShowTitle' => false, 'autoActivateChild' => false, 'expandOnHover' => true, 'collapsedButton' => true, 'fixedButton' => true],
                     'header' => ['enable' => true, 'mode' => 'fixed', 'menuAlign' => 'start'],
                     'navigation' => ['accordion' => true, 'split' => true, 'styleType' => 'rounded'],
-                    'breadcrumb' => ['enable' => true, 'showIcon' => true, 'showHome' => false, 'hideOnlyOne' => false, 'styleType' => 'normal'],
+                    'breadcrumb' => ['enable' => true, 'showIcon' => true, 'showHome' => true, 'hideOnlyOne' => false, 'styleType' => 'normal'],
                     'shortcutKeys' => ['enable' => true, 'globalSearch' => true, 'globalLogout' => true, 'globalLockScreen' => true],
                     'transition' => ['enable' => true, 'loading' => true, 'progress' => true, 'name' => 'fade-slide'],
                     'widget' => ['globalSearch' => true, 'fullscreen' => true, 'languageToggle' => true, 'notification' => true, 'themeToggle' => true, 'sidebarToggle' => true, 'lockScreen' => true],
-                    'footer' => ['enable' => false, 'fixed' => false],
-                    'copyright' => ['enable' => true, 'companyName' => '', 'companySiteLink' => '', 'date' => '2026', 'icp' => '', 'icpLink' => ''],
-                    'custom' => [
-                        'enableFormFullscreen' => true,
-                        'tenantMode' => 'single',
-                        'defaultTableSize' => 20,
-                        'reportTitle' => '',
-                    ],
                 ],
             ],
         ];

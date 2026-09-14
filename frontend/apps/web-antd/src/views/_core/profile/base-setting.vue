@@ -18,10 +18,10 @@ const formSchema = computed((): VbenFormSchema[] => [
   {
     component: 'Input',
     componentProps: {
-      placeholder: $t('page.profile.basic.namePlaceholder'),
+      placeholder: $t('profile.basic.namePlaceholder'),
     },
     fieldName: 'name',
-    label: $t('page.profile.basic.name'),
+    label: $t('profile.basic.name'),
   },
 ]);
 onMounted(async () => {
@@ -32,14 +32,14 @@ async function submit(values: Recordable<any>) {
   await updateProfileApi({ name: values.name });
   const userInfo = await getUserInfoApi();
   userStore.setUserInfo(userInfo);
-  message.success($t('page.profile.basic.updated'));
+  message.success($t('profile.basic.updated'));
 }
 </script>
 <template>
   <section class="profile-section">
     <div class="profile-section-heading">
-      <h2>{{ $t('page.profile.basic.title') }}</h2>
-      <p>{{ $t('page.profile.basic.nameDescription') }}</p>
+      <h2>{{ $t('profile.basic.title') }}</h2>
+      <p>{{ $t('profile.basic.nameDescription') }}</p>
     </div>
     <ProfileBaseSetting
       ref="profileRef"

@@ -5,7 +5,6 @@ import { computed, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 
 import { AuthenticationLoginExpiredModal } from '@vben/common-ui';
-import { useWatermark } from '@vben/hooks';
 import {
   BasicLayout,
   LockScreen,
@@ -15,7 +14,6 @@ import {
 import {
   preferences,
   updatePreferences,
-  usePreferences,
 } from '@vben/preferences';
 import { useAccessStore, useUserStore } from '@vben/stores';
 
@@ -81,18 +79,28 @@ const router = useRouter();
 const userStore = useUserStore();
 const authStore = useAuthStore();
 const accessStore = useAccessStore();
-const { destroyWatermark, updateWatermark } = useWatermark();
-const { isDark } = usePreferences();
 const adminAppearance = getAdminAppearance();
+const themeModeStorageKey = 'laravel-vben-admin:theme-mode';
+const storedThemeMode = localStorage.getItem(themeModeStorageKey);
+const preferredThemeMode = ['light', 'dark', 'auto'].includes(
+  storedThemeMode || '',
+)
+  ? storedThemeMode as 'auto' | 'dark' | 'light'
+  : adminAppearance.mode;
 updatePreferences({
   app: { layout: adminAppearance.layout },
   theme: {
     builtinType: adminAppearance.theme,
     colorPrimary:
       LOGIN_THEME_COLORS[adminAppearance.theme] || LOGIN_THEME_COLORS.default,
-    mode: adminAppearance.mode,
+    mode: preferredThemeMode,
   },
 });
+watch(
+  () => preferences.theme.mode,
+  (mode) => localStorage.setItem(themeModeStorageKey, mode),
+  { flush: 'sync' },
+);
 const showDot = computed(() =>
   notifications.value.some((item) => !item.isRead),
 );
@@ -103,7 +111,7 @@ const menus = computed(() => [
       router.push({ name: 'Profile' });
     },
     icon: 'lucide:user',
-    text: $t('page.auth.profile'),
+    text: $t('auth.profile'),
   },
 ]);
 
@@ -114,13 +122,13 @@ const avatar = computed(() => {
 const roleName = computed(() => {
   const roles = userStore.userInfo?.roles || [];
   if (roles.includes('administrator')) {
-    return $t('page.auth.roles.administrator');
+    return $t('auth.roles.administrator');
   }
   if (roles.includes('manager')) {
-    return $t('page.auth.roles.manager');
+    return $t('auth.roles.manager');
   }
 
-  return userStore.userInfo?.desc || $t('page.auth.roles.unassigned');
+  return userStore.userInfo?.desc || $t('auth.roles.unassigned');
 });
 
 async function handleLogout() {
@@ -173,44 +181,6 @@ function navigateTo(
   }
 }
 
-watch(
-  () => ({
-    enable: preferences.app.watermark,
-    content: preferences.app.watermarkContent,
-    isDark: isDark.value,
-  }),
-  async ({ enable, content, isDark: isDarkValue }) => {
-    if (enable) {
-      const watermarkColor = isDarkValue
-        ? 'rgba(255, 255, 255, 0.12)'
-        : 'rgba(0, 0, 0, 0.12)';
-
-      await updateWatermark({
-        advancedStyle: {
-          colorStops: [
-            {
-              color: watermarkColor,
-              offset: 0,
-            },
-            {
-              color: watermarkColor,
-              offset: 1,
-            },
-          ],
-          type: 'linear',
-        },
-        content:
-          content ||
-          `${userStore.userInfo?.username} - ${userStore.userInfo?.realName}`,
-      });
-    } else {
-      destroyWatermark();
-    }
-  },
-  {
-    immediate: true,
-  },
-);
 </script>
 
 <template>

@@ -45,11 +45,11 @@ function selectAvatar(item: { id: string; url: string }) {
 
 function beforeAvatarUpload(file: RcFile) {
   if (!allowedAvatarTypes.has(file.type)) {
-    message.error($t('page.profile.basic.avatarTypeError'));
+    message.error($t('profile.basic.avatarTypeError'));
     return false;
   }
   if (file.size > maxAvatarSize) {
-    message.error($t('page.profile.basic.avatarSizeError'));
+    message.error($t('profile.basic.avatarSizeError'));
     return false;
   }
   return true;
@@ -65,7 +65,7 @@ async function saveAvatar() {
     });
     const userInfo = await getUserInfoApi();
     userStore.setUserInfo(userInfo);
-    message.success($t('page.profile.basic.avatarUpdated'));
+    message.success($t('profile.basic.avatarUpdated'));
     emit('saved');
   } finally {
     avatarLoading.value = false;
@@ -81,7 +81,7 @@ async function uploadAvatar(options: UploadRequestOption) {
     selectedAvatar.value = result.avatar;
     userStore.setUserInfo(userInfo);
     options.onSuccess?.(result);
-    message.success($t('page.profile.basic.avatarUploaded'));
+    message.success($t('profile.basic.avatarUploaded'));
     emit('saved');
   } catch (error) {
     options.onError?.(error as Error);
@@ -96,8 +96,8 @@ async function uploadAvatar(options: UploadRequestOption) {
     <div class="avatar-preview">
       <Avatar :size="88" :src="currentAvatar" />
       <div>
-        <div class="avatar-label">{{ $t('page.profile.basic.avatar') }}</div>
-        <div class="avatar-help">{{ $t('page.profile.basic.avatarHelp') }}</div>
+        <div class="avatar-label">{{ $t('profile.basic.avatar') }}</div>
+        <div class="avatar-help">{{ $t('profile.basic.avatarHelp') }}</div>
         <Upload
           accept="image/jpeg,image/png,image/webp"
           :before-upload="beforeAvatarUpload"
@@ -105,20 +105,20 @@ async function uploadAvatar(options: UploadRequestOption) {
           :show-upload-list="false"
         >
           <Button :loading="avatarLoading" class="avatar-upload-button">
-            {{ $t('page.profile.basic.uploadAvatar') }}
+            {{ $t('profile.basic.uploadAvatar') }}
           </Button>
         </Upload>
       </div>
     </div>
 
     <div class="avatar-options-label">
-      {{ $t('page.profile.basic.defaultAvatars') }}
+      {{ $t('profile.basic.defaultAvatars') }}
     </div>
     <div class="avatar-options">
       <button
         v-for="item in avatarOptions"
         :key="item.id"
-        :aria-label="$t('page.profile.basic.selectAvatar')"
+        :aria-label="$t('profile.basic.selectAvatar')"
         class="avatar-option"
         :class="{ selected: selectedAvatar === item.id }"
         type="button"
@@ -130,7 +130,7 @@ async function uploadAvatar(options: UploadRequestOption) {
 
     <div class="avatar-actions">
       <Button type="primary" :loading="avatarLoading" @click="saveAvatar">
-        {{ $t('page.profile.basic.saveAvatar') }}
+        {{ $t('profile.basic.saveAvatar') }}
       </Button>
     </div>
   </Spin>

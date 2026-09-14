@@ -66,7 +66,7 @@ php artisan vben-admin:publish-assets
 
 登录日志与后台操作日志统一基于 `spatie/laravel-activitylog` 存储，并通过稳定的包契约记录、脱敏和查询；具体规则见二次开发指南的“权限与审计”章节。
 
-列表页提供统一搜索面板、权限按钮、自动刷新、当前页 CSV 导出和多操作折叠组件；大数据导出应在宿主项目按二次开发指南实现队列任务和独立服务端权限。
+列表页提供统一搜索面板、权限按钮、自动刷新、当前页 CSV 导出、多操作折叠和按需批量操作组件；大数据导出应在宿主项目按二次开发指南实现队列任务和独立服务端权限。
 
 ```bash
 composer require chencongbao/laravel-vben-admin

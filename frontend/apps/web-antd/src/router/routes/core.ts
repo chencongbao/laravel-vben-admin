@@ -44,7 +44,7 @@ const coreRoutes: RouteRecordRaw[] = [
         meta: {
           icon: 'lucide:user',
           hideInMenu: true,
-          title: $t('page.auth.profile'),
+          title: $t('auth.profile'),
         },
       },
     ],
@@ -64,7 +64,7 @@ const coreRoutes: RouteRecordRaw[] = [
         path: 'login',
         component: () => import('#/views/_core/authentication/login.vue'),
         meta: {
-          title: $t('page.auth.login'),
+          title: $t('auth.login'),
         },
       },
     ],

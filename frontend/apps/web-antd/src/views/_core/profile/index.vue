@@ -20,15 +20,15 @@ const avatarSettingOpen = ref(false);
 
 const tabs = computed(() => [
   {
-    label: $t('page.profile.tabs.basic'),
+    label: $t('profile.tabs.basic'),
     value: 'basic',
   },
   {
-    label: $t('page.profile.tabs.security'),
+    label: $t('profile.tabs.security'),
     value: 'security',
   },
   {
-    label: $t('page.profile.tabs.password'),
+    label: $t('profile.tabs.password'),
     value: 'password',
   },
 ]);
@@ -36,8 +36,8 @@ const tabs = computed(() => [
 <template>
   <Profile
     v-model:model-value="tabsValue"
-    :avatar-action-label="$t('page.profile.basic.editAvatar')"
-    :title="$t('page.profile.title')"
+    :avatar-action-label="$t('profile.basic.editAvatar')"
+    :title="$t('profile.title')"
     :user-info="userStore.userInfo"
     :tabs="tabs"
     @avatar-click="avatarSettingOpen = true"
@@ -51,7 +51,7 @@ const tabs = computed(() => [
   <Modal
     v-model:open="avatarSettingOpen"
     :footer="null"
-    :title="$t('page.profile.basic.avatarSetting')"
+    :title="$t('profile.basic.avatarSetting')"
     width="720px"
   >
     <ProfileAvatarSetting @saved="avatarSettingOpen = false" />

@@ -21,7 +21,6 @@ import { PreferencesLayout } from '@vben/layouts';
 import {
   BUILT_IN_THEME_PRESETS,
   preferences,
-  updateCustomPreferences,
   updatePreferences,
 } from '@vben/preferences';
 
@@ -153,47 +152,27 @@ const advancedSections: Array<{
       { key: 'widget.lockScreen', label: ['锁屏功能', 'Lock screen'], type: 'boolean' },
     ],
   },
-  {
-    key: 'extensions',
-    title: ['水印、页脚与扩展', 'Watermark, Footer & Extensions'],
-    fields: [
-      { key: 'app.watermark', label: ['显示水印', 'Show watermark'], type: 'boolean' },
-      { key: 'app.watermarkContent', label: ['水印文字', 'Watermark text'], type: 'string' },
-      { key: 'footer.enable', label: ['显示页脚', 'Show footer'], type: 'boolean' },
-      { key: 'footer.fixed', label: ['固定页脚', 'Fixed footer'], type: 'boolean' },
-      { key: 'copyright.enable', label: ['显示版权信息', 'Show copyright'], type: 'boolean' },
-      { key: 'copyright.date', label: ['版权年份', 'Copyright year'], type: 'string' },
-      { key: 'copyright.icp', label: ['备案号', 'ICP number'], type: 'string' },
-      { key: 'copyright.icpLink', label: ['备案链接', 'ICP link'], type: 'string' },
-      { key: 'custom.enableFormFullscreen', label: ['表单全屏', 'Form fullscreen'], type: 'boolean' },
-      { key: 'custom.tenantMode', label: ['租户模式', 'Tenant mode'], type: 'select', options: [
-        { label: ['单租户', 'Single tenant'], value: 'single' }, { label: ['多租户', 'Multi tenant'], value: 'multi' },
-      ] },
-      { key: 'custom.defaultTableSize', label: ['默认表格条数', 'Default table size'], type: 'number', min: 10, max: 200 },
-      { key: 'custom.reportTitle', label: ['报表标题', 'Report title'], type: 'string' },
-    ],
-  },
 ];
 
 const groups = computed(() => [
   {
-    description: $t('page.configuration.themeForm.login.description'),
+    description: $t('configuration.themeForm.login.description'),
     key: 'login',
     keys: ['system.login_theme', 'system.login_layout'],
-    title: $t('page.configuration.themeForm.login.title'),
+    title: $t('configuration.themeForm.login.title'),
   },
   {
-    description: $t('page.configuration.themeForm.admin.description'),
+    description: $t('configuration.themeForm.admin.description'),
     key: 'admin',
     keys: [
       'system.admin_theme',
       'system.admin_theme_mode',
       'system.admin_layout',
     ],
-    title: $t('page.configuration.themeForm.admin.title'),
+    title: $t('configuration.themeForm.admin.title'),
   },
   {
-    description: $t('page.configuration.themeForm.tabbar.description'),
+    description: $t('configuration.themeForm.tabbar.description'),
     key: 'tabbar',
     keys: [
       'system.tabbar_enable',
@@ -208,7 +187,7 @@ const groups = computed(() => [
       'system.tabbar_show_maximize',
       'system.tabbar_style_type',
     ],
-    title: $t('page.configuration.themeForm.tabbar.title'),
+    title: $t('configuration.themeForm.tabbar.title'),
   },
   {
     description: preferences.app.locale === 'en-US'
@@ -312,17 +291,17 @@ const loginLayouts: Array<{
 }> = [
   {
     icon: PanelLeft,
-    label: 'page.configuration.themeForm.options.loginLayout.panel-left',
+    label: 'configuration.themeForm.options.loginLayout.panel-left',
     value: 'panel-left',
   },
   {
     icon: InspectionPanel,
-    label: 'page.configuration.themeForm.options.loginLayout.panel-center',
+    label: 'configuration.themeForm.options.loginLayout.panel-center',
     value: 'panel-center',
   },
   {
     icon: PanelRight,
-    label: 'page.configuration.themeForm.options.loginLayout.panel-right',
+    label: 'configuration.themeForm.options.loginLayout.panel-right',
     value: 'panel-right',
   },
 ];
@@ -334,17 +313,17 @@ const themeModes: Array<{
 }> = [
   {
     icon: Sun,
-    label: 'page.configuration.themeForm.options.themeMode.light',
+    label: 'configuration.themeForm.options.themeMode.light',
     value: 'light',
   },
   {
     icon: MoonStar,
-    label: 'page.configuration.themeForm.options.themeMode.dark',
+    label: 'configuration.themeForm.options.themeMode.dark',
     value: 'dark',
   },
   {
     icon: SunMoon,
-    label: 'page.configuration.themeForm.options.themeMode.auto',
+    label: 'configuration.themeForm.options.themeMode.auto',
     value: 'auto',
   },
 ];
@@ -368,7 +347,7 @@ function isTabbarSetting(key: string) {
 function tabbarStyleOptions() {
   return ['chrome', 'plain', 'card', 'brisk'].map((value) => ({
     label: $t(
-      `page.configuration.themeForm.options.tabbarStyle.${value}`,
+      `configuration.themeForm.options.tabbarStyle.${value}`,
     ),
     value,
   }));
@@ -379,7 +358,7 @@ function selectTheme(item: SettingItem, theme: BuiltinThemeType) {
 }
 
 function fieldText(key: string, field: 'description' | 'label') {
-  return $t(`page.configuration.themeForm.fields.${fieldNames[key]}.${field}`);
+  return $t(`configuration.themeForm.fields.${fieldNames[key]}.${field}`);
 }
 
 function selectOptions(key: string) {
@@ -390,7 +369,7 @@ function selectOptions(key: string) {
       : 'theme';
 
   return (settingOptions[key] || []).map((value) => ({
-    label: $t(`page.configuration.themeForm.options.${optionGroup}.${value}`),
+    label: $t(`configuration.themeForm.options.${optionGroup}.${value}`),
     value,
   }));
 }
@@ -428,11 +407,8 @@ async function save() {
     const settingValue = (key: string) =>
       settings.value.find((item) => item.key === key)?.value;
     const advancedPreferences = settingValue('system.advanced_preferences') || {};
-    const { custom: customPreferences, ...advancedInterfacePreferences } =
-      advancedPreferences;
-
     updatePreferences({
-      ...advancedInterfacePreferences,
+      ...advancedPreferences,
       app: { ...advancedPreferences.app, layout: adminLayout },
       theme: {
         ...advancedPreferences.theme,
@@ -462,10 +438,7 @@ async function save() {
         timezone: false,
       },
     });
-    if (customPreferences) {
-      updateCustomPreferences(customPreferences);
-    }
-    message.success($t('page.configuration.themeForm.saved'));
+    message.success($t('configuration.themeForm.saved'));
   } finally {
     saving.value = false;
   }
@@ -475,7 +448,7 @@ onMounted(load);
 </script>
 
 <template>
-  <Page :title="$t('page.configuration.themeSettings')">
+  <Page :description="$t('configuration.themeDescription')" :title="$t('configuration.themeSettings')">
     <Card :bordered="false" :loading="loading" class="theme-card">
       <Form layout="vertical">
         <Tabs v-model:active-key="activeGroup" class="theme-tabs">
@@ -578,7 +551,7 @@ onMounted(load);
                         :aria-checked="item.value === preset.type"
                         :aria-label="
                           $t(
-                            `page.configuration.themeForm.options.theme.${preset.type}`,
+                            `configuration.themeForm.options.theme.${preset.type}`,
                           )
                         "
                         :class="{
@@ -587,7 +560,7 @@ onMounted(load);
                         :style="{ backgroundColor: preset.color }"
                         :title="
                           $t(
-                            `page.configuration.themeForm.options.theme.${preset.type}`,
+                            `configuration.themeForm.options.theme.${preset.type}`,
                           )
                         "
                         class="color-preset"
@@ -702,7 +675,7 @@ onMounted(load);
 
         <div class="theme-actions">
           <Button :loading="saving" size="large" type="primary" @click="save">
-            {{ $t('page.configuration.themeForm.save') }}
+            {{ $t('configuration.themeForm.save') }}
           </Button>
         </div>
       </Form>
@@ -715,7 +688,7 @@ onMounted(load);
   max-width: 960px;
   margin: 0 auto;
   border: 1px solid hsl(var(--border));
-  border-radius: 12px;
+  border-radius: var(--radius);
   box-shadow: 0 8px 28px rgb(15 23 42 / 5%);
 }
 
@@ -750,7 +723,7 @@ onMounted(load);
 .theme-list {
   overflow: hidden;
   border: 1px solid hsl(var(--border));
-  border-radius: 10px;
+  border-radius: var(--radius);
 }
 
 .advanced-tabs :deep(.ant-tabs-nav) {
@@ -766,13 +739,13 @@ onMounted(load);
   padding-right: 14px;
   padding-left: 14px;
   margin: 0 !important;
-  border-radius: 6px 6px 0 0 !important;
+  border-radius: var(--radius) var(--radius) 0 0 !important;
 }
 
 .advanced-section {
   overflow: hidden;
   border: 1px solid hsl(var(--border));
-  border-radius: 10px;
+  border-radius: var(--radius);
   background: hsl(var(--background));
 }
 
@@ -904,7 +877,7 @@ onMounted(load);
   justify-content: center;
   background: hsl(var(--background));
   border: 1px solid hsl(var(--border));
-  border-radius: 8px;
+  border-radius: var(--radius);
   outline: 2px solid transparent;
   outline-offset: 1px;
   transition:
@@ -957,7 +930,7 @@ onMounted(load);
   justify-content: center;
   background: hsl(var(--muted) / 55%);
   border: 1px solid hsl(var(--border));
-  border-radius: 8px;
+  border-radius: var(--radius);
   outline: 2px solid transparent;
   outline-offset: 1px;
 }
@@ -986,7 +959,7 @@ onMounted(load);
 
 .theme-actions :deep(.ant-btn) {
   min-width: 112px;
-  border-radius: 8px;
+  border-radius: var(--radius);
 }
 
 @media (max-width: 767px) {

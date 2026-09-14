@@ -1,0 +1,27 @@
+{
+  "actions": {
+    "autoRefresh": "Auto Refresh",
+    "batch": "Batch Actions",
+    "clearSelection": "Clear Selection",
+    "collapse": "Collapse",
+    "exportCurrentPage": "Export Current Page",
+    "filter": "Filter",
+    "expand": "Expand",
+    "refresh": "Refresh",
+    "reset": "Reset",
+    "search": "Search"
+  },
+  "fields": {
+    "createdAt": "Created At",
+    "id": "ID"
+  },
+  "selection": {
+    "selectedCount": "{count} selected"
+  },
+  "table": {
+    "noExportData": "There is no data to export on the current page"
+  },
+  "time": {
+    "seconds": "{count}s"
+  }
+}

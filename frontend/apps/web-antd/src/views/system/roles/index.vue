@@ -24,7 +24,7 @@ const form = reactive({ code: '', is_active: true, name: '' });
 const columns: TableColumnsType = [
   { dataIndex: 'code', title: '角色标识' }, { dataIndex: 'name', title: '角色名称' },
   { dataIndex: 'permissions_count', title: '权限数' }, { dataIndex: 'menus_count', title: '菜单数' },
-  { dataIndex: 'is_active', title: '状态' }, { dataIndex: 'created_at', title: '创建时间' },
+  { dataIndex: 'is_active', title: '状态' }, { dataIndex: 'created_at', title: $t('common.fields.createdAt') },
   { dataIndex: 'updated_at', title: '更新时间' }, { dataIndex: 'action', fixed: 'right', title: '操作', width: 82 },
 ];
 const isProtected = computed(() => editingRole.value?.is_super_admin === true);
@@ -124,9 +124,9 @@ onMounted(load);
 </script>
 
 <template>
-  <Page description="创建或编辑角色时直接分配菜单和操作权限。" title="角色管理">
-    <ListToolbar><template #left><PermissionButton icon="lucide:refresh-cw" :loading="loading" @click="load">刷新</PermissionButton></template><template #right><PermissionButton icon="lucide:shield-plus" permission="system.role.create" type="primary" @click="openEdit()">新增角色</PermissionButton></template></ListToolbar>
-    <Card :body-style="{ padding: 0 }">
+  <Page :description="$t('system.rolesDescription')" :title="$t('system.roles')">
+    <ListToolbar><template #left><PermissionButton icon="lucide:refresh-cw" :loading="loading" @click="load">{{ $t('common.actions.refresh') }}</PermissionButton></template><template #right><PermissionButton icon="lucide:shield-plus" permission="system.role.create" type="primary" @click="openEdit()">新增角色</PermissionButton></template></ListToolbar>
+    <Card :body-style="{ padding: 0 }" class="admin-table-card">
       <Table bordered class="admin-data-table" :columns="columns" :data-source="roles" :loading="loading" :pagination="pagination" :scroll="{ x: 1100 }" row-key="id" @change="changePage">
         <template #bodyCell="{ column, record, text }">
           <Tag v-if="column.dataIndex === 'code'" color="blue">{{ text }}</Tag>

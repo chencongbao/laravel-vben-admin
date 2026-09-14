@@ -7,14 +7,13 @@ import type {
   ThemeModeType,
 } from '@vben/types';
 
-import { initPreferences, updateCustomPreferences } from '@vben/preferences';
+import { initPreferences } from '@vben/preferences';
 import { unmountGlobalLoading } from '@vben/utils';
 
 import {
   type AdminTabbarConfig,
   type AdvancedPreferencesConfig,
   createOverridesPreferences,
-  preferencesExtension,
 } from './preferences';
 
 interface LaravelApplicationConfig {
@@ -214,7 +213,6 @@ async function initApplication() {
 
   // app偏好设置初始化
   await initPreferences({
-    extension: preferencesExtension,
     namespace,
     overrides: createOverridesPreferences(
       locale,
@@ -229,10 +227,6 @@ async function initApplication() {
       advancedPreferences,
     ),
   });
-
-  if (advancedPreferences.custom) {
-    updateCustomPreferences(advancedPreferences.custom);
-  }
 
   // 启动应用并挂载
   // vue应用主要逻辑及视图

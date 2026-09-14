@@ -15,39 +15,39 @@ const formSchema = computed((): VbenFormSchema[] => [
   {
     component: 'VbenInputPassword',
     componentProps: {
-      placeholder: $t('page.profile.password.currentPlaceholder'),
+      placeholder: $t('profile.password.currentPlaceholder'),
     },
     fieldName: 'currentPassword',
-    label: $t('page.profile.password.current'),
+    label: $t('profile.password.current'),
   },
   {
     component: 'VbenInputPassword',
     componentProps: {
       passwordStrength: true,
-      placeholder: $t('page.profile.password.newPlaceholder'),
+      placeholder: $t('profile.password.newPlaceholder'),
     },
     fieldName: 'newPassword',
-    label: $t('page.profile.password.new'),
+    label: $t('profile.password.new'),
   },
   {
     component: 'VbenInputPassword',
     componentProps: {
       passwordStrength: true,
-      placeholder: $t('page.profile.password.confirmPlaceholder'),
+      placeholder: $t('profile.password.confirmPlaceholder'),
     },
     fieldName: 'confirmPassword',
-    label: $t('page.profile.password.confirm'),
+    label: $t('profile.password.confirm'),
     dependencies: {
       rules(values) {
         return z
           .string({
-            required_error: $t('page.profile.password.confirmRequired'),
+            required_error: $t('profile.password.confirmRequired'),
           })
           .min(1, {
-            message: $t('page.profile.password.confirmRequired'),
+            message: $t('profile.password.confirmRequired'),
           })
           .refine((value) => value === values.newPassword, {
-            message: $t('page.profile.password.mismatch'),
+            message: $t('profile.password.mismatch'),
           });
       },
       triggerFields: ['newPassword'],
@@ -60,14 +60,14 @@ async function submit(values: Recordable<any>) {
     password: values.newPassword,
     password_confirmation: values.confirmPassword,
   });
-  message.success($t('page.profile.password.updated'));
+  message.success($t('profile.password.updated'));
 }
 </script>
 <template>
   <section class="profile-section">
     <div class="profile-section-heading">
-      <h2>{{ $t('page.profile.password.title') }}</h2>
-      <p>{{ $t('page.profile.password.description') }}</p>
+      <h2>{{ $t('profile.password.title') }}</h2>
+      <p>{{ $t('profile.password.description') }}</p>
     </div>
     <ProfilePasswordSetting :form-schema="formSchema" @submit="submit" />
   </section>

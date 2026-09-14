@@ -6,6 +6,7 @@ import { Card, Form, FormItem, Input, message, Modal, Popconfirm, Space, Switch,
 import { createResource, deleteResource, getResource, updateResource } from '#/api/system';
 import ListToolbar from '#/components/system/list-toolbar.vue';
 import PermissionButton from '#/components/system/permission-button.vue';
+import { $t } from '#/locales';
 
 interface Permission { code: string; id: number; is_active: boolean; is_sensitive: boolean; is_system: boolean; name: string }
 const loading = ref(false); const saving = ref(false); const visible = ref(false); const editingId = ref<number>();
@@ -44,9 +45,9 @@ onMounted(load);
 </script>
 
 <template>
-  <Page description="权限编码是稳定的服务端授权标识；标记为敏感的权限应谨慎分配。" title="权限管理">
-    <ListToolbar><template #left><PermissionButton icon="lucide:refresh-cw" :loading="loading" @click="load">刷新</PermissionButton></template><template #right><PermissionButton icon="lucide:key-round" permission="system.permission.create" type="primary" @click="open()">新增权限</PermissionButton></template></ListToolbar>
-    <Card :body-style="{ padding: 0 }">
+  <Page :description="$t('system.permissionsDescription')" :title="$t('system.permissions')">
+    <ListToolbar><template #left><PermissionButton icon="lucide:refresh-cw" :loading="loading" @click="load">{{ $t('common.actions.refresh') }}</PermissionButton></template><template #right><PermissionButton icon="lucide:key-round" permission="system.permission.create" type="primary" @click="open()">新增权限</PermissionButton></template></ListToolbar>
+    <Card :body-style="{ padding: 0 }" class="admin-table-card">
       <Table bordered class="admin-data-table" :columns="columns" :data-source="permissions" :loading="loading" :pagination="pagination" row-key="id" @change="changePage">
         <template #bodyCell="{ column, record, text }">
           <Tag v-if="column.dataIndex === 'is_sensitive'" :color="text ? 'red' : 'default'">{{ text ? '敏感' : '普通' }}</Tag>

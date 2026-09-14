@@ -7,19 +7,9 @@ import type {
   ThemeModeType,
 } from '@vben/types';
 
-import {
-  defineOverridesPreferences,
-  definePreferencesExtension,
-} from '@vben/preferences';
+import { defineOverridesPreferences } from '@vben/preferences';
 
 import defaultAvatar from './assets/default-avatar.svg?url';
-
-interface WebAntdPreferencesExtension {
-  defaultTableSize: number;
-  enableFormFullscreen: boolean;
-  reportTitle: string;
-  tenantMode: 'multi' | 'single';
-}
 
 export interface AdminTabbarConfig {
   draggable: boolean;
@@ -72,13 +62,7 @@ export function createOverridesPreferences(
       timezone,
       authPageLayout: loginLayout,
     },
-    copyright: {
-      ...advancedPreferences.copyright,
-      companyName: name,
-      companySiteLink: '',
-    },
     breadcrumb: advancedPreferences.breadcrumb,
-    footer: advancedPreferences.footer,
     header: advancedPreferences.header,
     navigation: advancedPreferences.navigation,
     shortcutKeys: advancedPreferences.shortcutKeys,
@@ -134,52 +118,3 @@ export const LOGIN_THEME_COLORS: Record<string, string> = {
   yellow: 'hsl(42 84% 61%)',
   zinc: 'hsl(240 5% 26%)',
 };
-
-export const preferencesExtension =
-  definePreferencesExtension<WebAntdPreferencesExtension>({
-    tabLabel: 'preferences.antd.tabLabel',
-    title: 'preferences.antd.title',
-    fields: [
-      {
-        component: 'switch',
-        defaultValue: true,
-        key: 'enableFormFullscreen',
-        label: 'preferences.antd.fields.enableFormFullscreen.label',
-        tip: 'preferences.antd.fields.enableFormFullscreen.tip',
-      },
-      {
-        component: 'select',
-        defaultValue: 'single',
-        key: 'tenantMode',
-        label: 'preferences.antd.fields.tenantMode.label',
-        options: [
-          {
-            label: 'preferences.antd.fields.tenantMode.options.single.label',
-            value: 'single',
-          },
-          {
-            label: 'preferences.antd.fields.tenantMode.options.multi.label',
-            value: 'multi',
-          },
-        ],
-      },
-      {
-        component: 'number',
-        componentProps: {
-          max: 200,
-          min: 10,
-          step: 10,
-        },
-        defaultValue: 20,
-        key: 'defaultTableSize',
-        label: 'preferences.antd.fields.defaultTableSize.label',
-      },
-      {
-        component: 'input',
-        defaultValue: '',
-        key: 'reportTitle',
-        label: 'preferences.antd.fields.reportTitle.label',
-        placeholder: 'preferences.antd.fields.reportTitle.placeholder',
-      },
-    ],
-  });

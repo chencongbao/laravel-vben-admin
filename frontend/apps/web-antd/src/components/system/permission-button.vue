@@ -58,6 +58,35 @@ const visible = computed(() => {
   border-radius: 0;
 }
 
+.permission-button:not(.ant-btn-primary):not(.ant-btn-dangerous):not(:disabled) {
+  color: hsl(var(--primary));
+  border-color: hsl(var(--primary));
+}
+
+.permission-button:not(.ant-btn-primary):not(.ant-btn-dangerous):not(:disabled):hover,
+.permission-button:not(.ant-btn-primary):not(.ant-btn-dangerous):not(:disabled):focus-visible {
+  color: hsl(var(--primary));
+  border-color: hsl(var(--primary));
+  background: hsl(var(--primary) / 8%);
+}
+
+.permission-button.ant-btn-primary:not(.ant-btn-dangerous) {
+  border-color: hsl(var(--primary));
+  background: hsl(var(--primary));
+}
+
+.permission-button.ant-btn-dangerous:not(.ant-btn-primary):not(:disabled) {
+  color: hsl(var(--destructive));
+  border-color: hsl(var(--destructive));
+}
+
+.permission-button.ant-btn-dangerous:not(.ant-btn-primary):not(:disabled):hover,
+.permission-button.ant-btn-dangerous:not(.ant-btn-primary):not(:disabled):focus-visible {
+  color: hsl(var(--destructive));
+  border-color: hsl(var(--destructive));
+  background: hsl(var(--destructive) / 8%);
+}
+
 .permission-button--icon-only {
   width: 32px;
   height: 32px;

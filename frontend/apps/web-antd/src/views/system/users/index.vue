@@ -6,6 +6,7 @@ import { Card, Form, FormItem, Input, message, Modal, Select, Space, Switch, Tab
 import { createResource, getResource, updateResource } from '#/api/system';
 import ListToolbar from '#/components/system/list-toolbar.vue';
 import PermissionButton from '#/components/system/permission-button.vue';
+import { $t } from '#/locales';
 import { formatBeijingDateTime } from '#/utils/datetime';
 
 interface Role { code: string; id: number; name: string }
@@ -39,7 +40,7 @@ const form = reactive({
   username: '',
 });
 const columns: TableColumnsType = [
-  { dataIndex: 'id', title: 'ID' }, { dataIndex: 'username', title: '用户名' },
+  { dataIndex: 'id', title: $t('common.fields.id') }, { dataIndex: 'username', title: '用户名' },
   { dataIndex: 'name', title: '姓名' }, { dataIndex: 'roles', title: '角色' },
   { dataIndex: 'two_factor_enabled', title: 'Google 2FA' },
   { dataIndex: 'login_ip_whitelist', title: '登录白名单' },
@@ -94,9 +95,9 @@ onMounted(load);
 </script>
 
 <template>
-  <Page description="创建管理员、维护账号状态并分配角色。密码至少 12 位，需包含大小写字母和数字。" title="用户管理">
-    <ListToolbar><template #left><PermissionButton icon="lucide:refresh-cw" :loading="loading" @click="load">刷新</PermissionButton></template><template #right><PermissionButton icon="lucide:user-plus" permission="system.user.create" type="primary" @click="open()">新增用户</PermissionButton></template></ListToolbar>
-    <Card :body-style="{ padding: 0 }">
+  <Page :description="$t('system.usersDescription')" :title="$t('system.administrators')">
+    <ListToolbar><template #left><PermissionButton icon="lucide:refresh-cw" :loading="loading" @click="load">{{ $t('common.actions.refresh') }}</PermissionButton></template><template #right><PermissionButton icon="lucide:user-plus" permission="system.user.create" type="primary" @click="open()">新增用户</PermissionButton></template></ListToolbar>
+    <Card :body-style="{ padding: 0 }" class="admin-table-card">
       <Table bordered class="admin-data-table" :columns="columns" :data-source="users" :loading="loading" :pagination="pagination" row-key="id" :scroll="{ x: 1250 }" @change="changePage">
         <template #bodyCell="{ column, record, text }">
           <Space v-if="column.dataIndex === 'roles'" wrap><Tag v-for="role in record.roles" :key="role.id">{{ role.name }}</Tag></Space>

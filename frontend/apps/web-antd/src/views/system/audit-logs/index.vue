@@ -1,12 +1,16 @@
 <script lang="ts" setup>
 import LogPage from '#/components/system/log-page.vue';
+import { $t } from '#/locales';
 const columns = [
-  { dataIndex: 'id', title: 'ID' }, { dataIndex: 'action', title: '操作' },
-  { dataIndex: 'actor_id', title: '操作人 ID' }, { dataIndex: 'subject_type', title: '对象类型' },
-  { dataIndex: 'subject_id', title: '对象 ID' }, { dataIndex: 'ip_address', title: 'IP 地址' },
-  { dataIndex: 'method', title: '请求方法' }, { dataIndex: 'path', title: '请求路径' },
-  { dataIndex: 'created_at', title: '时间' },
+  { dataIndex: 'id', title: $t('common.fields.id') }, { dataIndex: 'action', title: $t('system.auditFields.action') },
+  { dataIndex: 'actor_id', title: $t('system.auditFields.actorId') }, { dataIndex: 'subject_type', title: $t('system.auditFields.subjectType') },
+  { dataIndex: 'subject_id', title: $t('system.auditFields.subjectId') }, { dataIndex: 'ip_address', title: $t('system.auditFields.ipAddress') },
+  { dataIndex: 'method', title: $t('system.auditFields.method') }, { dataIndex: 'path', title: $t('system.auditFields.path') },
+  { dataIndex: 'created_at', title: $t('common.fields.createdAt') },
 ];
-const filters = [{ key: 'action', label: '操作标识' }, { key: 'actor_id', label: '操作人 ID' }];
+const filters = [
+  { key: 'action', label: $t('system.auditFields.actionCode') },
+  { key: 'actor_id', label: $t('system.auditFields.actorId') },
+];
 </script>
-<template><LogPage :columns="columns" :filters="filters" path="/system/audit-logs" permission="system.audit.view" title="审计日志" /></template>
+<template><LogPage :columns="columns" :description="$t('system.auditLogsDescription')" :filters="filters" path="/system/audit-logs" permission="system.audit.view" :title="$t('system.auditLogs')" /></template>

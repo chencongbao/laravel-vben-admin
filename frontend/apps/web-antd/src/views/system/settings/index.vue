@@ -27,24 +27,24 @@ const settingMeta: Record<
   { description: string; label: string; placeholder: string }
 > = {
   'system.name': {
-    description: 'page.system.settingsForm.fields.systemName.description',
-    label: 'page.system.settingsForm.fields.systemName.label',
-    placeholder: 'page.system.settingsForm.fields.systemName.placeholder',
+    description: 'system.settingsForm.fields.systemName.description',
+    label: 'system.settingsForm.fields.systemName.label',
+    placeholder: 'system.settingsForm.fields.systemName.placeholder',
   },
   'system.page_size': {
-    description: 'page.system.settingsForm.fields.pageSize.description',
-    label: 'page.system.settingsForm.fields.pageSize.label',
-    placeholder: 'page.system.settingsForm.fields.pageSize.placeholder',
+    description: 'system.settingsForm.fields.pageSize.description',
+    label: 'system.settingsForm.fields.pageSize.label',
+    placeholder: 'system.settingsForm.fields.pageSize.placeholder',
   },
   'system.login_remember_me': {
-    description: 'page.system.settingsForm.fields.loginRememberMe.description',
-    label: 'page.system.settingsForm.fields.loginRememberMe.label',
+    description: 'system.settingsForm.fields.loginRememberMe.description',
+    label: 'system.settingsForm.fields.loginRememberMe.label',
     placeholder: '',
   },
   'system.login_description': {
-    description: 'page.system.settingsForm.fields.loginDescription.description',
-    label: 'page.system.settingsForm.fields.loginDescription.label',
-    placeholder: 'page.system.settingsForm.fields.loginDescription.placeholder',
+    description: 'system.settingsForm.fields.loginDescription.description',
+    label: 'system.settingsForm.fields.loginDescription.label',
+    placeholder: 'system.settingsForm.fields.loginDescription.placeholder',
   },
 };
 
@@ -84,7 +84,7 @@ async function save() {
     if (typeof systemName === 'string' && systemName) {
       updatePreferences({ app: { name: systemName } });
     }
-    message.success($t('page.system.settingsForm.messages.saved'));
+    message.success($t('system.settingsForm.messages.saved'));
   } finally {
     saving.value = false;
   }
@@ -94,7 +94,7 @@ onMounted(load);
 </script>
 
 <template>
-  <Page :title="$t('page.system.settings')">
+  <Page :description="$t('system.settingsDescription')" :title="$t('system.settings')">
     <Card :bordered="false" :loading="loading" class="settings-card">
       <Form layout="vertical">
         <div class="settings-list">
@@ -148,7 +148,7 @@ onMounted(load);
             type="primary"
             @click="save"
           >
-            {{ $t('page.system.settingsForm.actions.save') }}
+            {{ $t('system.settingsForm.actions.save') }}
           </Button>
         </div>
       </Form>
@@ -162,14 +162,14 @@ onMounted(load);
   max-width: 960px;
   overflow: hidden;
   border: 1px solid hsl(var(--border));
-  border-radius: 12px;
+  border-radius: var(--radius);
   box-shadow: 0 8px 28px rgb(15 23 42 / 5%);
 }
 
 .settings-list {
   overflow: hidden;
   border: 1px solid hsl(var(--border));
-  border-radius: 10px;
+  border-radius: var(--radius);
 }
 
 .settings-row {
@@ -218,13 +218,13 @@ onMounted(load);
 
 .settings-actions :deep(.ant-btn) {
   min-width: 112px;
-  border-radius: 8px;
+  border-radius: var(--radius);
   font-weight: 500;
 }
 
 .settings-control :deep(.ant-input),
 .settings-control :deep(.ant-input-number) {
-  border-radius: 8px;
+  border-radius: var(--radius);
 }
 
 @media (max-width: 767px) {

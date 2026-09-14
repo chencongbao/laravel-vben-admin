@@ -289,12 +289,12 @@ onMounted(() => load());
 </script>
 
 <template>
-  <Page description="左侧维护菜单层级，右侧新增或编辑当前菜单。" title="菜单管理">
+  <Page :description="$t('system.menusDescription')" :title="$t('system.menus')">
     <div class="grid min-h-[680px] grid-cols-1 gap-4 xl:grid-cols-[minmax(360px,0.9fr)_minmax(560px,1.4fr)]">
       <Card :loading="loading" title="菜单树">
         <ListToolbar>
           <template #left>
-            <PermissionButton icon="lucide:refresh-cw" :loading="loading" @click="load()">刷新</PermissionButton>
+            <PermissionButton icon="lucide:refresh-cw" :loading="loading" @click="load()">{{ $t('common.actions.refresh') }}</PermissionButton>
             <PermissionButton icon="lucide:chevrons-down-up" @click="expandAll">展开</PermissionButton>
             <PermissionButton icon="lucide:chevrons-up-down" @click="collapseAll">收起</PermissionButton>
           </template>
@@ -343,7 +343,7 @@ onMounted(() => load());
               <Input v-model:value="form.code" :disabled="editing?.is_system" placeholder="例如：content.articles" />
             </FormItem>
             <FormItem label="菜单标题" required>
-              <Input v-model:value="form.title" placeholder="支持语言键，例如：page.system.title" />
+              <Input v-model:value="form.title" placeholder="支持语言键，例如：system.title" />
             </FormItem>
             <FormItem label="菜单类型" required>
               <Select v-model:value="form.type" :options="[{ label: '目录', value: 'directory' }, { label: '页面', value: 'page' }, { label: '外部链接', value: 'external' }]" />

@@ -1,0 +1,83 @@
+{
+  "title": "系统管理",
+  "administrators": "用户管理",
+  "usersDescription": "创建和维护后台用户，配置账号状态、角色、Google 2FA、登录白名单与允许登录时间。",
+  "roles": "角色管理",
+  "rolesDescription": "创建和维护角色，并为角色分配菜单及操作权限。",
+  "permissions": "权限管理",
+  "permissionsDescription": "维护服务端权限编码、启用状态及敏感操作标记。",
+  "menus": "菜单管理",
+  "menusDescription": "维护后台菜单层级、路由、图标、排序与访问权限。",
+  "loginLogs": "登录日志",
+  "loginLogsDescription": "查看后台用户的登录结果、客户端类型、IP 地址和登录时间。",
+  "auditLogs": "操作日志",
+  "auditLogsDescription": "查看后台用户对系统数据执行的新增、修改、删除等操作记录。",
+  "auditFields": {
+    "action": "操作",
+    "actionCode": "操作标识",
+    "actorId": "操作人编号",
+    "ipAddress": "IP 地址",
+    "method": "请求方法",
+    "path": "请求路径",
+    "subjectId": "对象编号",
+    "subjectType": "对象类型"
+  },
+  "settings": "系统设置",
+  "settingsDescription": "集中维护系统名称、默认分页数量及登录页面相关设置。",
+  "settingsForm": {
+    "actions": {
+      "save": "保存设置"
+    },
+    "fields": {
+      "systemName": {
+        "description": "显示在管理后台左上角的系统名称。",
+        "label": "系统名称",
+        "placeholder": "请输入系统名称"
+      },
+      "pageSize": {
+        "description": "设置数据列表默认每页显示的记录数量，可填写 10 至 100。",
+        "label": "默认分页数量",
+        "placeholder": "请输入每页记录数"
+      },
+      "loginRememberMe": {
+        "description": "控制后台登录页面是否显示“记住账号”选项。",
+        "label": "显示记住账号"
+      },
+      "loginDescription": {
+        "description": "设置登录页宣传区域统一显示的说明文字，不随语言切换。",
+        "label": "登录页宣传语",
+        "placeholder": "请输入登录页宣传语"
+      },
+      "loginTheme": {
+        "description": "统一设置登录页面的主题配色，登录页不再提供临时切换入口。",
+        "label": "登录页主题配色",
+        "placeholder": "请选择主题配色"
+      },
+      "loginLayout": {
+        "description": "统一设置登录表单显示在页面左侧、中间或右侧。",
+        "label": "登录页布局",
+        "placeholder": "请选择登录页布局"
+      }
+    },
+    "options": {
+      "loginTheme": {
+        "default": "默认蓝色",
+        "violet": "紫罗兰",
+        "pink": "玫红色",
+        "yellow": "金黄色",
+        "sky-blue": "天空蓝",
+        "green": "翡翠绿",
+        "zinc": "锌灰色"
+      },
+      "loginLayout": {
+        "panel-left": "左侧布局",
+        "panel-center": "居中布局",
+        "panel-right": "右侧布局"
+      }
+    },
+    "messages": {
+      "saved": "系统设置已保存"
+    }
+  },
+  "logsTitle": "系统日志"
+}

@@ -63,12 +63,18 @@ final class InstallCommandTest extends TestCase
         self::assertTrue(SystemSettings::value('system.tabbar_persist'));
         self::assertSame(0, SystemSettings::value('system.tabbar_max_count'));
         self::assertSame('chrome', SystemSettings::value('system.tabbar_style_type'));
-        self::assertIsArray(SystemSettings::value('system.advanced_preferences'));
-        self::assertTrue(SystemSettings::value('system.advanced_preferences')['widget']['languageToggle']);
+        $advancedPreferences = SystemSettings::value('system.advanced_preferences');
+        self::assertIsArray($advancedPreferences);
+        self::assertTrue($advancedPreferences['widget']['languageToggle']);
+        self::assertTrue($advancedPreferences['breadcrumb']['showHome']);
+        self::assertArrayNotHasKey('watermark', $advancedPreferences['app']);
+        self::assertArrayNotHasKey('footer', $advancedPreferences);
+        self::assertArrayNotHasKey('copyright', $advancedPreferences);
+        self::assertArrayNotHasKey('custom', $advancedPreferences);
         self::assertDatabaseHas('admin_menus', [
             'code' => 'configuration',
             'parent_code' => null,
-            'title' => 'page.configuration.title',
+            'title' => 'configuration.title',
         ]);
         self::assertDatabaseHas('admin_menus', [
             'code' => 'system.settings',
@@ -77,7 +83,7 @@ final class InstallCommandTest extends TestCase
         self::assertDatabaseHas('admin_menus', [
             'code' => 'system.logs',
             'parent_code' => null,
-            'title' => 'page.systemLogs.title',
+            'title' => 'system.logsTitle',
         ]);
         self::assertDatabaseHas('admin_menus', [
             'code' => 'system.login-logs',

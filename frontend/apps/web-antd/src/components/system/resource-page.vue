@@ -8,7 +8,6 @@ import { Page } from '@vben/common-ui';
 import {
   Card,
   Form,
-  FormItem,
   Input,
   InputNumber,
   message,
@@ -31,8 +30,10 @@ import {
 import AutoRefresh from '#/components/system/auto-refresh.vue';
 import ListToolbar from '#/components/system/list-toolbar.vue';
 import ListSearchPanel from '#/components/system/list-search-panel.vue';
+import ListSearchField from '#/components/system/list-search-field.vue';
 import PermissionButton from '#/components/system/permission-button.vue';
 import TableExportButton from '#/components/system/table-export-button.vue';
+import { $t } from '#/locales';
 import { formatBeijingDateTime, isDateTimeField } from '#/utils/datetime';
 
 export interface ResourceField {
@@ -68,7 +69,7 @@ const rows = ref<Record<string, any>[]>([]);
 const pagination = reactive({ current: 1, pageSize: 20, total: 0 });
 const form = reactive<Record<string, any>>({});
 const searchValues = reactive<Record<string, any>>({});
-const showFilters = ref(false);
+const showFilters = ref(true);
 const viewPermission = computed(() => props.permissionPrefix ? `${props.permissionPrefix}.view` : undefined);
 const exportColumns = computed(() => props.fields
   .filter((field) => field.table !== false)
@@ -173,8 +174,8 @@ onMounted(load);
   <Page :description="description" :title="title">
     <ListToolbar>
       <template #left>
-        <PermissionButton icon="lucide:refresh-cw" :loading="loading" @click="load">刷新</PermissionButton>
-        <PermissionButton v-if="searchFields?.length" icon="lucide:filter" @click="showFilters = !showFilters">筛选</PermissionButton>
+        <PermissionButton icon="lucide:refresh-cw" :loading="loading" @click="load">{{ $t('common.actions.refresh') }}</PermissionButton>
+        <PermissionButton v-if="searchFields?.length" icon="lucide:filter" @click="showFilters = !showFilters">{{ $t('common.actions.filter') }}</PermissionButton>
         <AutoRefresh :loading="loading" :storage-key="path" @refresh="load" />
       </template>
       <template #right>
@@ -183,16 +184,16 @@ onMounted(load);
       </template>
     </ListToolbar>
     <ListSearchPanel v-if="showFilters && searchFields?.length">
-      <FormItem v-for="field in searchFields" :key="field.key" :label="field.label" class="mb-0">
-        <Select v-if="field.options" v-model:value="searchValues[field.key]" allow-clear :options="field.options" :placeholder="`请选择${field.label}`" class="w-full" />
-        <Input v-else v-model:value="searchValues[field.key]" allow-clear :placeholder="`请输入${field.label}`" @press-enter="search" />
-      </FormItem>
+      <ListSearchField v-for="field in searchFields" :key="field.key" :label="field.label">
+        <Select v-if="field.options" v-model:value="searchValues[field.key]" allow-clear :options="field.options" :placeholder="field.label" class="w-full" />
+        <Input v-else v-model:value="searchValues[field.key]" allow-clear :placeholder="field.label" @press-enter="search" />
+      </ListSearchField>
       <template #actions>
-        <PermissionButton icon="lucide:search" type="primary" @click="search">查询</PermissionButton>
-        <PermissionButton icon="lucide:rotate-ccw" @click="resetSearch">重置</PermissionButton>
+        <PermissionButton icon="lucide:search" type="primary" @click="search">{{ $t('common.actions.search') }}</PermissionButton>
+        <PermissionButton icon="lucide:rotate-ccw" @click="resetSearch">{{ $t('common.actions.reset') }}</PermissionButton>
       </template>
     </ListSearchPanel>
-    <Card :body-style="{ padding: 0 }">
+    <Card :body-style="{ padding: 0 }" :bordered="false" class="admin-table-card">
       <Table
         bordered
         class="admin-data-table"

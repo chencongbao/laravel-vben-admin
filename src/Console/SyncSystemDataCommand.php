@@ -113,30 +113,30 @@ final class SyncSystemDataCommand extends Command
     {
         $items = [
             [
-                'code' => 'dashboard.workspace', 'parent_code' => null, 'title' => 'page.dashboard.workspace', 'type' => 'page',
+                'code' => 'dashboard.workspace', 'parent_code' => null, 'title' => 'dashboard.workspace', 'type' => 'page',
                 'route_name' => 'Workspace', 'route_path' => '/workspace', 'view_key' => 'dashboard.workspace',
                 'permission_code' => null, 'icon' => 'carbon:workspace', 'sort' => -1000,
                 'is_active' => true, 'is_hidden' => false, 'is_system' => true,
             ],
             [
-                'code' => 'system', 'parent_code' => null, 'title' => 'page.system.title', 'type' => 'directory', 'route_name' => 'System', 'route_path' => '/system', 'view_key' => null,
+                'code' => 'system', 'parent_code' => null, 'title' => 'system.title', 'type' => 'directory', 'route_name' => 'System', 'route_path' => '/system', 'view_key' => null,
                 'permission_code' => 'system.access', 'icon' => 'lucide:settings', 'sort' => 1000, 'is_active' => true, 'is_hidden' => false, 'is_system' => true,
             ],
             [
-                'code' => 'configuration', 'parent_code' => null, 'title' => 'page.configuration.title', 'type' => 'directory', 'route_name' => 'Configuration', 'route_path' => '/configuration', 'view_key' => null,
+                'code' => 'configuration', 'parent_code' => null, 'title' => 'configuration.title', 'type' => 'directory', 'route_name' => 'Configuration', 'route_path' => '/configuration', 'view_key' => null,
                 'permission_code' => 'system.setting.view', 'icon' => 'lucide:sliders-horizontal', 'sort' => 3000, 'is_active' => true, 'is_hidden' => false, 'is_system' => true,
             ],
             [
-                'code' => 'system.logs', 'parent_code' => null, 'title' => 'page.systemLogs.title', 'type' => 'directory', 'route_name' => 'SystemLogs', 'route_path' => '/system-logs', 'view_key' => null,
+                'code' => 'system.logs', 'parent_code' => null, 'title' => 'system.logsTitle', 'type' => 'directory', 'route_name' => 'SystemLogs', 'route_path' => '/system-logs', 'view_key' => null,
                 'permission_code' => null, 'icon' => 'lucide:notebook-tabs', 'sort' => 2000, 'is_active' => true, 'is_hidden' => false, 'is_system' => true,
             ],
         ];
 
         foreach ([
-            ['system.users', 'page.system.administrators', 'SystemUsers', '/system/users', 'system.users', 'system.user.view', 'lucide:users', 10],
-            ['system.roles', 'page.system.roles', 'SystemRoles', '/system/roles', 'system.roles', 'system.role.view', 'lucide:user-cog', 20],
-            ['system.permissions', 'page.system.permissions', 'SystemPermissions', '/system/permissions', 'system.permissions', 'system.permission.view', 'lucide:shield-check', 30],
-            ['system.menus', 'page.system.menus', 'SystemMenus', '/system/menus', 'system.menus', 'system.menu.view', 'lucide:list-tree', 40],
+            ['system.users', 'system.administrators', 'SystemUsers', '/system/users', 'system.users', 'system.user.view', 'lucide:users', 10],
+            ['system.roles', 'system.roles', 'SystemRoles', '/system/roles', 'system.roles', 'system.role.view', 'lucide:user-cog', 20],
+            ['system.permissions', 'system.permissions', 'SystemPermissions', '/system/permissions', 'system.permissions', 'system.permission.view', 'lucide:shield-check', 30],
+            ['system.menus', 'system.menus', 'SystemMenus', '/system/menus', 'system.menus', 'system.menu.view', 'lucide:list-tree', 40],
         ] as [$code, $title, $routeName, $routePath, $viewKey, $permissionCode, $icon, $sort]) {
             $items[] = [
                 'code' => $code, 'parent_code' => 'system', 'title' => $title, 'type' => 'page', 'route_name' => $routeName,
@@ -146,22 +146,22 @@ final class SyncSystemDataCommand extends Command
         }
 
         $items[] = [
-            'code' => 'system.settings', 'parent_code' => 'configuration', 'title' => 'page.system.settings', 'type' => 'page',
+            'code' => 'system.settings', 'parent_code' => 'configuration', 'title' => 'system.settings', 'type' => 'page',
             'route_name' => 'SystemSettings', 'route_path' => '/system/settings', 'view_key' => 'system.settings',
             'permission_code' => 'system.setting.view', 'icon' => 'lucide:settings-2', 'sort' => 10,
             'is_active' => true, 'is_hidden' => false, 'is_system' => true,
         ];
 
         $items[] = [
-            'code' => 'system.theme-settings', 'parent_code' => 'configuration', 'title' => 'page.configuration.themeSettings', 'type' => 'page',
+            'code' => 'system.theme-settings', 'parent_code' => 'configuration', 'title' => 'configuration.themeSettings', 'type' => 'page',
             'route_name' => 'ThemeSettings', 'route_path' => '/configuration/theme', 'view_key' => 'system.theme-settings',
             'permission_code' => null, 'icon' => 'lucide:palette', 'sort' => 20,
             'is_active' => true, 'is_hidden' => false, 'is_system' => true,
         ];
 
         foreach ([
-            ['system.login-logs', 'page.system.loginLogs', 'SystemLoginLogs', '/system/login-logs', 'system.login-logs', 'system.login-log.view', 'lucide:log-in', 10],
-            ['system.audit-logs', 'page.system.auditLogs', 'SystemAuditLogs', '/system/audit-logs', 'system.audit-logs', 'system.audit.view', 'lucide:clipboard-list', 20],
+            ['system.login-logs', 'system.loginLogs', 'SystemLoginLogs', '/system/login-logs', 'system.login-logs', 'system.login-log.view', 'lucide:log-in', 10],
+            ['system.audit-logs', 'system.auditLogs', 'SystemAuditLogs', '/system/audit-logs', 'system.audit-logs', 'system.audit.view', 'lucide:clipboard-list', 20],
         ] as [$code, $title, $routeName, $routePath, $viewKey, $permissionCode, $icon, $sort]) {
             $items[] = [
                 'code' => $code, 'parent_code' => 'system.logs', 'title' => $title, 'type' => 'page', 'route_name' => $routeName,

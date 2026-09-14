@@ -3,6 +3,8 @@ import { computed } from 'vue';
 
 import { message } from 'ant-design-vue';
 
+import { $t } from '#/locales';
+
 import PermissionButton from './permission-button.vue';
 
 interface ExportColumn { dataIndex: string; title: string }
@@ -25,7 +27,7 @@ function safeCell(value: unknown): string {
 }
 
 function download() {
-  if (props.rows.length === 0) return void message.warning('当前没有可导出的数据');
+  if (props.rows.length === 0) return void message.warning($t('common.table.noExportData'));
   const lines = [
     exportColumns.value.map((column) => safeCell(column.title)).join(','),
     ...props.rows.map((row) => exportColumns.value.map((column) => safeCell(row[column.dataIndex])).join(',')),
@@ -41,5 +43,5 @@ function download() {
 </script>
 
 <template>
-  <PermissionButton icon="lucide:download" :permission="permission" @click="download">导出当前页</PermissionButton>
+  <PermissionButton icon="lucide:download" :permission="permission" @click="download">{{ $t('common.actions.exportCurrentPage') }}</PermissionButton>
 </template>

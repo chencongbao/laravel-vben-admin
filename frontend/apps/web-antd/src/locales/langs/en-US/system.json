@@ -1,0 +1,83 @@
+{
+  "title": "System",
+  "administrators": "User Management",
+  "usersDescription": "Create and maintain back-office users, account status, roles, Google 2FA, login allowlists, and permitted login times.",
+  "roles": "Roles",
+  "rolesDescription": "Create and maintain roles, then assign menus and operation permissions.",
+  "permissions": "Permissions",
+  "permissionsDescription": "Maintain server-side permission codes, active status, and sensitive-operation markers.",
+  "menus": "Menus",
+  "menusDescription": "Maintain menu hierarchy, routes, icons, ordering, and access permissions.",
+  "loginLogs": "Login Logs",
+  "loginLogsDescription": "Review login results, client types, IP addresses, and login times for back-office users.",
+  "auditLogs": "Operation Logs",
+  "auditLogsDescription": "Review create, update, delete, and other data operations performed by back-office users.",
+  "auditFields": {
+    "action": "Action",
+    "actionCode": "Action Code",
+    "actorId": "Actor ID",
+    "ipAddress": "IP Address",
+    "method": "Method",
+    "path": "Path",
+    "subjectId": "Subject ID",
+    "subjectType": "Subject Type"
+  },
+  "settings": "Settings",
+  "settingsDescription": "Manage the system name, default page size, and login-page settings in one place.",
+  "settingsForm": {
+    "actions": {
+      "save": "Save settings"
+    },
+    "fields": {
+      "systemName": {
+        "description": "The system name displayed in the upper-left corner of the administration panel.",
+        "label": "System name",
+        "placeholder": "Enter the system name"
+      },
+      "pageSize": {
+        "description": "Set the default number of records displayed per page, from 10 to 100.",
+        "label": "Default page size",
+        "placeholder": "Enter records per page"
+      },
+      "loginRememberMe": {
+        "description": "Control whether the Remember Me option is displayed on the administration login page.",
+        "label": "Show Remember Me"
+      },
+      "loginDescription": {
+        "description": "Set the description shown in the login promotion area for every language.",
+        "label": "Login description",
+        "placeholder": "Enter the login description"
+      },
+      "loginTheme": {
+        "description": "Set the login page color theme globally. The login page no longer exposes a temporary switcher.",
+        "label": "Login page theme",
+        "placeholder": "Select a theme"
+      },
+      "loginLayout": {
+        "description": "Place the login form on the left, center, or right for every visitor.",
+        "label": "Login page layout",
+        "placeholder": "Select a login layout"
+      }
+    },
+    "options": {
+      "loginTheme": {
+        "default": "Default Blue",
+        "violet": "Violet",
+        "pink": "Pink",
+        "yellow": "Yellow",
+        "sky-blue": "Sky Blue",
+        "green": "Green",
+        "zinc": "Zinc"
+      },
+      "loginLayout": {
+        "panel-left": "Left",
+        "panel-center": "Center",
+        "panel-right": "Right"
+      }
+    },
+    "messages": {
+      "saved": "System settings saved"
+    }
+  },
+  "logsTitle": "System Logs"
+}

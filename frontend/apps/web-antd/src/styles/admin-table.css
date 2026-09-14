@@ -1,3 +1,11 @@
+.admin-table-card,
+.admin-table-card .ant-card-body,
+.admin-data-table .ant-table,
+.admin-data-table .ant-table-container,
+.admin-data-table .ant-table-content {
+  border-radius: 0 !important;
+}
+
 .admin-data-table .ant-table-thead > tr > th {
   color: hsl(var(--foreground));
   background: hsl(var(--muted) / 70%);

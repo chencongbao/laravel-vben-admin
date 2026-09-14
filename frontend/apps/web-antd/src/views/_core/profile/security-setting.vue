@@ -34,16 +34,16 @@ const twoFactorCode = ref('');
 const twoFactorLoading = ref(false);
 const disableModalOpen = ref(false);
 const columns = computed(() => [
-  { dataIndex: 'client_type', title: $t('page.profile.security.clientType') },
-  { dataIndex: 'ip_address', title: $t('page.profile.security.ipAddress') },
-  { dataIndex: 'created_at', title: $t('page.profile.security.signedInAt') },
-  { dataIndex: 'last_used_at', title: $t('page.profile.security.lastUsedAt') },
-  { dataIndex: 'current', title: $t('page.profile.security.session') },
-  { dataIndex: 'action', title: $t('page.profile.security.actions') },
+  { dataIndex: 'client_type', title: $t('profile.security.clientType') },
+  { dataIndex: 'ip_address', title: $t('profile.security.ipAddress') },
+  { dataIndex: 'created_at', title: $t('profile.security.signedInAt') },
+  { dataIndex: 'last_used_at', title: $t('profile.security.lastUsedAt') },
+  { dataIndex: 'current', title: $t('profile.security.session') },
+  { dataIndex: 'action', title: $t('profile.security.actions') },
 ]);
 
 function clientTypeLabel(type: AdminSession['client_type']) {
-  return $t(`page.profile.security.clientTypes.${type}`);
+  return $t(`profile.security.clientTypes.${type}`);
 }
 
 async function load() {
@@ -71,10 +71,10 @@ async function toggleTwoFactor(enabled: boolean) {
   try {
     if (enabled) {
       await enableTwoFactorApi();
-      message.success($t('page.profile.security.twoFactorEnabledPending'));
+      message.success($t('profile.security.twoFactorEnabledPending'));
     } else {
       await disableTwoFactorApi();
-      message.success($t('page.profile.security.twoFactorDisabled'));
+      message.success($t('profile.security.twoFactorDisabled'));
     }
     twoFactor.value = (await getTwoFactorStatusApi()).two_factor;
   } finally {
@@ -84,7 +84,7 @@ async function toggleTwoFactor(enabled: boolean) {
 
 async function confirmDisableTwoFactor() {
   if (!/^\d{6}$/.test(twoFactorCode.value)) {
-    message.warning($t('page.profile.security.twoFactorCodeTip'));
+    message.warning($t('profile.security.twoFactorCodeTip'));
     return;
   }
 
@@ -93,7 +93,7 @@ async function confirmDisableTwoFactor() {
     await disableTwoFactorApi(twoFactorCode.value);
     twoFactor.value = (await getTwoFactorStatusApi()).two_factor;
     disableModalOpen.value = false;
-    message.success($t('page.profile.security.twoFactorDisabled'));
+    message.success($t('profile.security.twoFactorDisabled'));
   } finally {
     twoFactorLoading.value = false;
   }
@@ -101,14 +101,14 @@ async function confirmDisableTwoFactor() {
 
 async function revoke(session: Record<string, any>) {
   await revokeSessionApi(Number(session.id));
-  message.success($t('page.profile.security.revoked'));
+  message.success($t('profile.security.revoked'));
   await load();
 }
 
 async function revokeOthers() {
   const result = await revokeOtherSessionsApi();
   message.success(
-    $t('page.profile.security.revokedOthers', {
+    $t('profile.security.revokedOthers', {
       count: result.revoked_count,
     }),
   );
@@ -121,12 +121,12 @@ onMounted(load);
 <template>
   <section class="profile-section">
     <div class="profile-section-heading">
-      <h2>{{ $t('page.profile.security.title') }}</h2>
-      <p>{{ $t('page.profile.security.description') }}</p>
+      <h2>{{ $t('profile.security.title') }}</h2>
+      <p>{{ $t('profile.security.description') }}</p>
     </div>
 
     <Card :bordered="false" class="security-card">
-      <template #title>{{ $t('page.profile.security.twoFactorTitle') }}</template>
+      <template #title>{{ $t('profile.security.twoFactorTitle') }}</template>
       <template #extra>
         <Switch
           :checked="twoFactor.enabled"
@@ -139,27 +139,27 @@ onMounted(load);
           {{
             $t(
               twoFactor.confirmed
-                ? 'page.profile.security.twoFactorActive'
+                ? 'profile.security.twoFactorActive'
                 : twoFactor.enabled
-                  ? 'page.profile.security.twoFactorPending'
-                  : 'page.profile.security.twoFactorInactive',
+                  ? 'profile.security.twoFactorPending'
+                  : 'profile.security.twoFactorInactive',
             )
           }}
         </Tag>
-        <p>{{ $t('page.profile.security.twoFactorDescription') }}</p>
+        <p>{{ $t('profile.security.twoFactorDescription') }}</p>
       </div>
     </Card>
 
     <Card :bordered="false" class="security-card">
       <template #title>{{
-        $t('page.profile.security.sessionsTitle')
+        $t('profile.security.sessionsTitle')
       }}</template>
       <template #extra>
         <Popconfirm
-          :title="$t('page.profile.security.revokeOthersConfirm')"
+          :title="$t('profile.security.revokeOthersConfirm')"
           @confirm="revokeOthers"
         >
-          <Button danger>{{ $t('page.profile.security.revokeOthers') }}</Button>
+          <Button danger>{{ $t('profile.security.revokeOthers') }}</Button>
         </Popconfirm>
       </template>
 
@@ -183,8 +183,8 @@ onMounted(load);
           >
             {{
               text
-                ? $t('page.profile.security.currentSession')
-                : $t('page.profile.security.otherSession')
+                ? $t('profile.security.currentSession')
+                : $t('profile.security.otherSession')
             }}
           </Tag>
           <span
@@ -194,25 +194,25 @@ onMounted(load);
             "
             class="session-time"
           >
-            {{ text ? formatBeijingDateTime(text) : $t('page.profile.security.neverUsed') }}
+            {{ text ? formatBeijingDateTime(text) : $t('profile.security.neverUsed') }}
           </span>
           <span
             v-else-if="column.dataIndex === 'ip_address'"
             class="session-ip"
           >
-            {{ text || $t('page.profile.security.unknownIp') }}
+            {{ text || $t('profile.security.unknownIp') }}
           </span>
           <Space v-else-if="column.dataIndex === 'action'">
             <Tag v-if="record.current" color="green">
-              {{ $t('page.profile.security.protected') }}
+              {{ $t('profile.security.protected') }}
             </Tag>
             <Popconfirm
               v-else
-              :title="$t('page.profile.security.revokeConfirm')"
+              :title="$t('profile.security.revokeConfirm')"
               @confirm="revoke(record)"
             >
               <Button danger size="small" type="link">
-                {{ $t('page.profile.security.revoke') }}
+                {{ $t('profile.security.revoke') }}
               </Button>
             </Popconfirm>
           </Space>
@@ -223,24 +223,24 @@ onMounted(load);
     <Modal
       v-model:open="disableModalOpen"
       :confirm-loading="twoFactorLoading"
-      :title="$t('page.profile.security.twoFactorDisableTitle')"
-      :ok-text="$t('page.profile.security.twoFactorDisableConfirm')"
+      :title="$t('profile.security.twoFactorDisableTitle')"
+      :ok-text="$t('profile.security.twoFactorDisableConfirm')"
       @ok="confirmDisableTwoFactor"
     >
-      <p>{{ $t('page.profile.security.twoFactorDisableDescription') }}</p>
+      <p>{{ $t('profile.security.twoFactorDisableDescription') }}</p>
       <Input
         v-model:value="twoFactorCode"
         :maxlength="6"
-        :placeholder="$t('page.profile.security.twoFactorCodePlaceholder')"
+        :placeholder="$t('profile.security.twoFactorCodePlaceholder')"
         inputmode="numeric"
         @press-enter="confirmDisableTwoFactor"
       />
     </Modal>
 
     <Card :bordered="false" class="security-card security-note">
-      <template #title>{{ $t('page.profile.security.notesTitle') }}</template>
-      <p>{{ $t('page.profile.security.passwordNote') }}</p>
-      <p>{{ $t('page.profile.security.mfaNote') }}</p>
+      <template #title>{{ $t('profile.security.notesTitle') }}</template>
+      <p>{{ $t('profile.security.passwordNote') }}</p>
+      <p>{{ $t('profile.security.mfaNote') }}</p>
     </Card>
   </section>
 </template>
@@ -268,7 +268,7 @@ onMounted(load);
 .security-card {
   overflow: hidden;
   border: 1px solid hsl(var(--border));
-  border-radius: 10px;
+  border-radius: var(--radius);
   box-shadow: none;
 }
 .security-card + .security-card {

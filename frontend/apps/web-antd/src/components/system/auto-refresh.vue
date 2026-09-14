@@ -4,6 +4,8 @@ import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { IconifyIcon } from '@vben/icons';
 import { Select, Switch } from 'ant-design-vue';
 
+import { $t } from '#/locales';
+
 defineOptions({ name: 'AdminAutoRefresh' });
 
 const props = withDefaults(defineProps<{
@@ -16,7 +18,10 @@ const props = withDefaults(defineProps<{
 });
 
 const emit = defineEmits<{ refresh: [] }>();
-const intervals = [15, 30, 60, 120, 300].map((value) => ({ label: `${value} 秒`, value }));
+const intervals = computed(() => [15, 30, 60, 120, 300].map((value) => ({
+  label: $t('common.time.seconds', { count: value }),
+  value,
+})));
 const enabledKey = `vben:auto-refresh:${props.storageKey}:enabled`;
 const secondsKey = `vben:auto-refresh:${props.storageKey}:seconds`;
 const enabled = ref(localStorage.getItem(enabledKey) === '1');
@@ -59,7 +64,7 @@ start();
 <template>
   <div class="admin-auto-refresh">
     <IconifyIcon icon="lucide:clock-3" />
-    <span>自动刷新</span>
+    <span>{{ $t('common.actions.autoRefresh') }}</span>
     <Switch v-model:checked="enabled" size="small" />
     <Select v-if="enabled" v-model:value="seconds" :options="intervals" size="small" />
     <span v-if="enabled" class="admin-auto-refresh__status">{{ status }}</span>
@@ -67,6 +72,7 @@ start();
 </template>
 
 <style scoped>
-.admin-auto-refresh { display: inline-flex; height: 32px; align-items: center; gap: 6px; padding: 0 8px; border: 1px solid hsl(var(--border)); background: hsl(var(--background)); white-space: nowrap; }
-.admin-auto-refresh__status { min-width: 28px; color: hsl(var(--muted-foreground)); text-align: right; font-variant-numeric: tabular-nums; }
+.admin-auto-refresh { display: inline-flex; height: 32px; align-items: center; gap: 6px; padding: 0 8px; color: hsl(var(--primary)); border: 1px solid hsl(var(--primary)); background: hsl(var(--background)); white-space: nowrap; }
+.admin-auto-refresh:hover { background: hsl(var(--primary) / 8%); }
+.admin-auto-refresh__status { min-width: 28px; color: hsl(var(--primary)); text-align: right; font-variant-numeric: tabular-nums; }
 </style>
