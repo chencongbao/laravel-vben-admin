@@ -22,10 +22,29 @@ const { apiURL } = useAppConfig(import.meta.env, import.meta.env.PROD);
 
 const localizedErrorKeys: Record<string, string> = {
   ADMIN_PRIVILEGE_ESCALATION_DENIED: 'common.errors.privilegeEscalationDenied',
+  ADMIN_SELF_DEMOTION_DENIED: 'system.errors.adminSelfDemotionDenied',
+  ADMIN_SELF_DISABLE_DENIED: 'system.errors.adminSelfDisableDenied',
+  ADMIN_SUPER_ADMIN_REQUIRED: 'system.errors.superAdminRequired',
+  ADMIN_USERNAME_IMMUTABLE: 'system.errors.usernameImmutable',
+  BUILTIN_ADMIN_IDENTITY_PROTECTED: 'system.errors.builtInAdminIdentityProtected',
+  BUILTIN_ADMIN_ROLE_PROTECTED: 'system.errors.builtInAdminRoleProtected',
   CAPTCHA_INVALID: 'authentication.errors.captchaInvalid',
   CURRENT_PASSWORD_INCORRECT: 'profile.password.currentIncorrect',
   INVALID_CREDENTIALS: 'authentication.errors.invalidCredentials',
   LOGIN_IP_NOT_ALLOWED: 'authentication.errors.loginIpNotAllowed',
+  DEFAULT_MENU_PROTECTED: 'system.errors.defaultMenuProtected',
+  MENU_CYCLE: 'system.errors.menuCycle',
+  MENU_HAS_CHILDREN: 'system.errors.menuHasChildren',
+  MENU_REORDER_INCOMPLETE: 'system.errors.menuReorderIncomplete',
+  PERMISSION_CYCLE: 'system.errors.permissionCycle',
+  PERMISSION_HAS_CHILDREN: 'system.errors.permissionHasChildren',
+  PERMISSION_IN_USE: 'system.errors.permissionInUse',
+  PERMISSION_REORDER_INCOMPLETE: 'system.errors.permissionReorderIncomplete',
+  ROLE_IN_USE: 'system.errors.roleInUse',
+  SYSTEM_MENU_PROTECTED: 'system.errors.systemMenuProtected',
+  SYSTEM_PERMISSION_PROTECTED: 'system.errors.systemPermissionProtected',
+  SYSTEM_ROLE_IDENTITY_PROTECTED: 'system.errors.systemRoleIdentityProtected',
+  SYSTEM_ROLE_PROTECTED: 'system.errors.systemRoleProtected',
   TWO_FACTOR_CHALLENGE_INVALID:
     'authentication.errors.twoFactorChallengeInvalid',
   TWO_FACTOR_CODE_INVALID: 'authentication.errors.twoFactorCodeInvalid',
@@ -137,7 +156,9 @@ function createRequestClient(baseURL: string, options?: RequestClientOptions) {
             .find(Boolean)
         ?? (validationFields.some((field) => field.startsWith('settings.'))
           ? 'system.settingsForm.messages.invalid'
-          : undefined);
+          : validationFields.length > 0
+            ? 'common.errors.validationFailed'
+            : undefined);
       const messageKey = localizedKey ?? validationKey;
       const errorMessage = responseData?.error ?? responseData?.message ?? '';
       // 如果没有错误信息，则会根据状态码进行提示

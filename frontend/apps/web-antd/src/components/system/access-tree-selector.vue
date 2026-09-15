@@ -3,6 +3,8 @@ import type { Key } from 'ant-design-vue/es/_util/type';
 
 import { computed, watch } from 'vue';
 
+import { $t } from '@vben/locales';
+
 import { Checkbox, Tree } from 'ant-design-vue';
 
 interface AccessTreeNode {
@@ -113,8 +115,8 @@ watch([() => props.treeData, checkedKeys], () => {
 <template>
   <div class="admin-access-tree-selector">
     <div class="admin-access-tree-selector__actions">
-      <Checkbox v-model:checked="allChecked" :disabled="disabled" :indeterminate="indeterminate">全选</Checkbox>
-      <Checkbox v-model:checked="allExpanded">展开</Checkbox>
+      <Checkbox v-model:checked="allChecked" :disabled="disabled" :indeterminate="indeterminate">{{ $t('system.accessTree.selectAll') }}</Checkbox>
+      <Checkbox v-model:checked="allExpanded">{{ $t('system.accessTree.expandAll') }}</Checkbox>
     </div>
     <Tree
       :checked-keys="checkedKeys"

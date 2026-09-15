@@ -2,15 +2,68 @@
   "title": "系统管理",
   "administrators": "用户管理",
   "usersDescription": "创建和维护后台用户，配置账号状态、角色、Google 2FA、登录白名单与允许登录时间。",
+  "accessTree": { "selectAll": "全选", "expandAll": "展开" },
+  "common": {
+    "actions": { "addChild": "新增子级", "close": "关闭", "delete": "删除", "edit": "编辑", "editAndAuthorize": "编辑与授权" },
+    "states": { "disabled": "禁用", "enabled": "启用" }
+  },
+  "errors": {
+    "adminSelfDemotionDenied": "不能移除当前账号自己的超级管理员角色",
+    "adminSelfDisableDenied": "不能禁用当前登录账号",
+    "builtInAdminIdentityProtected": "内置管理员账号身份不能修改",
+    "builtInAdminRoleProtected": "内置管理员账号的固定角色不能修改",
+    "defaultMenuProtected": "默认工作台菜单不能修改",
+    "menuCycle": "菜单父子关系不能形成循环",
+    "menuHasChildren": "请先删除或移动子菜单",
+    "menuReorderIncomplete": "必须提交完整的菜单树进行排序",
+    "permissionCycle": "权限父子关系不能形成循环",
+    "permissionHasChildren": "请先删除或移动子权限",
+    "permissionInUse": "该权限已分配给角色，不能删除",
+    "permissionReorderIncomplete": "必须提交完整的权限树进行排序",
+    "roleInUse": "该角色已分配给用户，不能删除",
+    "superAdminRequired": "只有超级管理员可以修改管理员角色",
+    "systemMenuProtected": "系统菜单不能修改或删除",
+    "systemPermissionProtected": "系统权限不能修改或删除",
+    "systemRoleIdentityProtected": "管理员角色的固定身份不能修改",
+    "systemRoleProtected": "系统角色不能修改或删除",
+    "usernameImmutable": "用户创建后不能修改用户名"
+  },
+  "userForm": {
+    "actions": { "create": "新增用户", "edit": "编辑用户" },
+    "fields": {
+      "active": "启用", "loginAllowlist": "登录 IP 白名单", "name": "姓名", "newPassword": "新密码（不修改请留空）", "password": "密码", "role": "角色", "security": "登录安全", "twoFactor": "Google 2FA", "username": "用户名"
+    },
+    "messages": { "required": "请完整填写用户名、姓名和密码", "saved": "用户保存成功" },
+    "placeholders": { "allowlist": "填写后自动开启；留空表示未开启。每行一个，例如：\n203.0.113.10\n10.0.0.0/24\n2001:db8::/32" },
+    "tips": { "allowlist": "非本地环境必须设置白名单并且当前 IP 命中才能登录。", "password": "密码至少 12 位，并且必须同时包含大写字母、小写字母和数字。", "twoFactor": "开启后，白名单校验通过才会在登录页绑定或验证 Google 验证器。" }
+  },
+  "userList": {
+    "fields": { "action": "操作", "lastLoginAt": "最近登录时间", "lastLoginIp": "最近登录 IP", "loginAllowlist": "登录白名单", "name": "姓名", "role": "角色", "status": "状态", "twoFactor": "Google 2FA", "username": "用户名" },
+    "states": { "allowlistConfigured": "已设置 {count} 条", "allowlistUnset": "未设置", "twoFactorBound": "已绑定", "twoFactorDisabled": "未开启", "twoFactorPending": "待绑定" }
+  },
   "roles": "角色管理",
   "rolesDescription": "创建和维护角色，并为角色分配菜单及操作权限。",
+  "roleNames": { "administrator": "超级管理员", "manager": "管理员" },
+  "roleForm": {
+    "actions": { "create": "新增角色", "edit": "编辑角色", "viewSuperAdmin": "查看超级管理员" },
+    "fields": { "code": "角色标识", "menu": "菜单", "name": "角色名称", "permission": "权限" },
+    "messages": { "accessSaved": "角色和权限保存成功", "deleted": "角色已删除", "menuRequired": "请至少选择一项菜单", "permissionRequired": "请至少选择一项权限", "required": "请填写角色标识和名称" },
+    "placeholders": { "code": "例如：operator", "name": "请输入角色名称" },
+    "prompts": { "delete": "确定删除该角色？" }
+  },
+  "roleList": { "fields": { "action": "操作", "code": "角色标识", "name": "角色名称", "updatedAt": "更新时间" } },
   "permissions": "权限管理",
   "permissionsDescription": "维护权限层级、服务端权限编码及关联菜单。",
   "permissionForm": {
+    "actions": { "create": "新增权限", "edit": "编辑：{name}" },
+    "fields": { "code": "权限编码", "menus": "关联菜单", "name": "权限名称", "parent": "父级权限" },
     "messages": {
-      "codeInvalid": "权限编码格式不正确，请使用小写字母开头的点分格式，例如 match.publish"
-    }
+      "codeInvalid": "权限编码格式不正确，请使用小写字母开头的点分格式，例如 match.publish", "deleted": "权限已删除", "required": "请填写权限编码和名称", "saved": "权限保存成功", "sortFailed": "权限拖动保存失败，已恢复原顺序", "sortSaved": "权限层级和排序已保存"
+    },
+    "placeholders": { "code": "例如：match.publish", "name": "请输入权限名称或语言键", "parent": "请选择父级权限" },
+    "prompts": { "delete": "确定删除该权限？" }
   },
+  "permissionList": { "actions": { "addChild": "新增子级", "collapseChild": "收起子权限", "drag": "按住拖动权限", "edit": "编辑权限", "expandChild": "展开子权限" }, "empty": "暂无权限", "systemDeleteDisabled": "系统权限不可删除", "title": "权限列表", "treeLabel": "权限层级与排序", "topLevel": "顶级权限" },
   "permissionNames": {
     "system": {
       "access": "系统管理",
@@ -28,10 +81,51 @@
   },
   "menus": "菜单管理",
   "menusDescription": "维护后台菜单层级、路由、图标、排序与访问权限。",
+  "menuForm": {
+    "actions": { "create": "新增菜单", "edit": "编辑：{name}" },
+    "fields": { "icon": "菜单图标", "permissions": "菜单权限", "routePath": "路由路径", "title": "菜单标题", "type": "菜单类型", "parent": "父级菜单" },
+    "help": { "routePath": "后台前端页面的路由路径，例如：/system/users；不是后端 API 路径。" },
+    "messages": { "deleted": "菜单已删除", "required": "请填写菜单标题、菜单图标和菜单类型", "saved": "菜单保存成功", "sortFailed": "菜单拖动保存失败，已恢复原顺序", "sortSaved": "菜单层级和排序已保存" },
+    "options": { "directory": "目录", "external": "外部链接", "page": "页面" },
+    "placeholders": { "parent": "请选择父级菜单", "routePath": "例如：/content/articles", "title": "请输入菜单标题或语言键" },
+    "prompts": { "delete": "确定删除该菜单？" }
+  },
+  "menuList": { "actions": { "addChild": "新增子级", "collapseChild": "收起子菜单", "drag": "按住拖动菜单", "edit": "编辑菜单", "expandChild": "展开子菜单" }, "empty": "暂无菜单", "systemDeleteDisabled": "系统菜单不可删除", "title": "菜单列表", "treeLabel": "菜单层级与排序", "topLevel": "顶级菜单" },
   "loginLogs": "登录日志",
-  "loginLogsDescription": "查看后台用户的登录结果、客户端类型、IP 地址和登录时间。",
+  "loginLogsDescription": "查看后台用户的登录结果、访问终端、用户代理、IP 地址和登录时间。",
+  "loginLog": {
+    "fields": {
+      "username": "用户名",
+      "ipAddress": "IP 地址",
+      "result": "结果",
+      "accessDevice": "访问终端",
+      "userAgent": "用户代理（UA）",
+      "failureCode": "失败代码"
+    },
+    "filters": {
+      "result": "登录结果"
+    },
+    "states": {
+      "succeeded": "成功",
+      "failed": "失败"
+    }
+  },
   "auditLogs": "操作日志",
   "auditLogsDescription": "查看后台用户对系统数据执行的新增、修改、删除等操作记录。",
+  "auditLog": {
+    "actions": { "detail": "查看详情" },
+    "changesCount": "{count} 项变更",
+    "fields": { "actions": "操作", "actionType": "操作类型", "actor": "操作者", "changes": "变更内容", "createdAt": "操作时间", "description": "操作内容", "ipAddress": "IP 地址", "method": "请求方法", "path": "请求路径", "subject": "操作对象" },
+    "filters": { "actionCode": "操作编码", "actor": "操作者", "description": "内容关键字", "ipAddress": "IP 地址", "subjectId": "对象编号", "subjectType": "对象类型", "timeRange": "操作时间" },
+    "placeholders": { "actor": "姓名、用户名或编号" },
+    "actionTypes": { "created": "新增", "deleted": "删除", "other": "其他", "updated": "修改" },
+    "actionNames": {
+      "avatarUpdated": "修改头像", "passwordUpdated": "修改密码", "profileUpdated": "修改个人资料", "sessionRevoked": "撤销登录会话", "sessionsRevoked": "撤销其他登录会话", "twoFactorConfirmed": "绑定双重验证", "twoFactorDisabled": "关闭双重验证", "twoFactorEnabled": "开启双重验证",
+      "menuCreated": "新增菜单", "menuDeleted": "删除菜单", "menuReordered": "调整菜单排序", "menuUpdated": "编辑菜单", "permissionCreated": "新增权限", "permissionDeleted": "删除权限", "permissionReordered": "调整权限排序", "permissionUpdated": "编辑权限", "roleAccessUpdated": "修改角色授权", "roleCreated": "新增角色", "roleDeleted": "删除角色", "roleUpdated": "编辑角色", "settingsUpdated": "编辑系统配置", "themeSettingsUpdated": "编辑主题配置", "userCreated": "新增用户", "userUpdated": "编辑用户"
+    },
+    "subjectTypes": { "menu": "菜单", "permission": "权限", "role": "角色", "setting": "系统配置", "user": "用户" },
+    "detail": { "after": "修改后", "before": "修改前", "changes": "变更详情", "context": "业务上下文", "field": "字段", "noChanges": "没有字段变更", "request": "请求信息", "requestId": "请求编号", "requestInput": "请求参数（已脱敏）", "routeName": "路由名称", "title": "操作日志详情 #{id}", "unknownActor": "未知操作者" }
+  },
   "auditFields": {
     "action": "操作",
     "actionCode": "操作标识",

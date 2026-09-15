@@ -71,7 +71,8 @@ function descendantIds(id: number) {
 const parentOptions = computed<ParentOption[]>(() => {
   const excluded = editing.value ? descendantIds(editing.value.id) : new Set<number>();
   if (editing.value) excluded.add(editing.value.id);
-  const options: ParentOption[] = [{ depth: -1, isLast: true, label: '顶级权限', searchText: '顶级权限', value: 0 }];
+  const topLevel = $t('system.permissionList.topLevel');
+  const options: ParentOption[] = [{ depth: -1, isLast: true, label: topLevel, searchText: topLevel, value: 0 }];
   const appendNodes = (nodes: PermissionTreeNode[], depth = 0) => {
     const visibleNodes = nodes.filter((node) => !excluded.has(node.id));
     visibleNodes.forEach((node, index) => {
@@ -104,7 +105,9 @@ function expandAllMenus() {
     .map((menu) => menu.id);
 }
 
-const formTitle = computed(() => editing.value ? `编辑：${permissionName(editing.value)}` : '新增权限');
+const formTitle = computed(() => editing.value
+  ? $t('system.permissionForm.actions.edit', { name: permissionName(editing.value) })
+  : $t('system.permissionForm.actions.create'));
 
 function createEmptyForm(parentId = 0) {
   return { code: '', menu_ids: [] as Key[], name: '', parent_id: parentId, sort: 0 };
@@ -154,16 +157,16 @@ function addChild(item: PermissionTreeNode) {
 }
 
 async function save() {
-  if (!form.code || !form.name) return void message.warning('请填写权限编码和名称');
+  if (!form.code || !form.name) return void message.warning($t('system.permissionForm.messages.required'));
   if (!permissionCodePattern.test(form.code)) return void message.warning($t('system.permissionForm.messages.codeInvalid'));
   saving.value = true;
   try {
     const payload = { code: form.code, menu_ids: form.menu_ids.filter((key): key is number => typeof key === 'number'), name: form.name, parent_id: form.parent_id || null, sort: form.sort };
     await (editing.value ? updateResource('/system/permissions', editing.value.id, payload) : createResource('/system/permissions', payload));
-    message.success('权限保存成功'); await load(); openCreate();
+    message.success($t('system.permissionForm.messages.saved')); await load(); openCreate();
   } finally { saving.value = false; }
 }
-async function remove(item: Permission) { await deleteResource('/system/permissions', item.id); message.success('权限已删除'); await load(); openCreate(); }
+async function remove(item: Permission) { await deleteResource('/system/permissions', item.id); message.success($t('system.permissionForm.messages.deleted')); await load(); openCreate(); }
 function expandAll() { permissionTreeRef.value?.openAll(); }
 function collapseAll() { permissionTreeRef.value?.closeAll(); }
 function flattenOrder(nodes: PermissionTreeNode[], parentId: null | number = null): Array<{ id: number; parent_id: null | number; sort: number }> {
@@ -176,9 +179,9 @@ async function handleTreeChange() {
   loading.value = true;
   try {
     await reorderPermissions(flattenOrder(draggablePermissions.value));
-    message.success('权限层级和排序已保存');
+    message.success($t('system.permissionForm.messages.sortSaved'));
   } catch {
-    message.error('权限拖动保存失败，已恢复原顺序');
+    message.error($t('system.permissionForm.messages.sortFailed'));
   } finally {
     await load(draggedCode.value);
     draggedCode.value = undefined;
@@ -190,16 +193,16 @@ onMounted(() => load());
 <template>
   <Page :description="$t('system.permissionsDescription')" :title="$t('system.permissions')">
     <div class="admin-menu-workspace min-h-[680px]">
-      <Card :loading="loading" class="admin-menu-workspace__tree" title="权限列表">
+      <Card :loading="loading" class="admin-menu-workspace__tree" :title="$t('system.permissionList.title')">
         <ListToolbar>
-          <template #left><ListRefreshButton :loading="loading" /><PermissionButton icon="lucide:chevrons-down-up" @click="expandAll">展开</PermissionButton><PermissionButton icon="lucide:chevrons-up-down" @click="collapseAll">收起</PermissionButton></template>
-          <template #right><PermissionButton icon="lucide:key-round" permission="system.permission.create" type="primary" @click="openCreate()">新增权限</PermissionButton></template>
+          <template #left><ListRefreshButton :loading="loading" /><PermissionButton icon="lucide:chevrons-down-up" @click="expandAll">{{ $t('common.actions.expand') }}</PermissionButton><PermissionButton icon="lucide:chevrons-up-down" @click="collapseAll">{{ $t('common.actions.collapse') }}</PermissionButton></template>
+          <template #right><PermissionButton icon="lucide:key-round" permission="system.permission.create" type="primary" @click="openCreate()">{{ $t('system.permissionForm.actions.create') }}</PermissionButton></template>
         </ListToolbar>
         <Draggable
           v-if="draggablePermissions.length > 0"
           ref="permissionTreeRef"
           v-model="draggablePermissions"
-          aria-label="权限层级与排序"
+          :aria-label="$t('system.permissionList.treeLabel')"
           class="admin-menu-tree"
           :disable-drag="!canReorder || loading"
           :disable-drop="!canReorder || loading"
@@ -216,36 +219,36 @@ onMounted(() => load());
         >
           <template #default="{ node, stat }">
             <div class="admin-menu-tree__node" :class="[{ 'is-selected': selectedCode === node.code }]">
-              <button v-if="stat.children.length > 0" :aria-label="stat.open ? '收起子权限' : '展开子权限'" class="admin-menu-tree__toggle" type="button" @click.stop="stat.open = !stat.open"><IconifyIcon :class="{ 'is-open': stat.open }" icon="lucide:chevron-right" /></button>
+              <button v-if="stat.children.length > 0" :aria-label="stat.open ? $t('system.permissionList.actions.collapseChild') : $t('system.permissionList.actions.expandChild')" class="admin-menu-tree__toggle" type="button" @click.stop="stat.open = !stat.open"><IconifyIcon :class="{ 'is-open': stat.open }" icon="lucide:chevron-right" /></button>
               <span v-else class="admin-menu-tree__toggle-placeholder"></span>
-              <span v-if="canReorder" aria-hidden="true" class="admin-menu-tree__drag-handle" title="按住拖动权限"><IconifyIcon icon="lucide:grip-vertical" /></span>
+              <span v-if="canReorder" aria-hidden="true" class="admin-menu-tree__drag-handle" :title="$t('system.permissionList.actions.drag')"><IconifyIcon icon="lucide:grip-vertical" /></span>
               <button class="admin-menu-tree__label" type="button" @click.stop="selectPermission(node)"><span class="truncate">{{ permissionName(node) }}</span><span class="admin-menu-tree__route">{{ node.code }}</span></button>
               <div class="admin-menu-tree__actions">
-                <PermissionButton icon="lucide:pencil" icon-only permission="system.permission.update" tooltip="编辑权限" type="text" @click.stop="selectPermission(node)" />
-                <PermissionButton icon="lucide:plus" icon-only permission="system.permission.create" tooltip="新增子级" type="text" @click.stop="addChild(node)" />
-                <Popconfirm v-if="!node.is_system" v-access:code="'system.permission.delete'" title="确定删除该权限？" @confirm="remove(node)"><PermissionButton danger icon="lucide:trash-2" icon-only permission="system.permission.delete" tooltip="删除权限" type="text" @click.stop /></Popconfirm>
-                <PermissionButton v-else danger disabled icon="lucide:trash-2" icon-only tooltip="系统权限不可删除" type="text" @click.stop />
+                <PermissionButton icon="lucide:pencil" icon-only permission="system.permission.update" :tooltip="$t('system.permissionList.actions.edit')" type="text" @click.stop="selectPermission(node)" />
+                <PermissionButton icon="lucide:plus" icon-only permission="system.permission.create" :tooltip="$t('system.permissionList.actions.addChild')" type="text" @click.stop="addChild(node)" />
+                <Popconfirm v-if="!node.is_system" v-access:code="'system.permission.delete'" :title="$t('system.permissionForm.prompts.delete')" @confirm="remove(node)"><PermissionButton danger icon="lucide:trash-2" icon-only permission="system.permission.delete" :tooltip="$t('system.common.actions.delete')" type="text" @click.stop /></Popconfirm>
+                <PermissionButton v-else danger disabled icon="lucide:trash-2" icon-only :tooltip="$t('system.permissionList.systemDeleteDisabled')" type="text" @click.stop />
               </div>
             </div>
           </template>
           <template #placeholder><div class="admin-menu-tree__drop-placeholder"></div></template>
         </Draggable>
-        <Empty v-else description="暂无权限" />
+        <Empty v-else :description="$t('system.permissionList.empty')" />
       </Card>
 
       <Card class="admin-menu-editor admin-menu-workspace__editor" :title="formTitle">
         <Form :label-col="{ span: 5 }" :wrapper-col="{ span: 17 }">
-          <FormItem label="父级权限">
-            <Select v-model:value="form.parent_id" :filter-option="true" option-filter-prop="searchText" :options="parentOptions" placeholder="请选择父级权限" popup-class-name="admin-menu-parent-dropdown" show-search>
+          <FormItem :label="$t('system.permissionForm.fields.parent')">
+            <Select v-model:value="form.parent_id" :filter-option="true" option-filter-prop="searchText" :options="parentOptions" :placeholder="$t('system.permissionForm.placeholders.parent')" popup-class-name="admin-menu-parent-dropdown" show-search>
               <template #option="{ depth, isLast, label }"><div class="admin-menu-parent-option"><span v-if="depth >= 0" aria-hidden="true" class="admin-menu-parent-option__branch" :class="{ 'is-last': isLast }" :style="{ marginInlineStart: `${depth * 28}px` }"></span><span>{{ label }}</span></div></template>
             </Select>
           </FormItem>
-          <FormItem label="权限编码" required><Input v-model:value="form.code" :disabled="Boolean(editing?.is_system)" placeholder="例如 match.publish" /></FormItem>
-          <FormItem label="权限名称" required><Input v-model:value="form.name" placeholder="请输入权限名称或语言键" /></FormItem>
-          <FormItem label="关联菜单">
+          <FormItem :label="$t('system.permissionForm.fields.code')" required><Input v-model:value="form.code" :disabled="Boolean(editing?.is_system)" :placeholder="$t('system.permissionForm.placeholders.code')" /></FormItem>
+          <FormItem :label="$t('system.permissionForm.fields.name')" required><Input v-model:value="form.name" :placeholder="$t('system.permissionForm.placeholders.name')" /></FormItem>
+          <FormItem :label="$t('system.permissionForm.fields.menus')">
             <AccessTreeSelector v-model:checked-keys="form.menu_ids" v-model:expanded-keys="expandedMenuKeys" :tree-data="menuTree" />
           </FormItem>
-          <div class="admin-menu-editor__footer"><PermissionButton icon="lucide:rotate-ccw" @click="resetEditor">重置</PermissionButton><PermissionButton icon="lucide:save" :loading="saving" :permission="editing ? 'system.permission.update' : 'system.permission.create'" type="primary" @click="save">{{ $t('common.submit') }}</PermissionButton></div>
+          <div class="admin-menu-editor__footer"><PermissionButton icon="lucide:rotate-ccw" @click="resetEditor">{{ $t('common.actions.reset') }}</PermissionButton><PermissionButton icon="lucide:save" :loading="saving" :permission="editing ? 'system.permission.update' : 'system.permission.create'" type="primary" @click="save">{{ $t('common.submit') }}</PermissionButton></div>
         </Form>
       </Card>
     </div>

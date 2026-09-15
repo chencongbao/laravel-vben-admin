@@ -150,11 +150,12 @@ function descendantIds(id: number) {
 const parentOptions = computed<MenuParentOption[]>(() => {
   const excluded = editing.value ? descendantIds(editing.value.id) : new Set<number>();
   if (editing.value) excluded.add(editing.value.id);
+  const topLevel = $t('system.menuList.topLevel');
   const options: MenuParentOption[] = [{
     depth: -1,
     isLast: true,
-    label: '顶级菜单',
-    searchText: '顶级菜单',
+    label: topLevel,
+    searchText: topLevel,
     value: 0,
   }];
   const appendNodes = (nodes: MenuTreeNode[], ancestorLast: boolean[] = []) => {
@@ -177,7 +178,14 @@ const parentOptions = computed<MenuParentOption[]>(() => {
   return options;
 });
 
-const formTitle = computed(() => editing.value ? `编辑：${$t(editing.value.title)}` : '新增菜单');
+const formTitle = computed(() => editing.value
+  ? $t('system.menuForm.actions.edit', { name: $t(editing.value.title) })
+  : $t('system.menuForm.actions.create'));
+const menuTypeOptions = computed(() => [
+  { label: $t('system.menuForm.options.directory'), value: 'directory' },
+  { label: $t('system.menuForm.options.page'), value: 'page' },
+  { label: $t('system.menuForm.options.external'), value: 'external' },
+]);
 
 function permissionName(permission: Pick<Permission, 'code' | 'name'>) {
   const systemNameKey = `system.permissionNames.${permission.code}`;
@@ -307,8 +315,8 @@ function handleRoutePathInput(value: string) {
 
 async function save() {
   syncGeneratedRouteFields();
-  if (!form.code || !form.title || !form.type || !form.icon || !form.route_path) {
-    return void message.warning('请填写父级菜单、菜单标题、菜单图标、路由路径和菜单类型');
+  if (!form.code || !form.title || !form.type || !form.icon) {
+    return void message.warning($t('system.menuForm.messages.required'));
   }
   saving.value = true;
   try {
@@ -324,7 +332,7 @@ async function save() {
       view_key: form.view_key || null,
     };
     await (editing.value ? updateResource('/system/menus', editing.value.id, payload) : createResource('/system/menus', payload));
-    message.success('菜单保存成功');
+    message.success($t('system.menuForm.messages.saved'));
     await load();
     closeEditor();
   } finally {
@@ -334,7 +342,7 @@ async function save() {
 
 async function remove(item: MenuItem) {
   await deleteResource('/system/menus', item.id);
-  message.success('菜单已删除');
+  message.success($t('system.menuForm.messages.deleted'));
   closeEditor();
   await load();
 }
@@ -367,9 +375,9 @@ async function handleTreeChange() {
   loading.value = true;
   try {
     await reorderMenus(flattenOrder(draggableMenus.value));
-    message.success('菜单层级和排序已保存');
+    message.success($t('system.menuForm.messages.sortSaved'));
   } catch {
-    message.error('菜单拖动保存失败，已恢复原顺序');
+    message.error($t('system.menuForm.messages.sortFailed'));
   } finally {
     await load(draggedCode.value);
     draggedCode.value = undefined;
@@ -382,15 +390,15 @@ onMounted(() => load());
 <template>
   <Page :description="$t('system.menusDescription')" :title="$t('system.menus')">
     <div class="admin-menu-workspace min-h-[680px]">
-      <Card :loading="loading" class="admin-menu-workspace__tree" title="菜单列表">
+      <Card :loading="loading" class="admin-menu-workspace__tree" :title="$t('system.menuList.title')">
         <ListToolbar>
           <template #left>
             <ListRefreshButton :loading="loading" />
-            <PermissionButton icon="lucide:chevrons-down-up" @click="expandAll">展开</PermissionButton>
-            <PermissionButton icon="lucide:chevrons-up-down" @click="collapseAll">收起</PermissionButton>
+            <PermissionButton icon="lucide:chevrons-down-up" @click="expandAll">{{ $t('common.actions.expand') }}</PermissionButton>
+            <PermissionButton icon="lucide:chevrons-up-down" @click="collapseAll">{{ $t('common.actions.collapse') }}</PermissionButton>
           </template>
           <template #right>
-            <PermissionButton icon="lucide:list-plus" permission="system.menu.create" type="primary" @click="openCreate()">新增菜单</PermissionButton>
+            <PermissionButton icon="lucide:list-plus" permission="system.menu.create" type="primary" @click="openCreate()">{{ $t('system.menuForm.actions.create') }}</PermissionButton>
           </template>
         </ListToolbar>
 
@@ -398,7 +406,7 @@ onMounted(() => load());
           v-if="draggableMenus.length > 0"
           ref="menuTreeRef"
           v-model="draggableMenus"
-          aria-label="菜单层级与排序"
+          :aria-label="$t('system.menuList.treeLabel')"
           class="admin-menu-tree"
           :disable-drag="!canReorder || loading"
           :disable-drop="!canReorder || loading"
@@ -417,7 +425,7 @@ onMounted(() => load());
             <div class="admin-menu-tree__node" :class="[{ 'is-selected': selectedCode === node.code }]">
               <button
                 v-if="stat.children.length > 0"
-                :aria-label="stat.open ? '收起子菜单' : '展开子菜单'"
+                :aria-label="stat.open ? $t('system.menuList.actions.collapseChild') : $t('system.menuList.actions.expandChild')"
                 class="admin-menu-tree__toggle"
                 type="button"
                 @click.stop="stat.open = !stat.open"
@@ -425,7 +433,7 @@ onMounted(() => load());
                 <IconifyIcon :class="{ 'is-open': stat.open }" icon="lucide:chevron-right" />
               </button>
               <span v-else class="admin-menu-tree__toggle-placeholder"></span>
-              <span v-if="canReorder" aria-hidden="true" class="admin-menu-tree__drag-handle" title="按住拖动菜单">
+              <span v-if="canReorder" aria-hidden="true" class="admin-menu-tree__drag-handle" :title="$t('system.menuList.actions.drag')">
                 <IconifyIcon icon="lucide:grip-vertical" />
               </span>
               <button class="admin-menu-tree__label" type="button" @click.stop="selectMenu(node)">
@@ -433,12 +441,12 @@ onMounted(() => load());
                 <span class="admin-menu-tree__route">{{ node.route_path || node.code }}</span>
               </button>
               <Space size="small">
-                <PermissionButton icon="lucide:pencil" icon-only permission="system.menu.update" tooltip="编辑菜单" type="text" @click.stop="selectMenu(node)" />
-                <PermissionButton icon="lucide:plus" icon-only permission="system.menu.create" tooltip="新增子级" type="text" @click.stop="addChild(node)" />
-                <Popconfirm v-if="!node.is_system" v-access:code="'system.menu.delete'" title="确定删除该菜单？" @confirm="remove(node)">
-                  <PermissionButton danger icon="lucide:trash-2" icon-only permission="system.menu.delete" tooltip="删除菜单" type="text" @click.stop />
+                <PermissionButton icon="lucide:pencil" icon-only permission="system.menu.update" :tooltip="$t('system.menuList.actions.edit')" type="text" @click.stop="selectMenu(node)" />
+                <PermissionButton icon="lucide:plus" icon-only permission="system.menu.create" :tooltip="$t('system.menuList.actions.addChild')" type="text" @click.stop="addChild(node)" />
+                <Popconfirm v-if="!node.is_system" v-access:code="'system.menu.delete'" :title="$t('system.menuForm.prompts.delete')" @confirm="remove(node)">
+                  <PermissionButton danger icon="lucide:trash-2" icon-only permission="system.menu.delete" :tooltip="$t('system.common.actions.delete')" type="text" @click.stop />
                 </Popconfirm>
-                <PermissionButton v-else danger disabled icon="lucide:trash-2" icon-only tooltip="系统菜单不可删除" type="text" @click.stop />
+                <PermissionButton v-else danger disabled icon="lucide:trash-2" icon-only :tooltip="$t('system.menuList.systemDeleteDisabled')" type="text" @click.stop />
               </Space>
             </div>
           </template>
@@ -446,18 +454,18 @@ onMounted(() => load());
             <div class="admin-menu-tree__drop-placeholder"></div>
           </template>
         </Draggable>
-        <Empty v-else description="暂无菜单" />
+        <Empty v-else :description="$t('system.menuList.empty')" />
       </Card>
 
       <Card class="admin-menu-editor admin-menu-workspace__editor" :title="formTitle">
         <Form :label-col="{ span: 4 }" :wrapper-col="{ span: 18 }">
-          <FormItem label="父级菜单" required>
+          <FormItem :label="$t('system.menuForm.fields.parent')" required>
             <Select
               v-model:value="form.parent_id"
               :filter-option="true"
               option-filter-prop="searchText"
               :options="parentOptions"
-              placeholder="请选择父级菜单"
+              :placeholder="$t('system.menuForm.placeholders.parent')"
               popup-class-name="admin-menu-parent-dropdown"
               show-search
             >
@@ -475,12 +483,12 @@ onMounted(() => load());
               </template>
             </Select>
           </FormItem>
-          <FormItem label="菜单标题" required>
-            <Input v-model:value="form.title" placeholder="请输入菜单标题或语言键">
+          <FormItem :label="$t('system.menuForm.fields.title')" required>
+            <Input v-model:value="form.title" :placeholder="$t('system.menuForm.placeholders.title')">
               <template #prefix><IconifyIcon icon="lucide:pencil" /></template>
             </Input>
           </FormItem>
-          <FormItem label="菜单图标" required>
+          <FormItem :label="$t('system.menuForm.fields.icon')" required>
             <IconPicker
               v-model="form.icon"
               :page-size="30"
@@ -488,20 +496,20 @@ onMounted(() => load());
               @change="form.icon = $event"
             />
           </FormItem>
-          <FormItem label="路由路径">
-            <Input :value="form.route_path" placeholder="例如：/content/articles" @update:value="handleRoutePathInput">
+          <FormItem :label="$t('system.menuForm.fields.routePath')">
+            <Input :value="form.route_path" :placeholder="$t('system.menuForm.placeholders.routePath')" @update:value="handleRoutePathInput">
               <template #prefix><IconifyIcon icon="lucide:link" /></template>
             </Input>
-            <div class="admin-menu-editor__help">后台前端页面的路由路径，例如：/system/users；不是后端 API 路径。</div>
+            <div class="admin-menu-editor__help">{{ $t('system.menuForm.help.routePath') }}</div>
           </FormItem>
-          <FormItem label="菜单类型" required>
-            <Select v-model:value="form.type" :options="[{ label: '目录', value: 'directory' }, { label: '页面', value: 'page' }, { label: '外部链接', value: 'external' }]" />
+          <FormItem :label="$t('system.menuForm.fields.type')" required>
+            <Select v-model:value="form.type" :options="menuTypeOptions" />
           </FormItem>
-          <FormItem label="菜单权限">
+          <FormItem :label="$t('system.menuForm.fields.permissions')">
             <AccessTreeSelector v-model:checked-keys="checkedPermissionKeys" v-model:expanded-keys="expandedPermissionKeys" check-strictly :tree-data="permissionTree" />
           </FormItem>
           <div class="admin-menu-editor__footer">
-            <PermissionButton icon="lucide:rotate-ccw" @click="resetEditor">重置</PermissionButton>
+            <PermissionButton icon="lucide:rotate-ccw" @click="resetEditor">{{ $t('common.actions.reset') }}</PermissionButton>
             <PermissionButton icon="lucide:save" :loading="saving" :permission="editing ? 'system.menu.update' : 'system.menu.create'" type="primary" @click="save">
               {{ $t('common.submit') }}
             </PermissionButton>

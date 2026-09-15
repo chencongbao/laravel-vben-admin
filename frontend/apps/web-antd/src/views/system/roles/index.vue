@@ -33,11 +33,11 @@ const checkedMenuKeys = ref<Key[]>([]); const expandedMenuKeys = ref<Key[]>([]);
 const pagination = reactive(createAdminPagination());
 const searchId = ref<number>(); const showFilters = ref(true);
 const form = reactive({ code: '', name: '' });
-const columns: TableColumnsType = [
-  { dataIndex: 'code', title: '角色标识' }, { dataIndex: 'name', title: '角色名称' },
+const columns = computed<TableColumnsType>(() => [
+  { dataIndex: 'code', title: $t('system.roleList.fields.code') }, { dataIndex: 'name', title: $t('system.roleList.fields.name') },
   { dataIndex: 'created_at', title: $t('common.fields.createdAt') },
-  { dataIndex: 'updated_at', title: '更新时间' }, { dataIndex: 'action', fixed: 'right', title: '操作', width: 82 },
-];
+  { dataIndex: 'updated_at', title: $t('system.roleList.fields.updatedAt') }, { dataIndex: 'action', fixed: 'right', title: $t('system.roleList.fields.action'), width: 82 },
+]);
 const isProtected = computed(() => editingRole.value?.is_super_admin === true);
 const isSystemIdentity = computed(() => editingRole.value?.is_system === true);
 const menuTree = computed<AccessTreeNode[]>(() => {
@@ -56,6 +56,11 @@ function permissionName(permission: PermissionItem) {
   const systemNameKey = `system.permissionNames.${permission.code}`;
   const systemName = $t(systemNameKey);
   return systemName === systemNameKey ? $t(permission.name) : systemName;
+}
+function roleName(role: Record<string, any>) {
+  const roleNameKey = `system.roleNames.${role.code}`;
+  const localizedName = $t(roleNameKey);
+  return localizedName === roleNameKey ? $t(role.name) : localizedName;
 }
 const permissionTree = computed<AccessTreeNode[]>(() => {
   const childrenByParent = new Map<null | number, PermissionItem[]>();
@@ -118,18 +123,18 @@ function selectedAccess() {
   };
 }
 async function saveRole() {
-  if (!form.code || !form.name) return void message.warning('请填写角色标识和名称');
+  if (!form.code || !form.name) return void message.warning($t('system.roleForm.messages.required'));
   const access = selectedAccess();
-  if (access.permission_ids.length === 0) return void message.warning('请至少选择一项权限');
-  if (access.menu_ids.length === 0) return void message.warning('请至少选择一项菜单');
+  if (access.permission_ids.length === 0) return void message.warning($t('system.roleForm.messages.permissionRequired'));
+  if (access.menu_ids.length === 0) return void message.warning($t('system.roleForm.messages.menuRequired'));
   saving.value = true;
   try {
     const payload = { ...form, ...access };
     await (editingRole.value ? updateResource('/system/roles', editingRole.value.id, payload) : createResource('/system/roles', payload));
-    visible.value = false; message.success('角色和权限保存成功'); await load();
+    visible.value = false; message.success($t('system.roleForm.messages.accessSaved')); await load();
   } finally { saving.value = false; }
 }
-async function remove(role: any) { await deleteResource('/system/roles', role.id); message.success('角色已删除'); await load(); }
+async function remove(role: any) { await deleteResource('/system/roles', role.id); message.success($t('system.roleForm.messages.deleted')); await load(); }
 function changePage(page: { current?: number; pageSize?: number }) { pagination.current = page.current ?? 1; pagination.pageSize = page.pageSize ?? pagination.pageSize; void load(); }
 function search() { pagination.current = 1; void load(); }
 function resetSearch() { searchId.value = undefined; search(); }
@@ -139,31 +144,32 @@ onMounted(load);
 
 <template>
   <Page :description="$t('system.rolesDescription')" :title="$t('system.roles')">
-    <ListToolbar><template #left><ListRefreshButton :loading="loading" /><PermissionButton icon="lucide:filter" @click="showFilters = !showFilters">{{ $t('common.actions.filter') }}</PermissionButton></template><template #right><PermissionButton icon="lucide:shield-plus" permission="system.role.create" type="primary" @click="openEdit()">新增角色</PermissionButton></template></ListToolbar>
+    <ListToolbar><template #left><ListRefreshButton :loading="loading" /><PermissionButton icon="lucide:filter" @click="showFilters = !showFilters">{{ $t('common.actions.filter') }}</PermissionButton></template><template #right><PermissionButton icon="lucide:shield-plus" permission="system.role.create" type="primary" @click="openEdit()">{{ $t('system.roleForm.actions.create') }}</PermissionButton></template></ListToolbar>
     <ListSearchPanel v-if="showFilters"><ListSearchField :label="$t('common.fields.id')"><InputNumber v-model:value="searchId" :min="1" :placeholder="$t('common.fields.id')" @press-enter="search" /></ListSearchField><template #actions><PermissionButton icon="lucide:search" type="primary" @click="search">{{ $t('common.actions.search') }}</PermissionButton><PermissionButton icon="lucide:rotate-ccw" @click="resetSearch">{{ $t('common.actions.reset') }}</PermissionButton></template></ListSearchPanel>
     <Card :body-style="{ padding: 0 }" class="admin-table-card">
       <Table :ref="setTableRef" bordered class="admin-data-table" :columns="columns" :data-source="roles" :loading="loading" :pagination="pagination" :scroll="{ x: 760, y: tableScrollY }" row-key="id" @change="changePage">
         <template #bodyCell="{ column, record, text }">
           <Tag v-if="column.dataIndex === 'code'" color="blue">{{ text }}</Tag>
+          <span v-else-if="column.dataIndex === 'name'">{{ roleName(record) }}</span>
           <span v-else-if="column.dataIndex === 'created_at' || column.dataIndex === 'updated_at'">{{ formatBeijingDateTime(text) }}</span>
           <Space v-else-if="column.dataIndex === 'action' && !record.is_super_admin">
-            <PermissionButton icon="lucide:pencil" icon-only permission="system.role.update" tooltip="编辑与授权" type="text" @click="openEdit(record)" />
-            <Popconfirm v-if="!record.is_system" v-access:code="'system.role.delete'" title="确定删除该角色？" @confirm="remove(record)"><PermissionButton danger icon="lucide:trash-2" icon-only permission="system.role.delete" tooltip="删除角色" type="text" /></Popconfirm>
+            <PermissionButton icon="lucide:pencil" icon-only permission="system.role.update" :tooltip="$t('system.common.actions.editAndAuthorize')" type="text" @click="openEdit(record)" />
+            <Popconfirm v-if="!record.is_system" v-access:code="'system.role.delete'" :title="$t('system.roleForm.prompts.delete')" @confirm="remove(record)"><PermissionButton danger icon="lucide:trash-2" icon-only permission="system.role.delete" :tooltip="$t('system.common.actions.delete')" type="text" /></Popconfirm>
           </Space>
         </template>
       </Table>
     </Card>
-    <Modal v-model:open="visible" centered :confirm-loading="saving" :ok-text="isProtected ? '关闭' : '确定'" :title="editingRole ? (isProtected ? '查看超级管理员' : '编辑角色') : '新增角色'" width="900px" wrap-class-name="admin-role-editor-modal" @ok="handleModalOk">
+    <Modal v-model:open="visible" centered :confirm-loading="saving" :ok-text="isProtected ? $t('system.common.actions.close') : $t('common.submit')" :title="editingRole ? (isProtected ? $t('system.roleForm.actions.viewSuperAdmin') : $t('system.roleForm.actions.edit')) : $t('system.roleForm.actions.create')" width="900px" wrap-class-name="admin-role-editor-modal" @ok="handleModalOk">
       <Form class="pt-2" layout="vertical">
         <div class="grid grid-cols-2 gap-4">
-          <FormItem label="角色标识" required><Input v-model:value="form.code" :disabled="isSystemIdentity" placeholder="例如：operator" /></FormItem>
-          <FormItem label="角色名称" required><Input v-model:value="form.name" :disabled="isSystemIdentity" placeholder="请输入角色名称" /></FormItem>
+          <FormItem :label="$t('system.roleForm.fields.code')" required><Input v-model:value="form.code" :disabled="isSystemIdentity" :placeholder="$t('system.roleForm.placeholders.code')" /></FormItem>
+          <FormItem :label="$t('system.roleForm.fields.name')" required><Input v-model:value="form.name" :disabled="isSystemIdentity" :placeholder="$t('system.roleForm.placeholders.name')" /></FormItem>
         </div>
         <div class="admin-role-access-grid">
-          <FormItem class="admin-role-access-section" label="权限" required>
+          <FormItem class="admin-role-access-section" :label="$t('system.roleForm.fields.permission')" required>
             <AccessTreeSelector v-model:checked-keys="checkedPermissionKeys" v-model:expanded-keys="expandedPermissionKeys" :disabled="isProtected" include-ancestors :tree-data="permissionTree" />
           </FormItem>
-          <FormItem class="admin-role-access-section" label="菜单" required>
+          <FormItem class="admin-role-access-section" :label="$t('system.roleForm.fields.menu')" required>
             <AccessTreeSelector v-model:checked-keys="checkedMenuKeys" v-model:expanded-keys="expandedMenuKeys" :disabled="isProtected" include-ancestors :tree-data="menuTree" />
           </FormItem>
         </div>

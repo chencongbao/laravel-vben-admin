@@ -50,16 +50,21 @@ const form = reactive({
   two_factor_enabled: false,
   username: '',
 });
-const columns: TableColumnsType = [
-  { dataIndex: 'id', title: $t('common.fields.id') }, { dataIndex: 'username', title: '用户名' },
-  { dataIndex: 'name', title: '姓名' }, { dataIndex: 'roles', title: '角色' },
-  { dataIndex: 'two_factor_enabled', title: 'Google 2FA' },
-  { dataIndex: 'login_ip_whitelist', title: '登录白名单' },
-  { dataIndex: 'last_login_ip', title: '最近登录 IP' },
-  { dataIndex: 'last_login_at', title: '最近登录时间' },
-  { dataIndex: 'is_active', title: '状态' }, { dataIndex: 'action', fixed: 'right', title: '操作', width: 58 },
-];
+const columns = computed<TableColumnsType>(() => [
+  { dataIndex: 'id', title: $t('common.fields.id') }, { dataIndex: 'username', title: $t('system.userList.fields.username') },
+  { dataIndex: 'name', title: $t('system.userList.fields.name') }, { dataIndex: 'roles', title: $t('system.userList.fields.role') },
+  { dataIndex: 'two_factor_enabled', title: $t('system.userList.fields.twoFactor') },
+  { dataIndex: 'login_ip_whitelist', title: $t('system.userList.fields.loginAllowlist') },
+  { dataIndex: 'last_login_ip', title: $t('system.userList.fields.lastLoginIp') },
+  { dataIndex: 'last_login_at', title: $t('system.userList.fields.lastLoginAt') },
+  { dataIndex: 'is_active', title: $t('system.userList.fields.status') }, { dataIndex: 'action', fixed: 'right', title: $t('system.userList.fields.action'), width: 58 },
+]);
 const isFixedRoleAccount = computed(() => editingId.value !== undefined && ['admin', 'cmsadmin'].includes(form.username));
+function roleName(role: Role) {
+  const roleNameKey = `system.roleNames.${role.code}`;
+  const localizedName = $t(roleNameKey);
+  return localizedName === roleNameKey ? $t(role.name) : localizedName;
+}
 
 async function load() {
   loading.value = true;
@@ -87,7 +92,7 @@ function open(record?: any) {
 
 async function save() {
   if (!form.username || !form.name || (!editingId.value && !form.password)) {
-    message.warning('请完整填写用户名、姓名和密码'); return;
+    message.warning($t('system.userForm.messages.required')); return;
   }
   const whitelist = [...new Set(form.login_ip_whitelist.split(/[,\n]/).map((item) => item.trim()).filter(Boolean))];
   saving.value = true;
@@ -100,7 +105,7 @@ async function save() {
     delete payload.role_id;
     if (!payload.password) delete payload.password;
     await (editingId.value ? updateResource('/system/users', editingId.value, payload) : createResource('/system/users', payload));
-    visible.value = false; message.success('用户保存成功'); await load();
+    visible.value = false; message.success($t('system.userForm.messages.saved')); await load();
   } finally { saving.value = false; }
 }
 
@@ -114,42 +119,42 @@ onMounted(load);
 
 <template>
   <Page :description="$t('system.usersDescription')" :title="$t('system.administrators')">
-    <ListToolbar><template #left><ListRefreshButton :loading="loading" /><PermissionButton icon="lucide:filter" @click="showFilters = !showFilters">{{ $t('common.actions.filter') }}</PermissionButton></template><template #right><PermissionButton icon="lucide:user-plus" permission="system.user.create" type="primary" @click="open()">新增用户</PermissionButton></template></ListToolbar>
+    <ListToolbar><template #left><ListRefreshButton :loading="loading" /><PermissionButton icon="lucide:filter" @click="showFilters = !showFilters">{{ $t('common.actions.filter') }}</PermissionButton></template><template #right><PermissionButton icon="lucide:user-plus" permission="system.user.create" type="primary" @click="open()">{{ $t('system.userForm.actions.create') }}</PermissionButton></template></ListToolbar>
     <ListSearchPanel v-if="showFilters"><ListSearchField :label="$t('common.fields.id')"><InputNumber v-model:value="searchId" :min="1" :placeholder="$t('common.fields.id')" @press-enter="search" /></ListSearchField><template #actions><PermissionButton icon="lucide:search" type="primary" @click="search">{{ $t('common.actions.search') }}</PermissionButton><PermissionButton icon="lucide:rotate-ccw" @click="resetSearch">{{ $t('common.actions.reset') }}</PermissionButton></template></ListSearchPanel>
     <Card :body-style="{ padding: 0 }" class="admin-table-card">
       <Table :ref="setTableRef" bordered class="admin-data-table" :columns="columns" :data-source="users" :loading="loading" :pagination="pagination" row-key="id" :scroll="{ x: 1250, y: tableScrollY }" @change="changePage">
         <template #bodyCell="{ column, record, text }">
-          <Space v-if="column.dataIndex === 'roles'" wrap><Tag v-for="role in record.roles" :key="role.id">{{ role.name }}</Tag></Space>
-          <Tag v-else-if="column.dataIndex === 'is_active'" :color="text ? 'green' : 'default'">{{ text ? '启用' : '禁用' }}</Tag>
+          <Space v-if="column.dataIndex === 'roles'" wrap><Tag v-for="role in record.roles" :key="role.id">{{ roleName(role) }}</Tag></Space>
+          <Tag v-else-if="column.dataIndex === 'is_active'" :color="text ? 'green' : 'default'">{{ text ? $t('system.common.states.enabled') : $t('system.common.states.disabled') }}</Tag>
           <Tag v-else-if="column.dataIndex === 'two_factor_enabled'" :color="text ? (record.two_factor_confirmed_at ? 'green' : 'orange') : 'default'">
-            {{ text ? (record.two_factor_confirmed_at ? '已绑定' : '待绑定') : '未开启' }}
+            {{ text ? (record.two_factor_confirmed_at ? $t('system.userList.states.twoFactorBound') : $t('system.userList.states.twoFactorPending')) : $t('system.userList.states.twoFactorDisabled') }}
           </Tag>
-          <Tag v-else-if="column.dataIndex === 'login_ip_whitelist'" :color="text?.length ? 'green' : 'red'">{{ text?.length ? `已设置 ${text.length} 条` : '未设置' }}</Tag>
+          <Tag v-else-if="column.dataIndex === 'login_ip_whitelist'" :color="text?.length ? 'green' : 'red'">{{ text?.length ? $t('system.userList.states.allowlistConfigured', { count: text.length }) : $t('system.userList.states.allowlistUnset') }}</Tag>
           <span v-else-if="column.dataIndex === 'last_login_ip'">{{ text || '—' }}</span>
           <span v-else-if="column.dataIndex === 'last_login_at'">{{ formatBeijingDateTime(text) }}</span>
-          <PermissionButton v-else-if="column.dataIndex === 'action'" icon="lucide:pencil" icon-only permission="system.user.update" tooltip="编辑用户" type="text" @click="open(record)" />
+          <PermissionButton v-else-if="column.dataIndex === 'action'" icon="lucide:pencil" icon-only permission="system.user.update" :tooltip="$t('system.userForm.actions.edit')" type="text" @click="open(record)" />
         </template>
       </Table>
     </Card>
-    <Modal v-model:open="visible" :confirm-loading="saving" :title="editingId ? '编辑用户' : '新增用户'" width="680px" @ok="save">
+    <Modal v-model:open="visible" :confirm-loading="saving" :title="editingId ? $t('system.userForm.actions.edit') : $t('system.userForm.actions.create')" width="680px" @ok="save">
       <Form layout="vertical">
-        <FormItem label="用户名" required><Input v-model:value="form.username" :disabled="editingId !== undefined" /></FormItem>
-        <FormItem label="姓名" required><Input v-model:value="form.name" /></FormItem>
-        <FormItem :label="editingId ? '新密码（不修改请留空）' : '密码'" :required="!editingId">
+        <FormItem :label="$t('system.userForm.fields.username')" required><Input v-model:value="form.username" :disabled="editingId !== undefined" /></FormItem>
+        <FormItem :label="$t('system.userForm.fields.name')" required><Input v-model:value="form.name" /></FormItem>
+        <FormItem :label="editingId ? $t('system.userForm.fields.newPassword') : $t('system.userForm.fields.password')" :required="!editingId">
           <Input.Password v-model:value="form.password" />
-          <div class="setting-tip">密码至少 12 位，并且必须同时包含大写字母、小写字母和数字。</div>
+          <div class="setting-tip">{{ $t('system.userForm.tips.password') }}</div>
         </FormItem>
-        <FormItem label="角色"><Select v-model:value="form.role_id" allow-clear :disabled="isFixedRoleAccount" :options="roles.map((role) => ({ label: `${role.name} (${role.code})`, value: role.id }))" /></FormItem>
-        <FormItem label="启用"><Switch v-model:checked="form.is_active" /></FormItem>
+        <FormItem :label="$t('system.userForm.fields.role')"><Select v-model:value="form.role_id" allow-clear :disabled="isFixedRoleAccount" :options="roles.map((role) => ({ label: `${roleName(role)} (${role.code})`, value: role.id }))" /></FormItem>
+        <FormItem :label="$t('system.userForm.fields.active')"><Switch v-model:checked="form.is_active" /></FormItem>
         <div class="security-settings">
-          <h3>登录安全</h3>
-          <FormItem label="Google 2FA">
+          <h3>{{ $t('system.userForm.fields.security') }}</h3>
+          <FormItem :label="$t('system.userForm.fields.twoFactor')">
             <Switch v-model:checked="form.two_factor_enabled" />
-            <span class="setting-tip">开启后，白名单校验通过才会在登录页绑定或验证 Google 验证器。</span>
+            <span class="setting-tip">{{ $t('system.userForm.tips.twoFactor') }}</span>
           </FormItem>
-          <FormItem label="登录 IP 白名单">
-            <Input.TextArea v-model:value="form.login_ip_whitelist" :rows="5" placeholder="填写后自动开启；留空表示未开启。每行一个，例如：&#10;203.0.113.10&#10;10.0.0.0/24&#10;2001:db8::/32" />
-            <div class="setting-tip whitelist-tip">非本地环境必须设置白名单并且当前 IP 命中才能登录。</div>
+          <FormItem :label="$t('system.userForm.fields.loginAllowlist')">
+            <Input.TextArea v-model:value="form.login_ip_whitelist" :rows="5" :placeholder="$t('system.userForm.placeholders.allowlist')" />
+            <div class="setting-tip whitelist-tip">{{ $t('system.userForm.tips.allowlist') }}</div>
           </FormItem>
         </div>
       </Form>

@@ -23,6 +23,8 @@ final class ActivityAuditRecorder implements AuditRecorder
             ->withProperties([
                 'context' => $this->redactActivityData($context),
                 'request_input' => $this->redactActivityData($this->request->all()),
+                'request_id' => $this->request->header('X-Request-ID'),
+                'route_name' => $this->request->route()?->getName(),
             ])
             ->tap(function (Activity $activity): void {
                 $activity->log_type = 'operation';

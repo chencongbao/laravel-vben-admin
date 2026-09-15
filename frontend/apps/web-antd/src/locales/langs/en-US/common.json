@@ -12,7 +12,8 @@
     "search": "Search"
   },
   "errors": {
-    "privilegeEscalationDenied": "You cannot assign or modify roles and permissions beyond your authority."
+    "privilegeEscalationDenied": "You cannot assign or modify roles and permissions beyond your authority.",
+    "validationFailed": "The form is invalid. Check the fields and try again."
   },
   "fields": {
     "createdAt": "Created At",

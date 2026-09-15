@@ -3,7 +3,7 @@ import { computed, onMounted, reactive, ref } from 'vue';
 
 import { Page } from '@vben/common-ui';
 
-import { Card, Input, InputNumber, Select, Table, Tag } from 'ant-design-vue';
+import { Card, Input, InputNumber, Select, Table, Tag, Tooltip } from 'ant-design-vue';
 
 import { getResource } from '#/api/system';
 import AutoRefresh from '#/components/system/auto-refresh.vue';
@@ -83,7 +83,12 @@ onMounted(load);
     <Card :body-style="{ padding: 0 }" :bordered="false" class="admin-table-card">
       <Table :ref="setTableRef" bordered class="admin-data-table" :columns="columns" :data-source="rows" :loading="loading" :pagination="pagination" row-key="id" :scroll="{ y: tableScrollY }" @change="changePage">
         <template #bodyCell="{ column, text }">
-          <Tag v-if="column.dataIndex === 'succeeded'" :color="text ? 'green' : 'red'">{{ text ? '成功' : '失败' }}</Tag>
+          <Tag v-if="column.dataIndex === 'succeeded'" :color="text ? 'green' : 'red'">
+            {{ text ? $t('system.loginLog.states.succeeded') : $t('system.loginLog.states.failed') }}
+          </Tag>
+          <Tooltip v-else-if="column.dataIndex === 'user_agent' && text" :title="String(text)">
+            <span class="block truncate">{{ text }}</span>
+          </Tooltip>
           <span v-else-if="isDateTimeField(String(column.dataIndex ?? ''))">{{ formatBeijingDateTime(text) }}</span>
           <code v-else-if="column.dataIndex === 'changes' || column.dataIndex === 'context'">{{ JSON.stringify(text) }}</code>
         </template>

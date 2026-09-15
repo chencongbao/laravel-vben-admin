@@ -113,6 +113,7 @@ final class ActivityLogTest extends TestCase
         ], server: [
             'REMOTE_ADDR' => '203.0.113.10',
             'HTTP_USER_AGENT' => 'ActivityLogTest/1.0',
+            'HTTP_X_REQUEST_ID' => 'request-audit-001',
         ]);
         $this->app->instance('request', $request);
 
@@ -137,12 +138,26 @@ final class ActivityLogTest extends TestCase
         self::assertSame('/api/admin/system/settings', $activity->path);
 
         Sanctum::actingAs($actor, ['admin']);
-        $this->getJson('/api/admin/system/audit-logs?id='.$activity->getKey().'&action=system.setting.updated')
+        $this->getJson('/api/admin/system/audit-logs?id='.$activity->getKey().'&action=system.setting.updated&actor=cmsadmin&subject_type=AdminUser&subject_id='.$actor->getKey().'&description=setting&ip_address=203.0.113.10')
             ->assertOk()
             ->assertJsonPath('total', 1)
             ->assertJsonPath('data.0.id', $activity->getKey())
+            ->assertJsonPath('data.0.actor.username', 'cmsadmin')
+            ->assertJsonPath('data.0.subject_type_name', 'AdminUser')
+            ->assertJsonPath('data.0.changed_count', 1)
+            ->assertJsonPath('data.0.action_type', 'updated')
             ->assertJsonPath('data.0.method', 'PUT')
-            ->assertJsonPath('data.0.path', '/api/admin/system/settings');
+            ->assertJsonPath('data.0.path', '/api/admin/system/settings')
+            ->assertJsonMissingPath('data.0.request_input');
+
+        $this->getJson('/api/admin/system/audit-logs/'.$activity->getKey())
+            ->assertOk()
+            ->assertJsonPath('id', $activity->getKey())
+            ->assertJsonPath('actor.username', 'cmsadmin')
+            ->assertJsonPath('request_id', 'request-audit-001')
+            ->assertJsonPath('request_input.password', '[REDACTED]')
+            ->assertJsonPath('changes.before.password', '[REDACTED]')
+            ->assertJsonPath('user_agent', 'ActivityLogTest/1.0');
 
     }
 
