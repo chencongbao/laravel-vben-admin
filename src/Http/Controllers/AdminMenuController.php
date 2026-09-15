@@ -36,7 +36,11 @@ final class AdminMenuController extends Controller
         $permissionIds = $data['permission_ids'] ?? [];
         unset($data['permission_ids']);
         $menu = DB::transaction(function () use ($data, $permissionIds, $request): AdminMenu {
-            $menu = AdminMenu::query()->create($data + ['is_system' => false]);
+            $menu = AdminMenu::query()->create($data + [
+                'is_active' => true,
+                'is_hidden' => false,
+                'is_system' => false,
+            ]);
             $menu->permissions()->sync($permissionIds);
             $this->audit->record($request->user(), 'system.menu.created', $menu, [
                 'after' => $data + ['permission_ids' => $permissionIds],
@@ -166,8 +170,6 @@ final class AdminMenuController extends Controller
             'permission_ids.*' => ['required', 'integer', 'distinct', Rule::exists($permissionTable, 'id')->where('is_active', true)],
             'icon' => ['nullable', 'string', 'max:160'],
             'sort' => ['sometimes', 'integer', 'min:-100000', 'max:100000'],
-            'is_active' => ['sometimes', 'boolean'],
-            'is_hidden' => ['sometimes', 'boolean'],
         ]);
 
         if (array_key_exists('permission_ids', $data) && ($data['permission_code'] ?? null) !== null) {

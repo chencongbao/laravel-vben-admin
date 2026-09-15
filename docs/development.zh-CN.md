@@ -104,6 +104,8 @@ Route::post('/api/admin/matches/{match}/publish', PublishMatchController::class)
 
 宿主项目实现 `AdminModule`，通过 `ModuleRegistry` 注册权限与菜单。菜单记录只保存稳定 `view_key`，不保存任意 Vue 文件路径。
 菜单管理页不对管理员暴露 `route_name` 和 `view_key` 输入框：自定义菜单会根据路由路径自动生成稳定菜单编码与路由名称，页面类型同时生成 `view_key`。目录和外部链接的 `view_key` 为空。
+菜单管理不提供启用或隐藏设置：后台新增的菜单固定按启用且显示保存，有权限的有效菜单均按后台维护的树结构显示。历史 `is_active`、`is_hidden` 数据列仅为数据库兼容保留，不参与有效菜单查询与前端显示，也不接受菜单管理接口修改。
+工作台 `dashboard.workspace` 是登录后默认菜单，不参与菜单管理和拖拽排序；服务端必须在查询顺序与返回的 `meta.order` 两层保证其始终位于侧边栏第一位。
 
 注册后先预览，再同步：
 

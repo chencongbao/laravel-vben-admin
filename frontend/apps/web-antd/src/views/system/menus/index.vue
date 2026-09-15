@@ -4,7 +4,7 @@ import type { Key } from 'ant-design-vue/es/_util/type';
 import { computed, onMounted, reactive, ref } from 'vue';
 
 import { useAccess } from '@vben/access';
-import { Page } from '@vben/common-ui';
+import { IconPicker, Page } from '@vben/common-ui';
 import { IconifyIcon } from '@vben/icons';
 import { $t } from '@vben/locales';
 
@@ -16,12 +16,10 @@ import {
   Form,
   FormItem,
   Input,
-  InputNumber,
   message,
   Popconfirm,
   Select,
   Space,
-  Switch,
   Tree,
 } from 'ant-design-vue';
 
@@ -43,8 +41,6 @@ interface MenuItem {
   code: string;
   icon?: null | string;
   id: number;
-  is_active: boolean;
-  is_hidden: boolean;
   is_system: boolean;
   parent_id?: null | number;
   permission_code?: null | string;
@@ -88,6 +84,8 @@ interface MenuTreeController {
 }
 
 interface MenuParentOption {
+  depth: number;
+  isLast: boolean;
   label: string;
   searchText: string;
   value: number;
@@ -115,8 +113,6 @@ const canReorder = computed(() => hasAccessByCodes(['system.menu.update']));
 const form = reactive({
   code: '',
   icon: '',
-  is_active: true,
-  is_hidden: false,
   parent_id: 0,
   permission_code: undefined as string | undefined,
   route_name: '',
@@ -157,6 +153,8 @@ const parentOptions = computed<MenuParentOption[]>(() => {
   const excluded = editing.value ? descendantIds(editing.value.id) : new Set<number>();
   if (editing.value) excluded.add(editing.value.id);
   const options: MenuParentOption[] = [{
+    depth: -1,
+    isLast: true,
     label: '顶级菜单',
     searchText: '顶级菜单',
     value: 0,
@@ -167,11 +165,10 @@ const parentOptions = computed<MenuParentOption[]>(() => {
       const isLast = index === visibleNodes.length - 1;
       const title = $t(node.title);
       const path = node.route_path || '';
-      const indentation = ancestorLast
-        .map((parentIsLast) => parentIsLast ? '　　' : '│　')
-        .join('');
       options.push({
-        label: `${indentation}${isLast ? '└─ ' : '├─ '}${title}`,
+        depth: ancestorLast.length,
+        isLast,
+        label: title,
         searchText: `${title} ${path} ${node.code}`.toLowerCase(),
         value: node.id,
       });
@@ -248,7 +245,7 @@ async function load(selectCode?: string) {
 
 function createEmptyForm(parentId = 0) {
   return {
-    code: '', icon: '', is_active: true, is_hidden: false,
+    code: '', icon: '',
     parent_id: parentId, permission_code: undefined, route_name: '',
     route_path: '', sort: 0, title: '', type: 'page', view_key: '',
   };
@@ -266,8 +263,7 @@ function selectMenu(item: MenuItem) {
   editing.value = item;
   selectedCode.value = item.code;
   Object.assign(form, {
-    code: item.code, icon: item.icon ?? '', is_active: item.is_active,
-    is_hidden: item.is_hidden, parent_id: item.parent_id ?? 0,
+    code: item.code, icon: item.icon ?? '', parent_id: item.parent_id ?? 0,
     permission_code: item.permission_code ?? undefined,
     route_name: item.route_name ?? '', route_path: item.route_path ?? '',
     sort: item.sort, title: item.title, type: item.type, view_key: item.view_key ?? '',
@@ -429,6 +425,7 @@ onMounted(() => load());
           keep-placeholder
           :node-key="menuNodeKey"
           tree-line
+          :tree-line-offset="18"
           :trigger-class="['admin-menu-tree__drag-handle', 'admin-menu-tree__label']"
           @before-drag-start="handleDragStart"
           @change="handleTreeChange"
@@ -478,19 +475,35 @@ onMounted(() => load());
               option-filter-prop="searchText"
               :options="parentOptions"
               placeholder="请选择父级菜单"
+              popup-class-name="admin-menu-parent-dropdown"
               show-search
-            />
+            >
+              <template #option="{ depth, isLast, label }">
+                <div class="admin-menu-parent-option">
+                  <span
+                    v-if="depth >= 0"
+                    aria-hidden="true"
+                    class="admin-menu-parent-option__branch"
+                    :class="{ 'is-last': isLast }"
+                    :style="{ marginInlineStart: `${depth * 28}px` }"
+                  ></span>
+                  <span>{{ label }}</span>
+                </div>
+              </template>
+            </Select>
           </FormItem>
           <FormItem label="菜单标题" required>
             <Input v-model:value="form.title" placeholder="请输入菜单标题或语言键">
               <template #prefix><IconifyIcon icon="lucide:pencil" /></template>
             </Input>
           </FormItem>
-          <FormItem label="图标">
-            <Input v-model:value="form.icon" placeholder="例如：lucide:menu">
-              <template #prefix><IconifyIcon icon="lucide:shapes" /></template>
-            </Input>
-            <div class="admin-menu-editor__help">使用 Iconify 图标编码，例如 lucide:menu。</div>
+          <FormItem label="菜单图标">
+            <IconPicker
+              v-model="form.icon"
+              :page-size="30"
+              prefix="lucide"
+              @change="form.icon = $event"
+            />
           </FormItem>
           <FormItem label="路由路径">
             <Input :value="form.route_path" placeholder="例如：/content/articles" @update:value="handleRoutePathInput">
@@ -508,15 +521,6 @@ onMounted(() => load());
               </div>
               <Tree v-model:checked-keys="checkedPermissionKeys" v-model:expanded-keys="expandedPermissionKeys" :tree-data="permissionTree" checkable />
             </div>
-          </FormItem>
-          <FormItem label="显示设置">
-            <Space size="large">
-              <span class="admin-menu-editor__switch"><Switch v-model:checked="form.is_active" /> 启用菜单</span>
-              <span class="admin-menu-editor__switch"><Switch v-model:checked="form.is_hidden" /> 隐藏菜单</span>
-            </Space>
-          </FormItem>
-          <FormItem label="排序">
-            <InputNumber v-model:value="form.sort" class="admin-menu-editor__sort" />
           </FormItem>
           <div class="admin-menu-editor__footer">
             <PermissionButton icon="lucide:rotate-ccw" @click="resetEditor">重置</PermissionButton>

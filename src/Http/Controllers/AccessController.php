@@ -10,6 +10,10 @@ use Illuminate\Routing\Controller;
 
 final class AccessController extends Controller
 {
+    private const DEFAULT_MENU_CODE = 'dashboard.workspace';
+
+    private const DEFAULT_MENU_ORDER = -100001;
+
     public function permissions(Request $request): JsonResponse
     {
         /** @var AdminUser $user */
@@ -30,12 +34,15 @@ final class AccessController extends Controller
         /** @var AdminUser $user */
         $user = $request->user();
         $roles = $user->roles()->where('is_active', true)->get();
-        $query = AdminMenu::query()->where('is_active', true)->orderBy('sort')->orderBy('id');
+        $query = AdminMenu::query()
+            ->orderByRaw('CASE WHEN code = ? THEN 0 ELSE 1 END', [self::DEFAULT_MENU_CODE])
+            ->orderBy('sort')
+            ->orderBy('id');
 
         if (! $roles->contains('is_super_admin', true)) {
             $permissionCodes = $roles->flatMap(fn ($role) => $role->permissions()->where('is_active', true)->pluck('code'))->unique()->all();
             $query->where(function ($menuQuery) use ($roles, $permissionCodes): void {
-                $menuQuery->where('code', 'dashboard.workspace')
+                $menuQuery->where('code', self::DEFAULT_MENU_CODE)
                     ->orWhere(function ($roleMenuQuery) use ($roles, $permissionCodes): void {
                         $roleMenuQuery->whereHas('roles', fn ($roleQuery) => $roleQuery->whereKey($roles->modelKeys()))
                             ->where(fn ($permissionQuery) => $permissionQuery->whereNull('permission_code')->orWhereIn('permission_code', $permissionCodes));
@@ -52,7 +59,7 @@ final class AccessController extends Controller
             'name' => $menu->route_name,
             'path' => $menu->route_path,
             'view_key' => $menu->view_key,
-            'meta' => ['title' => $menu->title, 'icon' => $menu->icon, 'order' => $menu->sort, 'hidden' => $menu->is_hidden, 'authority' => array_values(array_filter([$menu->permission_code]))],
+            'meta' => ['title' => $menu->title, 'icon' => $menu->icon, 'order' => $menu->code === self::DEFAULT_MENU_CODE ? self::DEFAULT_MENU_ORDER : $menu->sort, 'authority' => array_values(array_filter([$menu->permission_code]))],
             'children' => [],
         ])->keyBy('id')->all();
 

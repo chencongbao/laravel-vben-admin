@@ -35,10 +35,12 @@ final class MenuManagementTest extends TestCase
     public function test_workspace_is_available_but_excluded_from_menu_management(): void
     {
         $workspace = AdminMenu::query()->where('code', 'dashboard.workspace')->firstOrFail();
+        AdminMenu::query()->where('code', 'system')->update(['sort' => -100000]);
 
         $this->getJson('/api/admin/access/menus')
             ->assertOk()
-            ->assertJsonPath('menus.0.code', 'dashboard.workspace');
+            ->assertJsonPath('menus.0.code', 'dashboard.workspace')
+            ->assertJsonPath('menus.0.meta.order', -100001);
 
         $this->getJson('/api/admin/system/menus')
             ->assertOk()
@@ -108,6 +110,44 @@ final class MenuManagementTest extends TestCase
             ->assertOk()
             ->assertJsonFragment(['code' => 'content.articles'])
             ->assertJsonFragment(['code' => 'system.menu.update']);
+    }
+
+    public function test_legacy_visibility_flags_do_not_hide_effective_menus(): void
+    {
+        AdminMenu::query()->where('code', 'system')->update([
+            'is_active' => false,
+            'is_hidden' => true,
+        ]);
+
+        $response = $this->getJson('/api/admin/access/menus')->assertOk();
+        $system = collect($response->json('menus'))->firstWhere('code', 'system');
+
+        self::assertNotNull($system);
+        self::assertArrayNotHasKey('hidden', $system['meta']);
+    }
+
+    public function test_menu_visibility_flags_are_not_configurable(): void
+    {
+        $response = $this->postJson('/api/admin/system/menus', [
+            'code' => 'content.visible',
+            'title' => 'Visible menu',
+            'type' => 'page',
+            'is_active' => false,
+            'is_hidden' => true,
+        ])->assertCreated();
+
+        $menu = AdminMenu::query()->findOrFail($response->json('menu.id'));
+        self::assertTrue($menu->is_active);
+        self::assertFalse($menu->is_hidden);
+
+        $this->patchJson('/api/admin/system/menus/'.$menu->getKey(), [
+            'title' => 'Still visible',
+            'is_active' => false,
+            'is_hidden' => true,
+        ])->assertOk();
+
+        self::assertTrue($menu->fresh()->is_active);
+        self::assertFalse($menu->fresh()->is_hidden);
     }
 
     public function test_primary_permission_must_be_selected_in_permission_tree(): void

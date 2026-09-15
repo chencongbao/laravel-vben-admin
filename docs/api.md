@@ -91,6 +91,8 @@ Creating and updating a non-super role accepts `code`, `name`, `is_active`, `per
 
 Permission CRUD uses `/system/permissions`; menu CRUD uses `/system/menus`. Each action has a distinct `system.permission.*` or `system.menu.*` permission. System records are protected, referenced permissions cannot be deleted, menus with children cannot be deleted, and cyclic menu parents are rejected.
 
+Menu create and update requests do not accept `is_active` or `is_hidden`. New menus are always stored as enabled and visible, and the effective menu API does not filter or hide menus by these legacy compatibility columns.
+
 Permission create and update requests accept `parent_id`, `code`, `name`, nullable `description`, nullable `http_methods`, nullable `http_paths`, `sort`, `is_active`, `is_sensitive`, and `menu_ids`. `http_methods` is limited to `GET`, `POST`, `PUT`, `PATCH`, `DELETE`, and `OPTIONS`; both metadata arrays are bounded and validated. Permission data and menu bindings are saved in one transaction. Responses include the related menus. Cyclic parents are rejected with `PERMISSION_CYCLE`, and a permission with children returns `PERMISSION_HAS_CHILDREN` when deletion is attempted. HTTP metadata supports route-coverage review only; stable permission codes and Laravel middleware remain authoritative.
 
 `PUT /system/menus/reorder` requires `system.menu.update` and atomically accepts the complete menu tree as `items` containing `id`, `parent_code`, and `sort`. Incomplete trees and cyclic parent relationships are rejected.
