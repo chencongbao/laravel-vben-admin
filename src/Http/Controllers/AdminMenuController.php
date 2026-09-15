@@ -164,7 +164,7 @@ final class AdminMenuController extends Controller
             'route_path' => ['nullable', 'string', 'max:255'],
             'view_key' => ['nullable', 'string', 'max:160', 'regex:/^[a-zA-Z0-9._-]+$/'],
             'permission_ids' => ['sometimes', 'array', 'max:500'],
-            'permission_ids.*' => ['required', 'integer', 'distinct', Rule::exists($permissionTable, 'id')->where('is_active', true)],
+            'permission_ids.*' => ['required', 'integer', 'distinct', Rule::exists($permissionTable, 'id')],
             'icon' => ['nullable', 'string', 'max:160'],
             'sort' => ['sometimes', 'integer', 'min:-100000', 'max:100000'],
         ]);

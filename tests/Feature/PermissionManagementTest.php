@@ -33,7 +33,7 @@ final class PermissionManagementTest extends TestCase
         Sanctum::actingAs(AdminUser::query()->where('username', 'cmsadmin')->firstOrFail(), ['admin']);
     }
 
-    public function test_permission_metadata_and_menu_bindings_are_saved_atomically(): void
+    public function test_permission_and_menu_bindings_are_saved_atomically(): void
     {
         $parent = AdminPermission::query()->where('code', 'system.access')->firstOrFail();
         $menu = AdminMenu::query()->where('code', 'system.permissions')->firstOrFail();
@@ -42,43 +42,25 @@ final class PermissionManagementTest extends TestCase
             'parent_id' => $parent->getKey(),
             'code' => 'match.publish',
             'name' => 'Publish matches',
-            'http_methods' => ['POST'],
-            'http_paths' => ['/api/admin/matches/{match}/publish'],
             'sort' => 30,
-            'is_active' => true,
-            'is_sensitive' => true,
             'menu_ids' => [$menu->getKey()],
             'unexpected_admin_flag' => true,
         ])->assertCreated()
             ->assertJsonPath('permission.code', 'match.publish')
-            ->assertJsonPath('permission.http_methods.0', 'POST')
             ->assertJsonPath('permission.menus.0.id', $menu->getKey());
 
         $permission = AdminPermission::query()->where('code', 'match.publish')->firstOrFail();
-        self::assertSame(['POST'], $permission->http_methods);
-        self::assertSame(['/api/admin/matches/{match}/publish'], $permission->http_paths);
         self::assertFalse(Schema::hasColumn('admin_permissions', 'description'));
+        self::assertFalse(Schema::hasColumn('admin_permissions', 'is_active'));
+        self::assertFalse(Schema::hasColumn('admin_permissions', 'is_sensitive'));
+        self::assertFalse(Schema::hasColumn('admin_permissions', 'http_methods'));
+        self::assertFalse(Schema::hasColumn('admin_permissions', 'http_paths'));
         self::assertArrayNotHasKey('unexpected_admin_flag', $permission->getAttributes());
         self::assertTrue($permission->menus()->whereKey($menu->getKey())->exists());
     }
 
-    public function test_http_paths_can_be_searched_from_registered_admin_routes(): void
+    public function test_hierarchy_cycles_are_rejected_without_partial_writes(): void
     {
-        $this->getJson('/api/admin/system/permissions/http-paths')
-            ->assertOk()
-            ->assertJsonFragment(['/api/admin/system/users'])
-            ->assertJsonFragment(['/api/admin/system/permissions/{adminPermission}']);
-    }
-
-    public function test_invalid_methods_and_hierarchy_cycles_are_rejected_without_partial_writes(): void
-    {
-        $this->postJson('/api/admin/system/permissions', [
-            'code' => 'match.invalid',
-            'name' => 'Invalid method',
-            'http_methods' => ['TRACE'],
-        ])->assertUnprocessable()->assertJsonValidationErrors('http_methods.0');
-        self::assertFalse(AdminPermission::query()->where('code', 'match.invalid')->exists());
-
         $parent = AdminPermission::query()->create(['code' => 'match.group', 'name' => 'Match group']);
         $child = AdminPermission::query()->create(['parent_id' => $parent->getKey(), 'code' => 'match.group.view', 'name' => 'View match group']);
 

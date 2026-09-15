@@ -87,6 +87,8 @@ final class InstallCommandTest extends TestCase
         self::assertDatabaseMissing('admin_permissions', ['code' => 'system.setting.update']);
         self::assertDatabaseMissing('admin_permissions', ['code' => 'system.theme-setting.update']);
         $configuration = AdminMenu::query()->where('code', 'configuration')->firstOrFail();
+        self::assertTrue($configuration->permissions()->where('code', 'system.configuration.access')->exists());
+        self::assertFalse($configuration->permissions()->whereIn('code', ['system.setting.view', 'system.theme-setting.view'])->exists());
         self::assertDatabaseHas('admin_menus', ['code' => 'system.settings', 'parent_id' => $configuration->getKey()]);
         self::assertDatabaseHas('admin_menus', [
             'code' => 'system.logs',
@@ -94,6 +96,8 @@ final class InstallCommandTest extends TestCase
             'title' => 'system.logsTitle',
         ]);
         $logs = AdminMenu::query()->where('code', 'system.logs')->firstOrFail();
+        self::assertTrue($logs->permissions()->where('code', 'system.logs.access')->exists());
+        self::assertFalse($logs->permissions()->whereIn('code', ['system.login-log.view', 'system.audit.view'])->exists());
         self::assertDatabaseHas('admin_menus', ['code' => 'system.login-logs', 'parent_id' => $logs->getKey()]);
         self::assertDatabaseHas('admin_menus', ['code' => 'system.audit-logs', 'parent_id' => $logs->getKey()]);
 

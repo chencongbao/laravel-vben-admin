@@ -14,6 +14,8 @@ use Illuminate\Validation\Rule;
 
 final class AdminRoleController extends Controller
 {
+    private const HIDDEN_FROM_NON_SUPER_ADMINS = ['administrator', 'manager'];
+
     public function __construct(private readonly AuditRecorder $audit, private readonly PrivilegeAssignmentGuard $privilegeGuard) {}
 
     public function index(Request $request): JsonResponse
@@ -22,7 +24,14 @@ final class AdminRoleController extends Controller
         $perPage = AdminPagination::perPage($validated['per_page'] ?? null);
         $id = $validated['id'] ?? null;
 
-        return response()->json(AdminRole::query()->withCount('permissions', 'menus')->when($id, fn ($query) => $query->whereKey($id))->orderBy('id')->paginate($perPage));
+        $isSuperAdmin = $this->privilegeGuard->isSuperAdmin($request->user());
+
+        return response()->json(AdminRole::query()
+            ->withCount('permissions', 'menus')
+            ->when(! $isSuperAdmin, fn ($query) => $query->whereNotIn('code', self::HIDDEN_FROM_NON_SUPER_ADMINS))
+            ->when($id, fn ($query) => $query->whereKey($id))
+            ->orderBy('id')
+            ->paginate($perPage));
     }
 
     public function store(Request $request): JsonResponse
@@ -45,8 +54,12 @@ final class AdminRoleController extends Controller
         return response()->json(['role' => $role->load('permissions:id,code,name', 'menus:id,code,title')], 201);
     }
 
-    public function show(AdminRole $adminRole): JsonResponse
+    public function show(Request $request, AdminRole $adminRole): JsonResponse
     {
+        if (! $this->canViewRole($request, $adminRole)) {
+            abort(404);
+        }
+
         return response()->json(['role' => $adminRole->load('permissions:id,code,name', 'menus:id,code,title')]);
     }
 
@@ -103,7 +116,7 @@ final class AdminRoleController extends Controller
         }
 
         $data = $request->validate([
-            'permission_ids' => ['required', 'array', 'max:500'], 'permission_ids.*' => ['integer', 'distinct', Rule::exists(config('laravel-vben-admin.tables.permissions', 'admin_permissions'), 'id')->where('is_active', true)],
+            'permission_ids' => ['required', 'array', 'max:500'], 'permission_ids.*' => ['integer', 'distinct', Rule::exists(config('laravel-vben-admin.tables.permissions', 'admin_permissions'), 'id')],
             'menu_ids' => ['required', 'array', 'max:500'], 'menu_ids.*' => ['integer', 'distinct', Rule::exists(config('laravel-vben-admin.tables.menus', 'admin_menus'), 'id')],
         ]);
         if (! $this->privilegeGuard->canAssignPermissions($request->user(), $data['permission_ids'])) {
@@ -132,9 +145,15 @@ final class AdminRoleController extends Controller
     {
         return $request->validate([
             'permission_ids' => ['required', 'array', 'min:1', 'max:500'],
-            'permission_ids.*' => ['integer', 'distinct', Rule::exists(config('laravel-vben-admin.tables.permissions', 'admin_permissions'), 'id')->where('is_active', true)],
+            'permission_ids.*' => ['integer', 'distinct', Rule::exists(config('laravel-vben-admin.tables.permissions', 'admin_permissions'), 'id')],
             'menu_ids' => ['required', 'array', 'min:1', 'max:500'],
             'menu_ids.*' => ['integer', 'distinct', Rule::exists(config('laravel-vben-admin.tables.menus', 'admin_menus'), 'id')],
         ]);
+    }
+
+    private function canViewRole(Request $request, AdminRole $role): bool
+    {
+        return $this->privilegeGuard->isSuperAdmin($request->user())
+            || ! in_array($role->code, self::HIDDEN_FROM_NON_SUPER_ADMINS, true);
     }
 }

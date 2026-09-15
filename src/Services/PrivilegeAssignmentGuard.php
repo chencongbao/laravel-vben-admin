@@ -2,7 +2,6 @@
 
 namespace Chencongbao\LaravelVbenAdmin\Services;
 
-use Chencongbao\LaravelVbenAdmin\Models\AdminPermission;
 use Chencongbao\LaravelVbenAdmin\Models\AdminRole;
 use Chencongbao\LaravelVbenAdmin\Models\AdminUser;
 
@@ -37,7 +36,6 @@ final class PrivilegeAssignmentGuard
             ->flatMap(fn (AdminRole $role) => $role->permissions->pluck('id'))
             ->unique();
 
-        return collect($permissionIds)->diff($actorPermissionIds)->isEmpty()
-            && ! AdminPermission::query()->whereKey($permissionIds)->where('is_sensitive', true)->exists();
+        return collect($permissionIds)->diff($actorPermissionIds)->isEmpty();
     }
 }

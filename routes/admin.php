@@ -45,7 +45,6 @@ Route::middleware(['auth:sanctum', 'admin.user'])->group(function (): void {
     Route::put('system/roles/{adminRole}/access', [AdminRoleController::class, 'access'])->middleware('admin.permission:system.role.update');
 
     Route::get('system/permissions', [AdminPermissionController::class, 'index'])->middleware('admin.permission:system.permission.view');
-    Route::get('system/permissions/http-paths', [AdminPermissionController::class, 'httpPaths'])->middleware('admin.permission:system.permission.view');
     Route::post('system/permissions', [AdminPermissionController::class, 'store'])->middleware('admin.permission:system.permission.create');
     Route::put('system/permissions/reorder', [AdminPermissionController::class, 'reorder'])->middleware('admin.permission:system.permission.update');
     Route::get('system/permissions/{adminPermission}', [AdminPermissionController::class, 'show'])->middleware('admin.permission:system.permission.view');

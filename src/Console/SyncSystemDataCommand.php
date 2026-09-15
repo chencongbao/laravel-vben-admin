@@ -96,38 +96,38 @@ final class SyncSystemDataCommand extends Command
     private function permissions(ModuleRegistry $registry): array
     {
         $items = [
-            ['code' => 'system.access', 'name' => 'Access administration', 'is_active' => true, 'is_system' => true, 'is_sensitive' => false],
-            ['code' => 'system.logs.access', 'name' => 'System logs', 'is_active' => true, 'is_system' => true, 'is_sensitive' => false],
-            ['code' => 'system.configuration.access', 'name' => 'Configuration administration', 'is_active' => true, 'is_system' => true, 'is_sensitive' => false],
+            ['code' => 'system.access', 'name' => 'Access administration', 'is_system' => true],
+            ['code' => 'system.logs.access', 'name' => 'System logs', 'is_system' => true],
+            ['code' => 'system.configuration.access', 'name' => 'Configuration administration', 'is_system' => true],
         ];
 
         foreach ([
-            'system.user.view' => ['View administrators', false],
-            'system.user.create' => ['Create administrators', true],
-            'system.user.update' => ['Update administrators', true],
-            'system.role.view' => ['View roles', false],
-            'system.role.create' => ['Create roles', true],
-            'system.role.update' => ['Update roles', true],
-            'system.role.delete' => ['Delete roles', true],
-            'system.permission.view' => ['View permissions', false],
-            'system.permission.create' => ['Create permissions', true],
-            'system.permission.update' => ['Update permissions', true],
-            'system.permission.delete' => ['Delete permissions', true],
-            'system.menu.view' => ['View menus', false],
-            'system.menu.create' => ['Create menus', true],
-            'system.menu.update' => ['Update menus', true],
-            'system.menu.delete' => ['Delete menus', true],
-            'system.audit.view' => ['View audit logs', true],
-            'system.login-log.view' => ['View login logs', true],
-            'system.setting.view' => ['View system settings', false],
-            'system.theme-setting.view' => ['View theme settings', false],
-        ] as $code => [$name, $sensitive]) {
-            $items[] = ['code' => $code, 'name' => $name, 'is_active' => true, 'is_system' => true, 'is_sensitive' => $sensitive];
+            'system.user.view' => 'View administrators',
+            'system.user.create' => 'Create administrators',
+            'system.user.update' => 'Update administrators',
+            'system.role.view' => 'View roles',
+            'system.role.create' => 'Create roles',
+            'system.role.update' => 'Update roles',
+            'system.role.delete' => 'Delete roles',
+            'system.permission.view' => 'View permissions',
+            'system.permission.create' => 'Create permissions',
+            'system.permission.update' => 'Update permissions',
+            'system.permission.delete' => 'Delete permissions',
+            'system.menu.view' => 'View menus',
+            'system.menu.create' => 'Create menus',
+            'system.menu.update' => 'Update menus',
+            'system.menu.delete' => 'Delete menus',
+            'system.audit.view' => 'View audit logs',
+            'system.login-log.view' => 'View login logs',
+            'system.setting.view' => 'View system settings',
+            'system.theme-setting.view' => 'View theme settings',
+        ] as $code => $name) {
+            $items[] = ['code' => $code, 'name' => $name, 'is_system' => true];
         }
 
         foreach ($registry->all() as $module) {
             foreach ($module->permissions() as $permission) {
-                $items[] = ['code' => $permission->code, 'name' => $permission->name, 'is_active' => true, 'is_system' => false, 'is_sensitive' => $permission->sensitive];
+                $items[] = ['code' => $permission->code, 'name' => $permission->name, 'is_system' => false];
             }
         }
 
@@ -175,11 +175,11 @@ final class SyncSystemDataCommand extends Command
             ],
             [
                 'code' => 'configuration', 'parent_menu_code' => null, 'title' => 'configuration.title', 'type' => 'directory', 'route_name' => 'Configuration', 'route_path' => '/configuration', 'view_key' => null,
-                'permission_code' => null, 'icon' => 'lucide:sliders-horizontal', 'sort' => 3000, 'is_system' => true,
+                'permission_code' => 'system.configuration.access', 'icon' => 'lucide:sliders-horizontal', 'sort' => 3000, 'is_system' => true,
             ],
             [
                 'code' => 'system.logs', 'parent_menu_code' => null, 'title' => 'system.logsTitle', 'type' => 'directory', 'route_name' => 'SystemLogs', 'route_path' => '/system-logs', 'view_key' => null,
-                'permission_code' => null, 'icon' => 'lucide:notebook-tabs', 'sort' => 2000, 'is_system' => true,
+                'permission_code' => 'system.logs.access', 'icon' => 'lucide:notebook-tabs', 'sort' => 2000, 'is_system' => true,
             ],
         ];
 

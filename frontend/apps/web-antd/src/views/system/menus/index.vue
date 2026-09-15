@@ -189,7 +189,7 @@ function permissionName(permission: Pick<Permission, 'code' | 'name'>) {
 const permissionTree = computed<PermissionTreeNode[]>(() => {
   const nodes = new Map<number, PermissionTreeNode>();
   permissions.value.forEach((permission) => nodes.set(permission.id, {
-    children: [], key: permission.id, title: `${permissionName(permission)}（${permission.code}）`,
+    children: [], key: permission.id, title: permissionName(permission),
   }));
   const roots: PermissionTreeNode[] = [];
   permissions.value.forEach((permission) => {
@@ -232,6 +232,10 @@ const permissionIndeterminate = computed(() => {
   return checkedCount > 0 && checkedCount < allPermissionKeys.value.length;
 });
 
+function handlePermissionCheck(keys: Key[] | { checked: Key[] }) {
+  checkedPermissionKeys.value = Array.isArray(keys) ? keys : keys.checked;
+}
+
 async function load(selectCode?: string) {
   loading.value = true;
   try {
@@ -242,6 +246,7 @@ async function load(selectCode?: string) {
     menus.value = menuResult.menus;
     draggableMenus.value = buildMenuTree(menus.value);
     permissions.value = permissionResult.data as Permission[];
+    expandedPermissionKeys.value = [...allPermissionGroupKeys.value];
     if (selectCode) {
       const selected = menus.value.find((item) => item.code === selectCode);
       if (selected) selectMenu(selected);
@@ -510,6 +515,7 @@ onMounted(() => load());
             <Input :value="form.route_path" placeholder="例如：/content/articles" @update:value="handleRoutePathInput">
               <template #prefix><IconifyIcon icon="lucide:link" /></template>
             </Input>
+            <div class="admin-menu-editor__help">后台前端页面的路由路径，例如：/system/users；不是后端 API 路径。</div>
           </FormItem>
           <FormItem label="菜单类型" required>
             <Select v-model:value="form.type" :options="[{ label: '目录', value: 'directory' }, { label: '页面', value: 'page' }, { label: '外部链接', value: 'external' }]" />
@@ -520,7 +526,7 @@ onMounted(() => load());
                 <Checkbox v-model:checked="allPermissionsChecked" :indeterminate="permissionIndeterminate">全选</Checkbox>
                 <Checkbox v-model:checked="permissionsExpanded">展开</Checkbox>
               </div>
-              <Tree v-model:checked-keys="checkedPermissionKeys" v-model:expanded-keys="expandedPermissionKeys" :show-line="{ showLeafIcon: false }" :tree-data="permissionTree" checkable>
+              <Tree :checked-keys="checkedPermissionKeys" v-model:expanded-keys="expandedPermissionKeys" :check-strictly="true" :show-line="{ showLeafIcon: false }" :tree-data="permissionTree" checkable @check="handlePermissionCheck">
                 <template #switcherIcon="{ expanded }">
                   <span class="admin-menu-permissions__switcher" aria-hidden="true">{{ expanded ? '−' : '+' }}</span>
                 </template>

@@ -8,7 +8,6 @@ use Chencongbao\LaravelVbenAdmin\Support\AdminPagination;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
-use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
@@ -16,7 +15,6 @@ final class AdminPermissionController extends Controller
 {
     public function __construct(
         private readonly AuditRecorder $audit,
-        private readonly Router $router,
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -52,18 +50,6 @@ final class AdminPermissionController extends Controller
     public function show(AdminPermission $adminPermission): JsonResponse
     {
         return response()->json(['permission' => $adminPermission->load('menus:id,code,title')]);
-    }
-
-    public function httpPaths(): JsonResponse
-    {
-        $paths = collect($this->router->getRoutes()->getRoutes())
-            ->map(fn ($route): string => '/'.ltrim($route->uri(), '/'))
-            ->filter(fn (string $path): bool => str_starts_with($path, '/api/admin/'))
-            ->unique()
-            ->sort()
-            ->values();
-
-        return response()->json(['paths' => $paths]);
     }
 
     public function reorder(Request $request): JsonResponse
@@ -114,8 +100,7 @@ final class AdminPermissionController extends Controller
     public function update(Request $request, AdminPermission $adminPermission): JsonResponse
     {
         $changesSystemIdentity = $adminPermission->is_system && (
-            ($request->has('code') && $request->string('code')->toString() !== $adminPermission->code)
-            || ($request->has('is_active') && $request->boolean('is_active') !== $adminPermission->is_active)
+            $request->has('code') && $request->string('code')->toString() !== $adminPermission->code
         );
         if ($changesSystemIdentity) {
             return response()->json(['message' => 'System permission identity cannot be modified.', 'code' => 'SYSTEM_PERMISSION_PROTECTED'], 422);
@@ -169,13 +154,7 @@ final class AdminPermissionController extends Controller
             'parent_id' => ['nullable', 'integer', Rule::exists($permissionTable, 'id')],
             'code' => [$permission ? 'sometimes' : 'required', 'string', 'max:160', 'regex:/^[a-z][a-z0-9]*(\.[a-z][a-z0-9-]*)+$/', Rule::unique($permissionTable, 'code')->ignore($permission?->getKey())],
             'name' => [$permission ? 'sometimes' : 'required', 'string', 'max:160'],
-            'http_methods' => ['nullable', 'array', 'max:10'],
-            'http_methods.*' => ['required', 'string', 'distinct', Rule::in(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'])],
-            'http_paths' => ['nullable', 'array', 'max:50'],
-            'http_paths.*' => ['required', 'string', 'distinct', 'max:255', 'regex:/^\/[A-Za-z0-9._~!$&\'()*+,;=:@%{}\/-]*$/'],
             'sort' => ['sometimes', 'integer', 'min:-100000', 'max:100000'],
-            'is_active' => ['sometimes', 'boolean'],
-            'is_sensitive' => ['sometimes', 'boolean'],
             'menu_ids' => ['sometimes', 'array', 'max:500'],
             'menu_ids.*' => ['required', 'integer', 'distinct', Rule::exists($menuTable, 'id')],
         ]);

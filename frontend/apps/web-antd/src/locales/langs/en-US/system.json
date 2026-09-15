@@ -5,7 +5,7 @@
   "roles": "Roles",
   "rolesDescription": "Create and maintain roles, then assign menus and operation permissions.",
   "permissions": "Permissions",
-  "permissionsDescription": "Maintain permission hierarchy, server-side codes, API audit metadata, related menus, and sensitive-operation markers.",
+  "permissionsDescription": "Maintain permission hierarchy, server-side codes, and related menus.",
   "permissionNames": {
     "system": {
       "access": "System Management",

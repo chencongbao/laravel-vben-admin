@@ -18,8 +18,7 @@ final class DatabaseAuthorizer implements Authorizer
             ->where(function ($query) use ($permission): void {
                 $query->where('is_super_admin', true)
                     ->orWhereHas('permissions', fn ($permissions) => $permissions
-                        ->where('code', $permission)
-                        ->where('is_active', true));
+                        ->where('code', $permission));
             })
             ->exists();
     }

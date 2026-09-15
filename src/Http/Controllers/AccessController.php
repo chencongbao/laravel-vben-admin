@@ -24,7 +24,7 @@ final class AccessController extends Controller
             return response()->json(['permissions' => ['*']]);
         }
 
-        $permissions = $roles->flatMap(fn ($role) => $role->permissions()->where('is_active', true)->pluck('code'))->unique()->values();
+        $permissions = $roles->flatMap(fn ($role) => $role->permissions()->pluck('code'))->unique()->values();
 
         return response()->json(['permissions' => $permissions]);
     }
@@ -41,7 +41,7 @@ final class AccessController extends Controller
             ->orderBy('id');
 
         if (! $roles->contains('is_super_admin', true)) {
-            $permissionCodes = $roles->flatMap(fn ($role) => $role->permissions()->where('is_active', true)->pluck('code'))->unique()->all();
+            $permissionCodes = $roles->flatMap(fn ($role) => $role->permissions()->pluck('code'))->unique()->all();
             $query->where(function ($menuQuery) use ($roles, $permissionCodes): void {
                 $menuQuery->where('code', self::DEFAULT_MENU_CODE)
                     ->orWhere(function ($roleMenuQuery) use ($roles, $permissionCodes): void {

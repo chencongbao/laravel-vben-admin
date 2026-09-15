@@ -85,7 +85,7 @@ Administrator create and update requests also accept `two_factor_enabled` and `l
 
 Creating and updating a non-super role accepts `code`, `name`, `is_active`, `permission_ids`, and `menu_ids` in one atomic request. The built-in `administrator` role is immutable and has implicit full access. The built-in `manager` identity is protected, while its access assignments can be updated. A role assigned to administrators cannot be deleted.
 
-`GET /system/roles` and `GET /system/permissions` accept an optional positive integer `id` query parameter for exact identifier filtering.
+`GET /system/roles` and `GET /system/permissions` accept an optional positive integer `id` query parameter for exact identifier filtering. Super administrators can list and view every role. All other administrators cannot list or directly view the built-in `administrator` and `manager` roles; this same filtered role collection is used by administrator role selectors.
 
 ## Permissions and menus
 
@@ -93,7 +93,7 @@ Permission CRUD uses `/system/permissions`; menu CRUD uses `/system/menus`. Each
 
 Menu create and update requests do not accept `is_active` or `is_hidden`. The menu table does not contain these columns; effective menus are displayed according to the stored hierarchy and the administrator's role and permission assignments.
 
-Permission create and update requests accept `parent_id`, `code`, `name`, nullable `http_methods`, nullable `http_paths`, `sort`, `is_active`, `is_sensitive`, and `menu_ids`. `http_methods` is limited to `GET`, `POST`, `PUT`, `PATCH`, `DELETE`, and `OPTIONS`; both metadata arrays are bounded and validated. `GET /system/permissions/http-paths` returns the registered `/api/admin/*` paths for the searchable multi-select in the permission editor. Permission data and menu bindings are saved in one transaction. Responses include the related menus. Cyclic parents are rejected with `PERMISSION_CYCLE`, and a permission with children returns `PERMISSION_HAS_CHILDREN` when deletion is attempted. `PUT /api/admin/system/permissions/reorder` accepts the complete permission tree as `id`, `parent_id`, and `sort`, then saves hierarchy and order in one transaction. HTTP metadata supports route-coverage review only; stable permission codes and Laravel middleware remain authoritative.
+Permission create and update requests accept `parent_id`, `code`, `name`, `sort`, and `menu_ids`. Permissions are effective whenever they exist; the permission table does not contain activation, sensitivity, HTTP method, or HTTP path metadata. Permission data and menu bindings are saved in one transaction. Responses include the related menus. Cyclic parents are rejected with `PERMISSION_CYCLE`, and a permission with children returns `PERMISSION_HAS_CHILDREN` when deletion is attempted. `PUT /api/admin/system/permissions/reorder` accepts the complete permission tree as `id`, `parent_id`, and `sort`, then saves hierarchy and order in one transaction. Stable permission codes and Laravel middleware remain authoritative.
 
 Menus and permissions share one many-to-many binding source in `admin_permission_menus`. Menu create/update accepts `permission_ids`; permission create/update accepts `menu_ids`. Both directions update the same pivot rows, and menu access metadata is generated from these related permission codes. The legacy `admin_menus.permission_code` column is not used.
 
