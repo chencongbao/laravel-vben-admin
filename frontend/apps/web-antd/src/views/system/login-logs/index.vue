@@ -1,8 +1,17 @@
 <script lang="ts" setup>
-import { computed } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 
+import { getCollection } from '#/api/system';
 import LogPage from '#/components/system/log-page.vue';
 import { $t } from '#/locales';
+
+interface Operator { id: number; name?: null | string; username: string }
+
+const operators = ref<Operator[]>([]);
+const operatorOptions = computed(() => operators.value.map((operator) => ({
+  label: operator.name ? `${operator.name}（${operator.username}）` : operator.username,
+  value: operator.username,
+})));
 
 const columns = computed(() => [
   { dataIndex: 'id', title: $t('common.fields.id') },
@@ -11,11 +20,10 @@ const columns = computed(() => [
   { dataIndex: 'succeeded', title: $t('system.loginLog.fields.result') },
   { dataIndex: 'client_type', title: $t('system.loginLog.fields.accessDevice') },
   { dataIndex: 'user_agent', ellipsis: true, title: $t('system.loginLog.fields.userAgent'), width: 360 },
-  { dataIndex: 'failure_code', title: $t('system.loginLog.fields.failureCode') },
   { dataIndex: 'created_at', title: $t('common.fields.createdAt') },
 ]);
 const filters = computed(() => [
-  { key: 'username', label: $t('system.loginLog.fields.username') },
+  { key: 'username', label: $t('system.loginLog.filters.operator'), options: operatorOptions.value },
   {
     key: 'succeeded',
     label: $t('system.loginLog.filters.result'),
@@ -25,5 +33,9 @@ const filters = computed(() => [
     ],
   },
 ]);
+onMounted(async () => {
+  const result = await getCollection<{ operators: Operator[] }>('/system/login-logs/operators');
+  operators.value = result.operators;
+});
 </script>
 <template><LogPage :columns="columns" :description="$t('system.loginLogsDescription')" :filters="filters" path="/system/login-logs" permission="system.login-log.view" :title="$t('system.loginLogs')" /></template>

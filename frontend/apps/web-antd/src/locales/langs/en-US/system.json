@@ -102,10 +102,10 @@
       "ipAddress": "IP Address",
       "result": "Result",
       "accessDevice": "Access Device",
-      "userAgent": "User-Agent (UA)",
-      "failureCode": "Failure Code"
+      "userAgent": "User-Agent (UA)"
     },
     "filters": {
+      "operator": "Operator",
       "result": "Login Result"
     },
     "states": {
@@ -120,7 +120,7 @@
     "changesCount": "{count} changes",
     "fields": { "actions": "Actions", "actionType": "Action Type", "actor": "Actor", "changes": "Changes", "createdAt": "Operation Time", "description": "Operation", "ipAddress": "IP Address", "method": "Method", "path": "Request Path", "subject": "Subject" },
     "filters": { "actionCode": "Action Code", "actor": "Actor", "description": "Content Keyword", "ipAddress": "IP Address", "subjectId": "Subject ID", "subjectType": "Subject Type", "timeRange": "Operation Time" },
-    "placeholders": { "actor": "Name, username, or ID" },
+    "placeholders": { "actor": "Select an operator" },
     "actionTypes": { "created": "Create", "deleted": "Delete", "other": "Other", "updated": "Update" },
     "actionNames": {
       "avatarUpdated": "Update Avatar", "passwordUpdated": "Update Password", "profileUpdated": "Update Profile", "sessionRevoked": "Revoke Session", "sessionsRevoked": "Revoke Other Sessions", "twoFactorConfirmed": "Confirm Two-Factor Authentication", "twoFactorDisabled": "Disable Two-Factor Authentication", "twoFactorEnabled": "Enable Two-Factor Authentication",

@@ -31,10 +31,13 @@ final class AdminLogController extends Controller
         ]);
         $perPage = AdminPagination::perPage($filters['per_page'] ?? null);
         $id = $filters['id'] ?? null;
+        $superAdministratorIds = $this->superAdministratorIds();
+        $canViewSuperAdministratorLogs = $this->privilegeGuard->isSuperAdmin($request->user());
         $logs = Activity::query()
             ->with('causer')
             ->where('log_name', config('laravel-vben-admin.activity_log.log_name', 'admin'))
             ->where('log_type', 'operation')
+            ->when(! $canViewSuperAdministratorLogs, fn ($query) => $this->excludeSuperAdministratorActivities($query, $superAdministratorIds))
             ->when($id, fn ($query) => $query->whereKey($id))
             ->when($filters['action'] ?? null, fn ($query, $action) => $query->where('event', $action))
             ->when($filters['actor'] ?? null, function ($query, $actor): void {
@@ -64,13 +67,21 @@ final class AdminLogController extends Controller
 
     public function auditDetail(int $activity): JsonResponse
     {
+        /** @var AdminUser $actor */
+        $actor = request()->user();
         $record = Activity::query()
             ->with('causer')
             ->where('log_name', config('laravel-vben-admin.activity_log.log_name', 'admin'))
             ->where('log_type', 'operation')
+            ->when(! $this->privilegeGuard->isSuperAdmin($actor), fn ($query) => $this->excludeSuperAdministratorActivities($query, $this->superAdministratorIds()))
             ->findOrFail($activity);
 
         return response()->json($this->auditPayload($record, true));
+    }
+
+    public function auditOperators(Request $request): JsonResponse
+    {
+        return $this->operatorOptions($request);
     }
 
     private function auditPayload(Activity $activity, bool $withDetails): array
@@ -163,9 +174,7 @@ final class AdminLogController extends Controller
         /** @var AdminUser $actor */
         $actor = $request->user();
         $canViewSuperAdministratorLogs = $this->privilegeGuard->isSuperAdmin($actor);
-        $superAdministrators = AdminUser::query()
-            ->whereHas('roles', fn ($query) => $query->where('is_active', true)->where('is_super_admin', true))
-            ->get(['id', 'username']);
+        $superAdministrators = AdminUser::query()->whereKey($this->superAdministratorIds())->get(['id', 'username']);
         $superAdministratorIds = $superAdministrators->pluck('id')->all();
         $superAdministratorUsernames = $superAdministrators->pluck('username')->filter()->all();
         $logs = Activity::query()
@@ -197,5 +206,38 @@ final class AdminLogController extends Controller
             ]);
 
         return response()->json($logs);
+    }
+
+    public function loginOperators(Request $request): JsonResponse
+    {
+        return $this->operatorOptions($request);
+    }
+
+    private function excludeSuperAdministratorActivities($query, array $superAdministratorIds): void
+    {
+        $query->where(function ($visibilityQuery) use ($superAdministratorIds): void {
+            $visibilityQuery->whereNull('causer_id')
+                ->orWhereNotIn('causer_id', $superAdministratorIds);
+        });
+    }
+
+    private function operatorOptions(Request $request): JsonResponse
+    {
+        /** @var AdminUser $actor */
+        $actor = $request->user();
+        $operators = AdminUser::query()
+            ->when(! $this->privilegeGuard->isSuperAdmin($actor), fn ($query) => $query->whereDoesntHave('roles', fn ($roleQuery) => $roleQuery->where('is_active', true)->where('is_super_admin', true)))
+            ->latest('id')
+            ->get(['id', 'name', 'username']);
+
+        return response()->json(['operators' => $operators]);
+    }
+
+    private function superAdministratorIds(): array
+    {
+        return AdminUser::query()
+            ->whereHas('roles', fn ($query) => $query->where('is_active', true)->where('is_super_admin', true))
+            ->pluck('id')
+            ->all();
     }
 }

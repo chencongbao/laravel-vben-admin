@@ -13,13 +13,14 @@ import {
   InputNumber,
   Modal,
   RangePicker,
+  Select,
   Spin,
   Table,
   Tag,
   Tooltip,
 } from 'ant-design-vue';
 
-import { getResource, getResourceDetail } from '#/api/system';
+import { getCollection, getResource, getResourceDetail } from '#/api/system';
 import AutoRefresh from '#/components/system/auto-refresh.vue';
 import ListRefreshButton from '#/components/system/list-refresh-button.vue';
 import ListSearchField from '#/components/system/list-search-field.vue';
@@ -56,6 +57,7 @@ interface AuditLog {
   user_agent?: null | string;
 }
 interface ChangeRow { after: any; before: any; field: string }
+interface Operator { id: number; name?: null | string; username: string }
 
 const actionLocaleKeys: Record<string, string> = {
   'auth.avatar.updated': 'avatarUpdated', 'auth.password.updated': 'passwordUpdated',
@@ -81,7 +83,8 @@ const detail = ref<AuditLog>();
 const detailLoading = ref(false);
 const detailOpen = ref(false);
 const dateRange = ref<[Dayjs, Dayjs]>();
-const filters = reactive({ action: '', actor: '', description: '', id: undefined as number | undefined, ip_address: '', subject_id: undefined as number | undefined, subject_type: '' });
+const operators = ref<Operator[]>([]);
+const filters = reactive({ action: '', actor_id: undefined as number | undefined, description: '', id: undefined as number | undefined, ip_address: '', subject_id: undefined as number | undefined, subject_type: '' });
 const pagination = reactive(createAdminPagination());
 const { setTableRef, tableScrollY } = useAdminTableScrollY();
 
@@ -163,7 +166,7 @@ async function load() {
 }
 function search() { pagination.current = 1; void load(); }
 function reset() {
-  Object.assign(filters, { action: '', actor: '', description: '', id: undefined, ip_address: '', subject_id: undefined, subject_type: '' });
+  Object.assign(filters, { action: '', actor_id: undefined, description: '', id: undefined, ip_address: '', subject_id: undefined, subject_type: '' });
   dateRange.value = undefined;
   search();
 }
@@ -179,7 +182,11 @@ async function showDetail(record: AuditLog | Record<string, any>) {
   try { detail.value = await getResourceDetail<AuditLog>('/system/audit-logs', Number(record.id)); }
   finally { detailLoading.value = false; }
 }
-onMounted(load);
+onMounted(async () => {
+  const result = await getCollection<{ operators: Operator[] }>('/system/audit-logs/operators');
+  operators.value = result.operators;
+  await load();
+});
 </script>
 
 <template>
@@ -193,7 +200,7 @@ onMounted(load);
     </ListToolbar>
     <ListSearchPanel>
       <ListSearchField :label="$t('common.fields.id')"><InputNumber v-model:value="filters.id" :min="1" /></ListSearchField>
-      <ListSearchField :label="$t('system.auditLog.filters.actor')"><Input v-model:value="filters.actor" allow-clear :placeholder="$t('system.auditLog.placeholders.actor')" @press-enter="search" /></ListSearchField>
+      <ListSearchField :label="$t('system.auditLog.filters.actor')"><Select v-model:value="filters.actor_id" allow-clear show-search :filter-option="(input, option) => String(option?.label ?? '').toLowerCase().includes(input.toLowerCase())" :options="operators.map((operator) => ({ label: operator.name ? `${operator.name}（${operator.username}）` : operator.username, value: operator.id }))" :placeholder="$t('system.auditLog.placeholders.actor')" class="w-full" /></ListSearchField>
       <ListSearchField :label="$t('system.auditLog.filters.actionCode')"><Input v-model:value="filters.action" allow-clear @press-enter="search" /></ListSearchField>
       <ListSearchField :label="$t('system.auditLog.filters.subjectType')"><Input v-model:value="filters.subject_type" allow-clear @press-enter="search" /></ListSearchField>
       <ListSearchField :label="$t('system.auditLog.filters.subjectId')"><InputNumber v-model:value="filters.subject_id" :min="1" /></ListSearchField>

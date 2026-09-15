@@ -71,7 +71,7 @@ onMounted(load);
     </ListToolbar>
     <ListSearchPanel v-if="showFilters">
       <ListSearchField v-for="filter in effectiveFilters" :key="filter.key" :label="filter.label">
-        <Select v-if="filter.options" v-model:value="values[filter.key]" allow-clear :options="filter.options" :placeholder="filter.label" class="w-full" />
+        <Select v-if="filter.options" v-model:value="values[filter.key]" allow-clear show-search :filter-option="(input, option) => String(option?.label ?? '').toLowerCase().includes(input.toLowerCase())" :options="filter.options" :placeholder="filter.label" class="w-full" />
         <InputNumber v-else-if="filter.type === 'number'" v-model:value="values[filter.key]" :min="1" :placeholder="filter.label" />
         <Input v-else v-model:value="values[filter.key]" allow-clear :placeholder="filter.label" @press-enter="search" />
       </ListSearchField>

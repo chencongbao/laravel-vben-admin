@@ -120,11 +120,18 @@ The effective menu API returns a tree. A non-super administrator only receives m
 | Method | Path | Permission |
 | --- | --- | --- |
 | GET | `/system/login-logs` | `system.login-log.view` |
+| GET | `/system/login-logs/operators` | `system.login-log.view` |
 | GET | `/system/audit-logs` | `system.audit.view` |
+| GET | `/system/audit-logs/operators` | `system.audit.view` |
+| GET | `/system/audit-logs/{activity}` | `system.audit.view` |
 
 Both endpoints read the shared Spatie Activitylog `activity_log` table. `log_type=login` identifies authentication events and `log_type=operation` identifies administration changes; the stable API paths remain unchanged so existing pages do not depend on Spatie's storage schema.
 
 Both log endpoints accept an optional positive integer `id` query parameter for exact activity identifier filtering. Their existing feature-specific filters remain available and are combined with `id` when supplied.
+
+The two `/operators` endpoints return the administrators available to the signed-in account's operator filter. A super administrator receives every administrator; every non-super administrator receives only accounts without an active super-administrator role. Login-log filtering submits the selected `username`, while operation-log filtering submits the selected `actor_id`.
+
+The same scope is enforced on log data, not only on dropdown options. Super administrators can view all login and operation logs. Every non-super administrator is excluded from login and operation records caused by a super administrator, and cannot retrieve a hidden operation-log detail directly by ID.
 
 Login-log items expose the existing `username`, `succeeded`, `failure_code`, `ip_address`, and `created_at` fields, plus `client_type` and `user_agent`. Audit-log items expose the existing actor, action, subject, changes, context, IP, and creation time fields, plus `description`, `method`, `path`, and `user_agent`. Timestamps use standard ISO-8601 serialization and are rendered as Beijing time by the administration client.
 

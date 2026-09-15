@@ -133,6 +133,10 @@ final class ActivityLogTest extends TestCase
         ]);
 
         Sanctum::actingAs($superAdministrator, ['admin']);
+        $this->getJson('/api/admin/system/login-logs/operators')
+            ->assertOk()
+            ->assertJsonFragment(['username' => 'cmsadmin'])
+            ->assertJsonFragment(['username' => 'admin']);
         $this->getJson('/api/admin/system/login-logs?per_page=100')
             ->assertOk()
             ->assertJsonFragment(['id' => $superFailedLog->getKey()])
@@ -140,11 +144,55 @@ final class ActivityLogTest extends TestCase
             ->assertJsonFragment(['id' => $administratorFailedLog->getKey()]);
 
         Sanctum::actingAs($administrator, ['admin']);
+        $this->getJson('/api/admin/system/login-logs/operators')
+            ->assertOk()
+            ->assertJsonMissing(['username' => 'cmsadmin'])
+            ->assertJsonFragment(['username' => 'admin']);
         $this->getJson('/api/admin/system/login-logs?per_page=100')
             ->assertOk()
             ->assertJsonMissing(['id' => $superFailedLog->getKey()])
             ->assertJsonMissing(['id' => $superSucceededLog->getKey()])
             ->assertJsonFragment(['id' => $administratorFailedLog->getKey()]);
+    }
+
+    public function test_only_super_administrators_can_query_super_administrator_operation_logs_and_operator_options(): void
+    {
+        $this->artisan('vben-admin:install')->assertSuccessful();
+        $superAdministrator = AdminUser::query()->where('username', 'cmsadmin')->firstOrFail();
+        $administrator = AdminUser::query()->where('username', 'admin')->firstOrFail();
+        $administrator->roles()->firstOrFail()->permissions()->syncWithoutDetaching([
+            AdminPermission::query()->where('code', 'system.audit.view')->valueOrFail('id'),
+        ]);
+
+        $audit = $this->app->make(AuditRecorder::class);
+        $audit->record($superAdministrator, 'system.user.updated', $superAdministrator, ['after' => ['name' => 'Super']]);
+        $superActivity = Activity::query()->where('log_type', 'operation')->latest('id')->firstOrFail();
+        $audit->record($administrator, 'system.user.updated', $administrator, ['after' => ['name' => 'Manager']]);
+        $administratorActivity = Activity::query()->where('log_type', 'operation')->latest('id')->firstOrFail();
+
+        Sanctum::actingAs($superAdministrator, ['admin']);
+        $this->getJson('/api/admin/system/audit-logs/operators')
+            ->assertOk()
+            ->assertJsonFragment(['username' => 'cmsadmin'])
+            ->assertJsonFragment(['username' => 'admin']);
+        $this->getJson('/api/admin/system/audit-logs?per_page=100')
+            ->assertOk()
+            ->assertJsonFragment(['id' => $superActivity->getKey()])
+            ->assertJsonFragment(['id' => $administratorActivity->getKey()]);
+
+        Sanctum::actingAs($administrator, ['admin']);
+        $this->getJson('/api/admin/system/audit-logs/operators')
+            ->assertOk()
+            ->assertJsonMissing(['username' => 'cmsadmin'])
+            ->assertJsonFragment(['username' => 'admin']);
+        $this->getJson('/api/admin/system/audit-logs?per_page=100')
+            ->assertOk()
+            ->assertJsonMissing(['id' => $superActivity->getKey()])
+            ->assertJsonFragment(['id' => $administratorActivity->getKey()]);
+        $this->getJson('/api/admin/system/audit-logs/'.$superActivity->getKey())->assertNotFound();
+        $this->getJson('/api/admin/system/audit-logs/'.$administratorActivity->getKey())
+            ->assertOk()
+            ->assertJsonPath('id', $administratorActivity->getKey());
     }
 
     public function test_operation_audit_uses_spatie_and_redacts_sensitive_values(): void
