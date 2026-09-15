@@ -58,6 +58,14 @@ php artisan vben-admin:publish-assets
 
 `vben-admin:publish-assets` copies the compiled application to `public/{VBEN_ADMIN_PATH}`. It refuses unsafe, reserved, or non-empty destinations unless `--force` is explicitly provided. The Laravel API always remains at `/api/admin` and project PHP extensions belong in `app/Admin`.
 
+To own and freely edit the workspace in a consuming project, publish its Vue source once:
+
+```bash
+php artisan vben-admin:publish-workspace
+```
+
+Edit `resources/admin/workspace/index.vue`, then build the package frontend with `VBEN_ADMIN_WORKSPACE` pointing to that file. The command prints the exact build command for the current project. Without this environment variable the shared default workspace remains active.
+
 ## Install
 
 完整的中文安装、启动、Path 仓库联调和前端构建说明见 [安装文档](docs/installation.zh-CN.md)。

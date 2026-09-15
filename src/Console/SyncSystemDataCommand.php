@@ -13,6 +13,22 @@ final class SyncSystemDataCommand extends Command
 {
     private const DEFAULT_MENU_CODE = 'dashboard.workspace';
 
+    private const MANAGER_EXCLUDED_MENU_CODES = [
+        'system.menus',
+        'system.permissions',
+    ];
+
+    private const MANAGER_EXCLUDED_PERMISSION_CODES = [
+        'system.menu.create',
+        'system.menu.delete',
+        'system.menu.update',
+        'system.menu.view',
+        'system.permission.create',
+        'system.permission.delete',
+        'system.permission.update',
+        'system.permission.view',
+    ];
+
     protected $signature = 'vben-admin:sync {--dry-run : Preview changes without writing them}';
 
     protected $description = 'Idempotently synchronize package-owned roles, permissions and menus';
@@ -82,7 +98,11 @@ final class SyncSystemDataCommand extends Command
             $manager = AdminRole::query()->where('code', 'manager')->firstOrFail();
             if (! $manager->permissions()->exists()) {
                 $manager->permissions()->sync(
-                    AdminPermission::query()->where('is_system', true)->pluck('id')->all(),
+                    AdminPermission::query()
+                        ->where('is_system', true)
+                        ->whereNotIn('code', self::MANAGER_EXCLUDED_PERMISSION_CODES)
+                        ->pluck('id')
+                        ->all(),
                 );
             }
             if (! $manager->menus()->exists()) {
@@ -90,10 +110,24 @@ final class SyncSystemDataCommand extends Command
                     AdminMenu::query()
                         ->where('is_system', true)
                         ->where('code', '!=', self::DEFAULT_MENU_CODE)
+                        ->whereNotIn('code', self::MANAGER_EXCLUDED_MENU_CODES)
                         ->pluck('id')
                         ->all(),
                 );
             }
+
+            $manager->permissions()->detach(
+                AdminPermission::query()
+                    ->whereIn('code', self::MANAGER_EXCLUDED_PERMISSION_CODES)
+                    ->pluck('id')
+                    ->all(),
+            );
+            $manager->menus()->detach(
+                AdminMenu::query()
+                    ->whereIn('code', self::MANAGER_EXCLUDED_MENU_CODES)
+                    ->pluck('id')
+                    ->all(),
+            );
 
             foreach ([
                 'configuration' => ['system.settings', 'system.theme-settings'],

@@ -107,6 +107,8 @@ Route::post('/api/admin/matches/{match}/publish', PublishMatchController::class)
 菜单管理不提供启用或隐藏设置，有权限的有效菜单均按后台维护的树结构显示。菜单表不保存 `is_active`、`is_hidden` 字段，菜单管理接口和系统数据同步也不得接受或写入这两个字段。
 工作台 `dashboard.workspace` 是登录后默认菜单，不参与菜单管理和拖拽排序；服务端必须在查询顺序与返回的 `meta.order` 两层保证其始终位于侧边栏第一位。工作台页签必须设置为固定且不可关闭，同时禁用取消固定，关闭当前、关闭其他及批量关闭均不得移除工作台。
 
+工作台的业务内容属于宿主项目。需要完整修改时执行 `php artisan vben-admin:publish-workspace`，只编辑宿主项目的 `resources/admin/workspace/index.vue`，不得修改普通 Composer 安装的 `vendor`。构建时通过 `VBEN_ADMIN_WORKSPACE` 传入该文件的绝对路径；未传入时继续使用共享包默认工作台。项目工作台可以自由组合 Vue 组件和调用项目 API，但接口权限仍必须由 Laravel 服务端校验。
+
 注册后先预览，再同步：
 
 ```bash
@@ -257,6 +259,7 @@ $this->audit->record(
 - 权限新增必须提交唯一稳定 `code` 和名称 `name`；权限码格式为小写点分段，例如 `system.user.create`。`parent_id` 为空表示根权限，操作权限应挂到对应功能查看权限下面。权限表单不包含说明、启用、敏感、HTTP 方法和 HTTP 路径字段；`sort` 仍作为树形顺序的持久化字段，由拖拽排序维护。父级不得指向自身或后代，系统权限身份不可修改。
 - 菜单与权限是多对多关系，唯一事实来源为 `admin_permission_menus`：从菜单表单提交 `permission_ids` 与从权限表单提交 `menu_ids` 完全等价，都会在同一事务中全量同步同一组关联行；提交空数组表示清空关联，编辑请求省略关联字段表示保持原关系。`admin_menus.permission_code` 已移除，不得恢复或同时维护第二套关系。
 - 菜单关联权限只定义该菜单的访问要求和前端 `meta.authority`，不等于把权限授予角色；角色编辑必须分别保存 `admin_role_menus` 和 `admin_role_permissions`。非超级管理员只有同时拥有该角色菜单且满足菜单关联权限时才看到菜单；未关联任何权限的角色菜单只校验角色菜单关系。超级管理员隐式拥有全部权限并可查看全部菜单，固定工作台对所有已登录后台用户可见。
+- 内置 `manager` 管理员角色不得关联 `system.menus`、`system.permissions` 菜单及 `system.menu.*`、`system.permission.*` 操作权限；系统同步必须持续撤销这些关联。菜单结构和权限结构只能由 `administrator` 超级管理员维护，不能只在前端隐藏入口。
 - 服务端授权始终以路由中间件绑定的稳定权限 `code` 为准，菜单路由、菜单是否显示和按钮隐藏都不能替代服务端权限校验。菜单、权限的新增、编辑、删除分别要求对应的 `system.menu.*`、`system.permission.*` 权限，并记录操作审计。
 - 后台管理员身份摘要统一使用 `src/composables/use-admin-identity.ts`：第一行显示本地化角色名称，第二行优先显示去除首尾空格后的姓名，姓名为空时回退用户名。顶部用户入口和个人中心资料卡必须复用该逻辑，不得分别拼接显示字段。
 - 路由页面必须保持唯一根元素。全局内容区使用 `Transition mode="out-in"`，路由组件若以Fragment形式输出多个根节点，离开页面时可能无法完成过渡并导致下一个页面内容不挂载；Modal、Drawer等同页节点也必须包在该页面的唯一根容器内。
@@ -356,6 +359,7 @@ cd frontend/apps/web-antd
 
 ```bash
 cd frontend
+VBEN_ADMIN_WORKSPACE="/path/to/laravel/resources/admin/workspace/index.vue" \
 VITE_BASE=/admin/ corepack pnpm \
   --filter=@chencongbao/laravel-vben-admin-web run build
 
@@ -365,6 +369,7 @@ php artisan vben-admin:publish-assets --force
 
 
 如果配置了其他 `VBEN_ADMIN_PATH`，`VITE_BASE` 必须使用相同路径并带首尾 `/`。
+如果项目没有发布自有工作台，可省略 `VBEN_ADMIN_WORKSPACE`，构建会使用包内默认页面。
 
 ## 11. 测试与验证分层
 

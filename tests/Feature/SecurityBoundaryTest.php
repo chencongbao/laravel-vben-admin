@@ -132,6 +132,33 @@ final class SecurityBoundaryTest extends TestCase
         self::assertSame('admin', $administrator->fresh()->username);
     }
 
+    public function test_builtin_administrator_roles_cannot_be_edited(): void
+    {
+        $this->artisan('vben-admin:install')->assertSuccessful();
+        $superAdministrator = AdminUser::query()->where('username', 'cmsadmin')->firstOrFail();
+        $superRole = AdminRole::query()->where('code', 'administrator')->firstOrFail();
+        $managerRole = AdminRole::query()->where('code', 'manager')->firstOrFail();
+        $permission = AdminPermission::query()->where('code', 'system.role.view')->firstOrFail();
+        $menu = AdminMenu::query()->where('code', 'system.roles')->firstOrFail();
+        Sanctum::actingAs($superAdministrator, ['admin']);
+
+        foreach ([$superRole, $managerRole] as $role) {
+            $this->patchJson('/api/admin/system/roles/'.$role->getKey(), [
+                'name' => 'Changed built-in role',
+                'permission_ids' => [$permission->getKey()],
+                'menu_ids' => [$menu->getKey()],
+            ])->assertUnprocessable()->assertJsonPath('code', 'SYSTEM_ROLE_PROTECTED');
+
+            $this->putJson('/api/admin/system/roles/'.$role->getKey().'/access', [
+                'permission_ids' => [$permission->getKey()],
+                'menu_ids' => [$menu->getKey()],
+            ])->assertUnprocessable()->assertJsonPath('code', 'SYSTEM_ROLE_PROTECTED');
+        }
+
+        self::assertNotSame('Changed built-in role', $superRole->fresh()->name);
+        self::assertNotSame('Changed built-in role', $managerRole->fresh()->name);
+    }
+
     public function test_administrator_username_is_immutable_after_creation(): void
     {
         $this->artisan('vben-admin:install')->assertSuccessful();
@@ -210,6 +237,29 @@ final class SecurityBoundaryTest extends TestCase
         self::assertEqualsCanonicalizing(
             [$parentMenu->getKey(), $childMenu->getKey()],
             $role->menus()->pluck('admin_menus.id')->all(),
+        );
+    }
+
+    public function test_role_permission_assignment_includes_all_ancestors(): void
+    {
+        $this->artisan('vben-admin:install')->assertSuccessful();
+        $superAdministrator = AdminUser::query()->where('username', 'cmsadmin')->firstOrFail();
+        $parentPermission = AdminPermission::query()->where('code', 'system.configuration.access')->firstOrFail();
+        $childPermission = AdminPermission::query()->where('code', 'system.setting.view')->firstOrFail();
+        $menu = AdminMenu::query()->where('code', 'system.settings')->firstOrFail();
+        Sanctum::actingAs($superAdministrator, ['admin']);
+
+        $response = $this->postJson('/api/admin/system/roles', [
+            'code' => 'settings-viewer',
+            'name' => 'Settings viewer',
+            'permission_ids' => [$childPermission->getKey()],
+            'menu_ids' => [$menu->getKey()],
+        ])->assertCreated();
+
+        $role = AdminRole::query()->findOrFail($response->json('role.id'));
+        self::assertEqualsCanonicalizing(
+            [$parentPermission->getKey(), $childPermission->getKey()],
+            $role->permissions()->pluck('admin_permissions.id')->all(),
         );
     }
 

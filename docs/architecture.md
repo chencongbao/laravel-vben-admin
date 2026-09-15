@@ -5,10 +5,10 @@
 Laravel Vben Admin is delivered as three independently upgradeable artifacts:
 
 1. `chencongbao/laravel-vben-admin`: Laravel authentication, authorization, navigation, settings, audit foundations and APIs.
-2. `laravel-vben-admin-starter`: an editable Vben Admin application starter owned by the consuming project after creation.
+2. `laravel-vben-admin-starter`: the packaged Vben Admin application with project-owned Vue overrides for deployment-specific pages such as the workspace.
 3. `@chencongbao/laravel-vben-admin-client`: a future optional TypeScript client for DTOs, errors and API contract checks.
 
-The Composer package does not ship an editable Vue application into `vendor`. The Starter does not implement authoritative permission decisions.
+The Composer package ships the default compiled application and its frontend source. Consuming projects must not edit `vendor`; they publish project-owned overrides under `resources/admin`, and the package build resolves those files explicitly. The Starter does not implement authoritative permission decisions.
 
 ## Invariants
 
@@ -19,6 +19,7 @@ The Composer package does not ship an editable Vue application into `vendor`. Th
 - Package system data is synchronized idempotently and never resets assignments.
 - Database menu records contain a `view_key`; the Vben application maps it through a local component allowlist.
 - The business platform and supplier platform share package code only, never runtime identity or authorization data.
+- The fixed workspace route resolves a project-owned `resources/admin/workspace/index.vue` only when `VBEN_ADMIN_WORKSPACE` is supplied at build time; otherwise it uses the package default.
 
 ## Delivery stages
 

@@ -3,7 +3,8 @@
   "extends": "@vben/tsconfig/web-app.json",
   "compilerOptions": {
     "paths": {
-      "#/*": ["./src/*"]
+      "#/*": ["./src/*"],
+      "#workspace": ["./src/views/dashboard/workspace/index.vue"]
     }
   },
   "references": [{ "path": "./tsconfig.node.json" }],

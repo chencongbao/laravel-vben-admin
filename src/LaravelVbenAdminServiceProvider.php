@@ -5,6 +5,7 @@ namespace Chencongbao\LaravelVbenAdmin;
 use Chencongbao\LaravelVbenAdmin\Console\CreateAdminCommand;
 use Chencongbao\LaravelVbenAdmin\Console\InstallCommand;
 use Chencongbao\LaravelVbenAdmin\Console\PublishAssetsCommand;
+use Chencongbao\LaravelVbenAdmin\Console\PublishWorkspaceCommand;
 use Chencongbao\LaravelVbenAdmin\Console\SyncSystemDataCommand;
 use Chencongbao\LaravelVbenAdmin\Contracts\AuditRecorder;
 use Chencongbao\LaravelVbenAdmin\Contracts\Authorizer;
@@ -59,6 +60,7 @@ final class LaravelVbenAdminServiceProvider extends ServiceProvider
             $this->commands([
                 InstallCommand::class,
                 PublishAssetsCommand::class,
+                PublishWorkspaceCommand::class,
                 CreateAdminCommand::class,
                 SyncSystemDataCommand::class,
             ]);

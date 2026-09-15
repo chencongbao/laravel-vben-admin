@@ -146,8 +146,8 @@ onMounted(load);
         <template #bodyCell="{ column, record, text }">
           <Tag v-if="column.dataIndex === 'code'" color="blue">{{ text }}</Tag>
           <span v-else-if="column.dataIndex === 'created_at' || column.dataIndex === 'updated_at'">{{ formatBeijingDateTime(text) }}</span>
-          <Space v-else-if="column.dataIndex === 'action'">
-            <PermissionButton :icon="record.is_super_admin ? 'lucide:eye' : 'lucide:pencil'" icon-only permission="system.role.update" :tooltip="record.is_super_admin ? '查看角色' : '编辑与授权'" type="text" @click="openEdit(record)" />
+          <Space v-else-if="column.dataIndex === 'action' && !record.is_system">
+            <PermissionButton icon="lucide:pencil" icon-only permission="system.role.update" tooltip="编辑与授权" type="text" @click="openEdit(record)" />
             <Popconfirm v-if="!record.is_system" v-access:code="'system.role.delete'" title="确定删除该角色？" @confirm="remove(record)"><PermissionButton danger icon="lucide:trash-2" icon-only permission="system.role.delete" tooltip="删除角色" type="text" /></Popconfirm>
           </Space>
         </template>
@@ -161,7 +161,7 @@ onMounted(load);
         </div>
         <div class="admin-role-access-grid">
           <FormItem class="admin-role-access-section" label="权限" required>
-            <AccessTreeSelector v-model:checked-keys="checkedPermissionKeys" v-model:expanded-keys="expandedPermissionKeys" :disabled="isProtected" :tree-data="permissionTree" />
+            <AccessTreeSelector v-model:checked-keys="checkedPermissionKeys" v-model:expanded-keys="expandedPermissionKeys" :disabled="isProtected" include-ancestors :tree-data="permissionTree" />
           </FormItem>
           <FormItem class="admin-role-access-section" label="菜单" required>
             <AccessTreeSelector v-model:checked-keys="checkedMenuKeys" v-model:expanded-keys="expandedMenuKeys" :disabled="isProtected" include-ancestors :tree-data="menuTree" />

@@ -6,6 +6,11 @@
   "rolesDescription": "Create and maintain roles, then assign menus and operation permissions.",
   "permissions": "Permissions",
   "permissionsDescription": "Maintain permission hierarchy, server-side codes, and related menus.",
+  "permissionForm": {
+    "messages": {
+      "codeInvalid": "Use a dot-separated permission code starting with a lowercase letter, for example match.publish."
+    }
+  },
   "permissionNames": {
     "system": {
       "access": "System Management",

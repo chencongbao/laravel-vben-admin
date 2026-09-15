@@ -6,6 +6,11 @@
   "rolesDescription": "创建和维护角色，并为角色分配菜单及操作权限。",
   "permissions": "权限管理",
   "permissionsDescription": "维护权限层级、服务端权限编码及关联菜单。",
+  "permissionForm": {
+    "messages": {
+      "codeInvalid": "权限编码格式不正确，请使用小写字母开头的点分格式，例如 match.publish"
+    }
+  },
   "permissionNames": {
     "system": {
       "access": "系统管理",

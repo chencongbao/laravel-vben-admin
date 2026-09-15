@@ -35,6 +35,7 @@ const permissionTreeRef = ref<PermissionTreeController>();
 const { hasAccessByCodes } = useAccess();
 const canReorder = computed(() => hasAccessByCodes(['system.permission.update']));
 const form = reactive({ code: '', menu_ids: [] as Key[], name: '', parent_id: 0, sort: 0 });
+const permissionCodePattern = /^[a-z][a-z0-9]*(\.[a-z][a-z0-9-]*)+$/;
 function buildPermissionTree(items: Permission[]) {
   const nodes = new Map<number, PermissionTreeNode>();
   items.forEach((item) => nodes.set(item.id, { ...item, children: [], key: item.code }));
@@ -154,6 +155,7 @@ function addChild(item: PermissionTreeNode) {
 
 async function save() {
   if (!form.code || !form.name) return void message.warning('请填写权限编码和名称');
+  if (!permissionCodePattern.test(form.code)) return void message.warning($t('system.permissionForm.messages.codeInvalid'));
   saving.value = true;
   try {
     const payload = { code: form.code, menu_ids: form.menu_ids.filter((key): key is number => typeof key === 'number'), name: form.name, parent_id: form.parent_id || null, sort: form.sort };

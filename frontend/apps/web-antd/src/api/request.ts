@@ -126,9 +126,15 @@ function createRequestClient(baseURL: string, options?: RequestClientOptions) {
       const validationFields = validationErrors
         ? Object.keys(validationErrors)
         : [];
-      const validationKey = validationFields
-        .map((field) => validationErrorKeys[field])
-        .find(Boolean)
+      const validationMessages = validationErrors
+        ? Object.values(validationErrors).flat()
+        : [];
+      const validationKey = validationMessages.includes('validation.regex')
+        && validationFields.includes('code')
+        ? 'system.permissionForm.messages.codeInvalid'
+        : validationFields
+            .map((field) => validationErrorKeys[field])
+            .find(Boolean)
         ?? (validationFields.some((field) => field.startsWith('settings.'))
           ? 'system.settingsForm.messages.invalid'
           : undefined);

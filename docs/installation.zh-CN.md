@@ -63,15 +63,34 @@ php artisan vben-admin:publish-assets
 - 使用 `admin_permission_menus` 写入每个系统菜单对应的访问权限；
 - `cmsadmin` 只绑定 `administrator`，`admin` 只绑定 `manager`；
 - `administrator` 通过超级管理员规则隐式拥有全部权限和菜单，不批量写入角色权限、角色菜单关联；
-- 新安装的 `manager` 默认关联全部内置系统权限，以及除固定工作台外的全部内置系统菜单；工作台由登录态自动提供，不写入 `admin_role_menus`。
+- 新安装的 `manager` 默认关联内置系统权限和菜单，但不关联固定工作台、菜单管理、权限管理，也不关联 `system.menu.*`、`system.permission.*` 操作权限；工作台由登录态自动提供，不写入 `admin_role_menus`。只有 `administrator` 超级管理员可以进入菜单管理和权限管理。
 
-`vben-admin:sync` 会保留已有自定义数据和非空角色授权。只有当内置 `manager` 的权限或菜单关联为空时，才补齐上述默认权限或默认菜单，避免普通管理员在全新安装后没有可访问功能。
+`vben-admin:sync` 会保留已有自定义数据和其他非空角色授权。只有当内置 `manager` 的权限或菜单关联为空时，才补齐上述默认权限或默认菜单；无论原来是否关联，都会从 `manager` 撤销菜单管理、权限管理及其操作权限，确保这些基础权限结构只能由超级管理员维护。
 
 `vben-admin:publish-assets` 会把包内已经编译的前端资源复制到 Laravel 的 `public/admin`。如果目标目录已经存在且需要更新，执行：
 
 ```bash
 php artisan vben-admin:publish-assets --force
 ```
+
+### 项目直接修改工作台
+
+工作台允许由每个 Laravel 项目完整接管，不需要修改共享包或 `vendor`。在宿主项目根目录执行一次：
+
+```bash
+php artisan vben-admin:publish-workspace
+```
+
+命令会创建 `resources/admin/workspace/index.vue`，已有文件默认不会被覆盖；只有确认需要恢复共享包模板时才使用 `--force`。此后可以在该 Vue 文件中自由修改布局、组件、接口和交互。
+
+修改后进入本包的 `frontend` 目录，按命令输出设置项目工作台的绝对路径并构建，例如：
+
+```bash
+VBEN_ADMIN_WORKSPACE="/path/to/laravel/resources/admin/workspace/index.vue" VITE_BASE=/admin/ pnpm build:antd
+php artisan vben-admin:publish-assets --force
+```
+
+`VBEN_ADMIN_WORKSPACE` 只在前端构建时使用，不是 Laravel 运行时配置。没有设置时自动使用共享包默认工作台。多个项目共用同一个 Path Repository 时，每次为目标项目构建都必须传入该项目自己的文件路径，生成的静态资源仍分别发布到各项目的 `public/{VBEN_ADMIN_PATH}`。
 
 `storage:link` 用于让管理员自行上传的头像可以通过 Web 访问；如果项目已经创建过 `public/storage` 链接，无需重复执行。
 
@@ -204,6 +223,9 @@ php artisan vben-admin:publish-assets
 
 # 覆盖更新已发布前端资源
 php artisan vben-admin:publish-assets --force
+
+# 发布项目可自由修改的工作台Vue源码
+php artisan vben-admin:publish-workspace
 
 # 按保留天数清理过期 activity_log（建议由 Laravel Scheduler 定期调用）
 php artisan activitylog:clean

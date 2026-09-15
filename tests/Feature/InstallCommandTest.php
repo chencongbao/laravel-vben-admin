@@ -54,14 +54,42 @@ final class InstallCommandTest extends TestCase
         $superRole = AdminRole::query()->where('code', 'administrator')->firstOrFail();
         $manager = AdminRole::query()->where('code', 'manager')->firstOrFail();
         self::assertEqualsCanonicalizing(
-            AdminPermission::query()->where('is_system', true)->pluck('id')->all(),
+            AdminPermission::query()
+                ->where('is_system', true)
+                ->whereNotIn('code', [
+                    'system.menu.create',
+                    'system.menu.delete',
+                    'system.menu.update',
+                    'system.menu.view',
+                    'system.permission.create',
+                    'system.permission.delete',
+                    'system.permission.update',
+                    'system.permission.view',
+                ])
+                ->pluck('id')
+                ->all(),
             $manager->permissions()->pluck('id')->all(),
         );
         self::assertEqualsCanonicalizing(
-            AdminMenu::query()->where('is_system', true)->where('code', '!=', 'dashboard.workspace')->pluck('id')->all(),
+            AdminMenu::query()
+                ->where('is_system', true)
+                ->whereNotIn('code', ['dashboard.workspace', 'system.menus', 'system.permissions'])
+                ->pluck('id')
+                ->all(),
             $manager->menus()->pluck('id')->all(),
         );
         self::assertFalse($manager->menus()->where('code', 'dashboard.workspace')->exists());
+        self::assertFalse($manager->menus()->whereIn('code', ['system.menus', 'system.permissions'])->exists());
+        self::assertFalse($manager->permissions()->whereIn('code', [
+            'system.menu.create',
+            'system.menu.delete',
+            'system.menu.update',
+            'system.menu.view',
+            'system.permission.create',
+            'system.permission.delete',
+            'system.permission.update',
+            'system.permission.view',
+        ])->exists());
         self::assertTrue(Schema::hasColumns('personal_access_tokens', ['ip_address', 'user_agent']));
         self::assertTrue(Schema::hasColumns('activity_log', ['log_name', 'log_type', 'event', 'attribute_changes', 'properties', 'legacy_source', 'legacy_id']));
         self::assertFalse(Schema::hasTable('admin_login_logs'));
@@ -164,5 +192,31 @@ final class InstallCommandTest extends TestCase
 
         self::assertTrue($manager->menus()->whereKey($loginLogs->getKey())->exists());
         self::assertTrue($manager->menus()->whereKey($systemLogs->getKey())->exists());
+    }
+
+    public function test_sync_revokes_menu_and_permission_management_from_manager(): void
+    {
+        $this->artisan('vben-admin:install')->assertSuccessful();
+
+        $manager = AdminRole::query()->where('code', 'manager')->firstOrFail();
+        $excludedPermissions = AdminPermission::query()
+            ->where(function ($query): void {
+                $query->where('code', 'like', 'system.menu.%')
+                    ->orWhere('code', 'like', 'system.permission.%');
+            })
+            ->pluck('id')
+            ->all();
+        $excludedMenus = AdminMenu::query()
+            ->whereIn('code', ['system.menus', 'system.permissions'])
+            ->pluck('id')
+            ->all();
+
+        $manager->permissions()->syncWithoutDetaching($excludedPermissions);
+        $manager->menus()->syncWithoutDetaching($excludedMenus);
+
+        $this->artisan('vben-admin:sync')->assertSuccessful();
+
+        self::assertFalse($manager->permissions()->whereKey($excludedPermissions)->exists());
+        self::assertFalse($manager->menus()->whereKey($excludedMenus)->exists());
     }
 }
