@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class AdminPermission extends Model
 {
-    protected $fillable = ['parent_id', 'code', 'name', 'description', 'http_methods', 'http_paths', 'sort', 'is_active', 'is_system', 'is_sensitive', 'is_deprecated'];
+    protected $fillable = ['parent_id', 'code', 'name', 'http_methods', 'http_paths', 'sort', 'is_active', 'is_system', 'is_sensitive', 'is_deprecated'];
 
     protected function casts(): array
     {

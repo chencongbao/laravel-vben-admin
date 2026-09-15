@@ -6,6 +6,7 @@ use Chencongbao\LaravelVbenAdmin\LaravelVbenAdminServiceProvider;
 use Chencongbao\LaravelVbenAdmin\Models\AdminMenu;
 use Chencongbao\LaravelVbenAdmin\Models\AdminPermission;
 use Chencongbao\LaravelVbenAdmin\Models\AdminUser;
+use Illuminate\Support\Facades\Schema;
 use Laravel\Sanctum\Sanctum;
 use Laravel\Sanctum\SanctumServiceProvider;
 use Orchestra\Testbench\TestCase;
@@ -41,7 +42,6 @@ final class PermissionManagementTest extends TestCase
             'parent_id' => $parent->getKey(),
             'code' => 'match.publish',
             'name' => 'Publish matches',
-            'description' => 'Publish a match after validation.',
             'http_methods' => ['POST'],
             'http_paths' => ['/api/admin/matches/{match}/publish'],
             'sort' => 30,
@@ -57,6 +57,7 @@ final class PermissionManagementTest extends TestCase
         $permission = AdminPermission::query()->where('code', 'match.publish')->firstOrFail();
         self::assertSame(['POST'], $permission->http_methods);
         self::assertSame(['/api/admin/matches/{match}/publish'], $permission->http_paths);
+        self::assertFalse(Schema::hasColumn('admin_permissions', 'description'));
         self::assertArrayNotHasKey('unexpected_admin_flag', $permission->getAttributes());
         self::assertTrue($permission->menus()->whereKey($menu->getKey())->exists());
     }

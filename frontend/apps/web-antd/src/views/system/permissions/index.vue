@@ -8,7 +8,7 @@ import { Page } from '@vben/common-ui';
 import { IconifyIcon } from '@vben/icons';
 
 import { Draggable } from '@he-tree/vue';
-import { Card, Empty, Form, FormItem, Input, InputNumber, message, Popconfirm, Select, Space, Switch, Textarea, Tree } from 'ant-design-vue';
+import { Card, Empty, Form, FormItem, Input, InputNumber, message, Popconfirm, Select, Space, Switch, Tree } from 'ant-design-vue';
 
 import { createResource, deleteResource, getCollection, getResource, reorderPermissions, updateResource } from '#/api/system';
 import ListRefreshButton from '#/components/system/list-refresh-button.vue';
@@ -20,7 +20,7 @@ import '@he-tree/vue/style/default.css';
 
 interface MenuItem { code: string; id: number; parent_id?: null | number; title: string }
 interface MenuTreeNode { children: MenuTreeNode[]; key: number; title: string }
-interface Permission { code: string; description?: null | string; http_methods?: null | string[]; http_paths?: null | string[]; id: number; is_active: boolean; is_sensitive: boolean; is_system: boolean; menus?: MenuItem[]; name: string; parent_id?: null | number; sort: number }
+interface Permission { code: string; http_methods?: null | string[]; http_paths?: null | string[]; id: number; is_active: boolean; is_sensitive: boolean; is_system: boolean; menus?: MenuItem[]; name: string; parent_id?: null | number; sort: number }
 interface PermissionTreeNode extends Permission { children: PermissionTreeNode[]; key: string }
 interface PermissionTreeController { closeAll: () => void; getStat: (node: PermissionTreeNode) => PermissionTreeStat; openAll: () => void }
 interface PermissionTreeStat { children: PermissionTreeStat[]; data: PermissionTreeNode; open: boolean }
@@ -32,7 +32,7 @@ const editing = ref<Permission>(); const selectedCode = ref<string>(); const dra
 const permissionTreeRef = ref<PermissionTreeController>();
 const { hasAccessByCodes } = useAccess();
 const canReorder = computed(() => hasAccessByCodes(['system.permission.update']));
-const form = reactive({ code: '', description: '', http_methods: [] as string[], http_paths: [] as string[], is_active: true, is_sensitive: false, menu_ids: [] as Key[], name: '', parent_id: 0, sort: 0 });
+const form = reactive({ code: '', http_methods: [] as string[], http_paths: [] as string[], is_active: true, is_sensitive: false, menu_ids: [] as Key[], name: '', parent_id: 0, sort: 0 });
 function buildPermissionTree(items: Permission[]) {
   const nodes = new Map<number, PermissionTreeNode>();
   items.forEach((item) => nodes.set(item.id, { ...item, children: [], key: item.code }));
@@ -98,7 +98,7 @@ const menuTree = computed<MenuTreeNode[]>(() => {
 const formTitle = computed(() => editing.value ? `编辑：${permissionName(editing.value)}` : '新增权限');
 
 function createEmptyForm(parentId = 0) {
-  return { code: '', description: '', http_methods: [] as string[], http_paths: [] as string[], is_active: true, is_sensitive: false, menu_ids: [] as Key[], name: '', parent_id: parentId, sort: 0 };
+  return { code: '', http_methods: [] as string[], http_paths: [] as string[], is_active: true, is_sensitive: false, menu_ids: [] as Key[], name: '', parent_id: parentId, sort: 0 };
 }
 
 async function load(selectCode?: string) {
@@ -129,7 +129,7 @@ function openCreate(parentId = 0) {
 function selectPermission(item: Permission) {
   editing.value = item;
   selectedCode.value = item.code;
-  Object.assign(form, { code: item.code, description: item.description ?? '', http_methods: item.http_methods ?? [], http_paths: item.http_paths ?? [], is_active: item.is_active, is_sensitive: item.is_sensitive, menu_ids: (item.menus ?? []).map((menu) => menu.id), name: item.name, parent_id: item.parent_id ?? 0, sort: item.sort ?? 0 });
+  Object.assign(form, { code: item.code, http_methods: item.http_methods ?? [], http_paths: item.http_paths ?? [], is_active: item.is_active, is_sensitive: item.is_sensitive, menu_ids: (item.menus ?? []).map((menu) => menu.id), name: item.name, parent_id: item.parent_id ?? 0, sort: item.sort ?? 0 });
 }
 
 function resetEditor() {
@@ -147,7 +147,7 @@ async function save() {
   if (!form.code || !form.name) return void message.warning('请填写权限编码和名称');
   saving.value = true;
   try {
-    const payload = { code: form.code, description: form.description || null, http_methods: form.http_methods.length > 0 ? form.http_methods : null, http_paths: form.http_paths.length > 0 ? form.http_paths : null, is_active: form.is_active, is_sensitive: form.is_sensitive, menu_ids: form.menu_ids.filter((key): key is number => typeof key === 'number'), name: form.name, parent_id: form.parent_id || null, sort: form.sort };
+    const payload = { code: form.code, http_methods: form.http_methods.length > 0 ? form.http_methods : null, http_paths: form.http_paths.length > 0 ? form.http_paths : null, is_active: form.is_active, is_sensitive: form.is_sensitive, menu_ids: form.menu_ids.filter((key): key is number => typeof key === 'number'), name: form.name, parent_id: form.parent_id || null, sort: form.sort };
     await (editing.value ? updateResource('/system/permissions', editing.value.id, payload) : createResource('/system/permissions', payload));
     message.success('权限保存成功'); await load(); openCreate();
   } finally { saving.value = false; }
@@ -231,7 +231,6 @@ onMounted(() => load());
           </FormItem>
           <FormItem label="权限编码" required><Input v-model:value="form.code" :disabled="Boolean(editing?.is_system)" placeholder="例如 match.publish" /></FormItem>
           <FormItem label="权限名称" required><Input v-model:value="form.name" placeholder="请输入权限名称或语言键" /></FormItem>
-          <FormItem label="权限说明"><Textarea v-model:value="form.description" :maxlength="500" :rows="3" show-count /></FormItem>
           <FormItem label="请求方法"><Select v-model:value="form.http_methods" mode="multiple" :options="['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'].map((value) => ({ label: value, value }))" placeholder="可选，仅用于接口覆盖审计" /></FormItem>
           <FormItem label="HTTP路径"><Select v-model:value="form.http_paths" :options="httpPathOptions" mode="multiple" option-filter-prop="label" placeholder="请选择或搜索 HTTP 路径" show-search /><div class="admin-menu-editor__help">请求方法和路径不替代服务端权限编码校验。</div></FormItem>
           <FormItem label="关联菜单">

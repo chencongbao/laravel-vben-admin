@@ -169,7 +169,6 @@ final class AdminPermissionController extends Controller
             'parent_id' => ['nullable', 'integer', Rule::exists($permissionTable, 'id')],
             'code' => [$permission ? 'sometimes' : 'required', 'string', 'max:160', 'regex:/^[a-z][a-z0-9]*(\.[a-z][a-z0-9-]*)+$/', Rule::unique($permissionTable, 'code')->ignore($permission?->getKey())],
             'name' => [$permission ? 'sometimes' : 'required', 'string', 'max:160'],
-            'description' => ['nullable', 'string', 'max:500'],
             'http_methods' => ['nullable', 'array', 'max:10'],
             'http_methods.*' => ['required', 'string', 'distinct', Rule::in(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'])],
             'http_paths' => ['nullable', 'array', 'max:50'],
