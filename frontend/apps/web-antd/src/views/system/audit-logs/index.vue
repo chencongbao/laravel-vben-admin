@@ -69,7 +69,7 @@ const actionLocaleKeys: Record<string, string> = {
   'system.role.access-updated': 'roleAccessUpdated', 'system.role.created': 'roleCreated',
   'system.role.deleted': 'roleDeleted', 'system.role.updated': 'roleUpdated',
   'system.settings.updated': 'settingsUpdated', 'system.theme-settings.updated': 'themeSettingsUpdated',
-  'system.user.created': 'userCreated', 'system.user.updated': 'userUpdated',
+  'system.user.created': 'userCreated', 'system.user.deleted': 'userDeleted', 'system.user.updated': 'userUpdated',
 };
 const subjectLocaleKeys: Record<string, string> = {
   AdminMenu: 'menu', AdminPermission: 'permission', AdminRole: 'role', AdminSetting: 'setting', AdminUser: 'user',

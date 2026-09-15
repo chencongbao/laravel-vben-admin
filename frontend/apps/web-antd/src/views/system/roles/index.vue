@@ -90,8 +90,8 @@ async function load() {
   } finally { loading.value = false; }
 }
 async function loadAccessCatalog() {
-  const [permissionResult, menuResult] = await Promise.all([getResource('/system/permissions', { per_page: 100 }), getCollection<{ menus: MenuItem[] }>('/system/menus')]);
-  permissions.value = permissionResult.data as PermissionItem[]; menus.value = menuResult.menus;
+  const result = await getCollection<{ menus: MenuItem[]; permissions: PermissionItem[] }>('/system/roles/access-options');
+  permissions.value = result.permissions; menus.value = result.menus;
   expandedPermissionKeys.value = [...allPermissionKeys.value];
   expandedMenuKeys.value = [...allMenuKeys.value];
 }

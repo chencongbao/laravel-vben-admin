@@ -12,6 +12,7 @@
     "search": "查询"
   },
   "errors": {
+    "permissionDenied": "没有执行此操作的权限",
     "privilegeEscalationDenied": "不能分配或修改超出当前账号权限范围的角色和权限",
     "validationFailed": "表单内容不正确，请检查后重试"
   },

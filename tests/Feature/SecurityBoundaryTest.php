@@ -12,6 +12,7 @@ use Laravel\Sanctum\Sanctum;
 use Laravel\Sanctum\SanctumServiceProvider;
 use Orchestra\Testbench\TestCase;
 use Spatie\Activitylog\ActivitylogServiceProvider;
+use Spatie\Activitylog\Models\Activity;
 
 final class SecurityBoundaryTest extends TestCase
 {
@@ -106,6 +107,152 @@ final class SecurityBoundaryTest extends TestCase
         ])->assertUnprocessable()->assertJsonValidationErrors('role_ids');
 
         self::assertFalse(AdminUser::query()->where('username', 'multiple-roles-user')->exists());
+    }
+
+    public function test_administrator_can_update_own_profile_but_cannot_change_own_status_or_role(): void
+    {
+        $this->artisan('vben-admin:install')->assertSuccessful();
+        $administrator = AdminUser::query()->where('username', 'admin')->firstOrFail();
+        Sanctum::actingAs($administrator, ['admin']);
+
+        $this->patchJson('/api/admin/system/users/'.$administrator->getKey(), [
+            'name' => 'Updated administrator',
+        ])->assertOk()->assertJsonPath('user.name', 'Updated administrator');
+
+        $this->patchJson('/api/admin/system/users/'.$administrator->getKey(), [
+            'is_active' => false,
+        ])->assertUnprocessable()->assertJsonPath('code', 'ADMIN_SELF_STATUS_CHANGE_DENIED');
+
+        self::assertTrue($administrator->fresh()->is_active);
+
+        $selfManagedRole = AdminRole::query()->create([
+            'code' => 'self-managed',
+            'name' => 'Self managed',
+            'is_active' => true,
+        ]);
+        $alternativeRole = AdminRole::query()->create([
+            'code' => 'alternative',
+            'name' => 'Alternative',
+            'is_active' => true,
+        ]);
+        $selfManagedRole->permissions()->sync([
+            AdminPermission::query()->where('code', 'system.user.update')->valueOrFail('id'),
+        ]);
+        $selfManagedUser = AdminUser::query()->create([
+            'username' => 'self-managed-user',
+            'name' => 'Self managed user',
+            'password' => 'SecurePassword123',
+            'is_active' => true,
+        ]);
+        $selfManagedUser->roles()->sync([$selfManagedRole->getKey()]);
+        Sanctum::actingAs($selfManagedUser, ['admin']);
+
+        $this->patchJson('/api/admin/system/users/'.$selfManagedUser->getKey(), [
+            'role_ids' => [$alternativeRole->getKey()],
+        ])->assertUnprocessable()->assertJsonPath('code', 'ADMIN_SELF_ROLE_CHANGE_DENIED');
+
+        self::assertTrue($selfManagedUser->roles()->whereKey($selfManagedRole->getKey())->exists());
+    }
+
+    public function test_user_role_options_include_every_active_non_super_role_and_creation_rejects_super_role(): void
+    {
+        $this->artisan('vben-admin:install')->assertSuccessful();
+        $superAdministrator = AdminUser::query()->where('username', 'cmsadmin')->firstOrFail();
+        $administrator = AdminUser::query()->where('username', 'admin')->firstOrFail();
+        $superRole = AdminRole::query()->where('code', 'administrator')->firstOrFail();
+        $managerRole = AdminRole::query()->where('code', 'manager')->firstOrFail();
+        $customRole = AdminRole::query()->create([
+            'code' => 'user-role-option',
+            'name' => 'User role option',
+            'is_active' => true,
+        ]);
+        $disabledRole = AdminRole::query()->create([
+            'code' => 'disabled-user-role-option',
+            'name' => 'Disabled user role option',
+            'is_active' => false,
+        ]);
+
+        Sanctum::actingAs($administrator, ['admin']);
+        $response = $this->getJson('/api/admin/system/users/role-options')->assertOk();
+        $roleIds = collect($response->json('roles'))->pluck('id')->all();
+        self::assertContains($managerRole->getKey(), $roleIds);
+        self::assertContains($customRole->getKey(), $roleIds);
+        self::assertNotContains($superRole->getKey(), $roleIds);
+        self::assertNotContains($disabledRole->getKey(), $roleIds);
+
+        Sanctum::actingAs($superAdministrator, ['admin']);
+        $this->postJson('/api/admin/system/users', [
+            'name' => 'Rejected super administrator',
+            'password' => 'SecurePassword123',
+            'role_ids' => [$superRole->getKey()],
+            'username' => 'rejected-super-administrator',
+        ])->assertUnprocessable()->assertJsonPath('code', 'ADMIN_SUPER_ROLE_ASSIGNMENT_DENIED');
+
+        self::assertFalse(AdminUser::query()->where('username', 'rejected-super-administrator')->exists());
+    }
+
+    public function test_administrator_and_super_administrator_can_delete_only_ordinary_users(): void
+    {
+        $this->artisan('vben-admin:install')->assertSuccessful();
+        $superAdministrator = AdminUser::query()->where('username', 'cmsadmin')->firstOrFail();
+        $administrator = AdminUser::query()->where('username', 'admin')->firstOrFail();
+        $ordinaryRole = AdminRole::query()->create([
+            'code' => 'deletable-user-role',
+            'name' => 'Deletable user role',
+            'is_active' => true,
+        ]);
+        $managerTarget = AdminUser::query()->create([
+            'username' => 'additional-manager',
+            'name' => 'Additional manager',
+            'password' => 'SecurePassword123',
+            'is_active' => true,
+        ]);
+        $managerTarget->roles()->sync([AdminRole::query()->where('code', 'manager')->valueOrFail('id')]);
+        $administratorTarget = AdminUser::query()->create([
+            'username' => 'additional-super-administrator',
+            'name' => 'Additional super administrator',
+            'password' => 'SecurePassword123',
+            'is_active' => true,
+        ]);
+        $administratorTarget->roles()->sync([AdminRole::query()->where('code', 'administrator')->valueOrFail('id')]);
+        $ordinaryUserForManager = AdminUser::query()->create([
+            'username' => 'ordinary-user-for-manager',
+            'name' => 'Ordinary user for manager',
+            'password' => 'SecurePassword123',
+            'is_active' => true,
+        ]);
+        $ordinaryUserForManager->roles()->sync([$ordinaryRole->getKey()]);
+        $ordinaryUserForSuper = AdminUser::query()->create([
+            'username' => 'ordinary-user-for-super',
+            'name' => 'Ordinary user for super',
+            'password' => 'SecurePassword123',
+            'is_active' => true,
+        ]);
+        $ordinaryUserForSuper->roles()->sync([$ordinaryRole->getKey()]);
+
+        Sanctum::actingAs($administrator, ['admin']);
+        $this->deleteJson('/api/admin/system/users/'.$ordinaryUserForManager->getKey())->assertNoContent();
+        $this->deleteJson('/api/admin/system/users/'.$managerTarget->getKey())
+            ->assertUnprocessable()
+            ->assertJsonPath('code', 'PROTECTED_ADMIN_USER_DELETE_DENIED');
+        $this->deleteJson('/api/admin/system/users/'.$administratorTarget->getKey())
+            ->assertUnprocessable()
+            ->assertJsonPath('code', 'PROTECTED_ADMIN_USER_DELETE_DENIED');
+
+        Sanctum::actingAs($superAdministrator, ['admin']);
+        $this->deleteJson('/api/admin/system/users/'.$ordinaryUserForSuper->getKey())->assertNoContent();
+        $this->deleteJson('/api/admin/system/users/'.$administrator->getKey())
+            ->assertUnprocessable()
+            ->assertJsonPath('code', 'PROTECTED_ADMIN_USER_DELETE_DENIED');
+        $this->deleteJson('/api/admin/system/users/'.$superAdministrator->getKey())
+            ->assertUnprocessable()
+            ->assertJsonPath('code', 'PROTECTED_ADMIN_USER_DELETE_DENIED');
+
+        self::assertFalse(AdminUser::query()->whereKey($ordinaryUserForManager->getKey())->exists());
+        self::assertFalse(AdminUser::query()->whereKey($ordinaryUserForSuper->getKey())->exists());
+        self::assertTrue(AdminUser::query()->whereKey($managerTarget->getKey())->exists());
+        self::assertTrue(AdminUser::query()->whereKey($administratorTarget->getKey())->exists());
+        self::assertSame(2, Activity::query()->where('event', 'system.user.deleted')->count());
     }
 
     public function test_default_administrator_accounts_keep_their_fixed_roles_and_usernames(): void
@@ -203,6 +350,37 @@ final class SecurityBoundaryTest extends TestCase
             'permission_ids' => [$permission->getKey()],
             'menu_ids' => [$menu->getKey()],
         ])->assertForbidden()->assertJsonPath('code', 'ADMIN_SUPER_ADMIN_REQUIRED');
+    }
+
+    public function test_manager_can_create_and_update_custom_roles_within_their_own_access_scope(): void
+    {
+        $this->artisan('vben-admin:install')->assertSuccessful();
+        $administrator = AdminUser::query()->where('username', 'admin')->firstOrFail();
+        $rolePermission = AdminPermission::query()->where('code', 'system.role.view')->firstOrFail();
+        $roleMenu = AdminMenu::query()->where('code', 'system.roles')->firstOrFail();
+        Sanctum::actingAs($administrator, ['admin']);
+
+        $response = $this->postJson('/api/admin/system/roles', [
+            'code' => 'content-editor',
+            'name' => 'Content editor',
+            'permission_ids' => [$rolePermission->getKey()],
+            'menu_ids' => [$roleMenu->getKey()],
+        ])->assertCreated()
+            ->assertJsonPath('role.code', 'content-editor');
+
+        $role = AdminRole::query()->findOrFail($response->json('role.id'));
+        self::assertFalse($role->is_system);
+        self::assertFalse($role->is_super_admin);
+
+        $this->patchJson('/api/admin/system/roles/'.$role->getKey(), [
+            'code' => 'content-editor',
+            'name' => 'Senior content editor',
+            'permission_ids' => [$rolePermission->getKey()],
+            'menu_ids' => [$roleMenu->getKey()],
+        ])->assertOk()
+            ->assertJsonPath('role.name', 'Senior content editor');
+
+        self::assertSame('Senior content editor', $role->fresh()->name);
     }
 
     public function test_administrator_username_is_immutable_after_creation(): void
@@ -338,5 +516,43 @@ final class SecurityBoundaryTest extends TestCase
         $this->getJson('/api/admin/system/roles/'.$customRole->getKey())
             ->assertOk()
             ->assertJsonPath('role.code', 'content-editor');
+    }
+
+    public function test_manager_can_load_role_access_options_without_menu_or_permission_management_access(): void
+    {
+        $this->artisan('vben-admin:install')->assertSuccessful();
+        $administrator = AdminUser::query()->where('username', 'admin')->firstOrFail();
+        $managerRole = $administrator->roles()->firstOrFail();
+        $roleViewPermission = AdminPermission::query()->where('code', 'system.role.view')->firstOrFail();
+        $menuManagementPermission = AdminPermission::query()->where('code', 'system.menu.view')->firstOrFail();
+        $permissionManagementPermission = AdminPermission::query()->where('code', 'system.permission.view')->firstOrFail();
+        $managerRole->permissions()->syncWithoutDetaching([$roleViewPermission->getKey()]);
+        $managerRole->permissions()->detach([$menuManagementPermission->getKey(), $permissionManagementPermission->getKey()]);
+        $expectedPermissionIds = $managerRole->permissions()->pluck('admin_permissions.id')->sort()->values()->all();
+        $expectedMenuIds = $managerRole->menus()
+            ->where('code', '!=', 'dashboard.workspace')
+            ->pluck('admin_menus.id')
+            ->sort()
+            ->values()
+            ->all();
+        Sanctum::actingAs($administrator, ['admin']);
+
+        $this->getJson('/api/admin/system/permissions?per_page=100')
+            ->assertForbidden()
+            ->assertJsonPath('code', 'ADMIN_PERMISSION_DENIED');
+        $this->getJson('/api/admin/system/menus')
+            ->assertForbidden()
+            ->assertJsonPath('code', 'ADMIN_PERMISSION_DENIED');
+
+        $response = $this->getJson('/api/admin/system/roles/access-options')->assertOk();
+
+        self::assertSame(
+            $expectedPermissionIds,
+            collect($response->json('permissions'))->pluck('id')->sort()->values()->all(),
+        );
+        self::assertSame(
+            $expectedMenuIds,
+            collect($response->json('menus'))->pluck('id')->sort()->values()->all(),
+        );
     }
 }

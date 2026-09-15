@@ -3,6 +3,7 @@
 namespace Chencongbao\LaravelVbenAdmin\Http\Controllers;
 
 use Chencongbao\LaravelVbenAdmin\Models\AdminUser;
+use Chencongbao\LaravelVbenAdmin\Services\PrivilegeAssignmentGuard;
 use Chencongbao\LaravelVbenAdmin\Support\AdminPagination;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -11,6 +12,8 @@ use Spatie\Activitylog\Models\Activity;
 
 final class AdminLogController extends Controller
 {
+    public function __construct(private readonly PrivilegeAssignmentGuard $privilegeGuard) {}
+
     public function audit(Request $request): JsonResponse
     {
         $filters = $request->validate([
@@ -157,9 +160,25 @@ final class AdminLogController extends Controller
         }
         $perPage = AdminPagination::perPage($filters['per_page'] ?? null);
         $id = $filters['id'] ?? null;
+        /** @var AdminUser $actor */
+        $actor = $request->user();
+        $canViewSuperAdministratorLogs = $this->privilegeGuard->isSuperAdmin($actor);
+        $superAdministrators = AdminUser::query()
+            ->whereHas('roles', fn ($query) => $query->where('is_active', true)->where('is_super_admin', true))
+            ->get(['id', 'username']);
+        $superAdministratorIds = $superAdministrators->pluck('id')->all();
+        $superAdministratorUsernames = $superAdministrators->pluck('username')->filter()->all();
         $logs = Activity::query()
             ->where('log_name', config('laravel-vben-admin.activity_log.log_name', 'admin'))
             ->where('log_type', 'login')
+            ->when(! $canViewSuperAdministratorLogs, function ($query) use ($superAdministratorIds, $superAdministratorUsernames): void {
+                $query
+                    ->where(function ($visibilityQuery) use ($superAdministratorIds): void {
+                        $visibilityQuery->whereNull('causer_id')
+                            ->orWhereNotIn('causer_id', $superAdministratorIds);
+                    })
+                    ->when($superAdministratorUsernames !== [], fn ($visibilityQuery) => $visibilityQuery->whereNotIn('properties->username', $superAdministratorUsernames));
+            })
             ->when($id, fn ($query) => $query->whereKey($id))
             ->when($filters['username'] ?? null, fn ($query, $username) => $query->where('properties->username', 'like', "%{$username}%"))
             ->when(array_key_exists('succeeded', $filters), fn ($query) => $query->where('properties->succeeded', $filters['succeeded']))

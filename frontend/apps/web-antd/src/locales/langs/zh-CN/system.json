@@ -10,6 +10,9 @@
   "errors": {
     "adminSelfDemotionDenied": "不能移除当前账号自己的超级管理员角色",
     "adminSelfDisableDenied": "不能禁用当前登录账号",
+    "adminSelfRoleChangeDenied": "不能修改当前登录账号自己的角色",
+    "adminSelfStatusChangeDenied": "不能修改当前登录账号自己的状态",
+    "superRoleAssignmentDenied": "新增用户不能分配超级管理员角色",
     "builtInAdminIdentityProtected": "内置管理员账号身份不能修改",
     "builtInAdminRoleProtected": "内置管理员账号的固定角色不能修改",
     "defaultMenuProtected": "默认工作台菜单不能修改",
@@ -20,6 +23,7 @@
     "permissionHasChildren": "请先删除或移动子权限",
     "permissionInUse": "该权限已分配给角色，不能删除",
     "permissionReorderIncomplete": "必须提交完整的权限树进行排序",
+    "protectedAdminUserDeleteDenied": "管理员和超级管理员账号不能删除",
     "roleInUse": "该角色已分配给用户，不能删除",
     "superAdminRequired": "只有超级管理员可以修改管理员角色",
     "systemMenuProtected": "系统菜单不能修改或删除",
@@ -33,9 +37,10 @@
     "fields": {
       "active": "启用", "loginAllowlist": "登录 IP 白名单", "name": "姓名", "newPassword": "新密码（不修改请留空）", "password": "密码", "role": "角色", "security": "登录安全", "twoFactor": "Google 2FA", "username": "用户名"
     },
-    "messages": { "required": "请完整填写用户名、姓名和密码", "saved": "用户保存成功" },
+    "messages": { "deleted": "用户已删除", "required": "请完整填写用户名、姓名和密码", "saved": "用户保存成功" },
     "placeholders": { "allowlist": "填写后自动开启；留空表示未开启。每行一个，例如：\n203.0.113.10\n10.0.0.0/24\n2001:db8::/32" },
-    "tips": { "allowlist": "非本地环境必须设置白名单并且当前 IP 命中才能登录。", "password": "密码至少 12 位，并且必须同时包含大写字母、小写字母和数字。", "twoFactor": "开启后，白名单校验通过才会在登录页绑定或验证 Google 验证器。" }
+    "tips": { "allowlist": "非本地环境必须设置白名单并且当前 IP 命中才能登录。", "password": "密码至少 12 位，并且必须同时包含大写字母、小写字母和数字。", "twoFactor": "开启后，白名单校验通过才会在登录页绑定或验证 Google 验证器。" },
+    "prompts": { "delete": "确定删除该用户？" }
   },
   "userList": {
     "fields": { "action": "操作", "lastLoginAt": "最近登录时间", "lastLoginIp": "最近登录 IP", "loginAllowlist": "登录白名单", "name": "姓名", "role": "角色", "status": "状态", "twoFactor": "Google 2FA", "username": "用户名" },
@@ -69,7 +74,7 @@
       "access": "系统管理",
       "logs": { "access": "系统日志" },
       "configuration": { "access": "配置管理" },
-      "user": { "view": "用户管理", "create": "新增用户", "update": "编辑用户" },
+      "user": { "view": "用户管理", "create": "新增用户", "update": "编辑用户", "delete": "删除用户" },
       "role": { "view": "角色管理", "create": "新增角色", "update": "编辑角色", "delete": "删除角色" },
       "permission": { "view": "权限管理", "create": "新增权限", "update": "编辑权限", "delete": "删除权限" },
       "menu": { "view": "菜单管理", "create": "新增菜单", "update": "编辑菜单", "delete": "删除菜单" },
@@ -121,7 +126,7 @@
     "actionTypes": { "created": "新增", "deleted": "删除", "other": "其他", "updated": "修改" },
     "actionNames": {
       "avatarUpdated": "修改头像", "passwordUpdated": "修改密码", "profileUpdated": "修改个人资料", "sessionRevoked": "撤销登录会话", "sessionsRevoked": "撤销其他登录会话", "twoFactorConfirmed": "绑定双重验证", "twoFactorDisabled": "关闭双重验证", "twoFactorEnabled": "开启双重验证",
-      "menuCreated": "新增菜单", "menuDeleted": "删除菜单", "menuReordered": "调整菜单排序", "menuUpdated": "编辑菜单", "permissionCreated": "新增权限", "permissionDeleted": "删除权限", "permissionReordered": "调整权限排序", "permissionUpdated": "编辑权限", "roleAccessUpdated": "修改角色授权", "roleCreated": "新增角色", "roleDeleted": "删除角色", "roleUpdated": "编辑角色", "settingsUpdated": "编辑系统配置", "themeSettingsUpdated": "编辑主题配置", "userCreated": "新增用户", "userUpdated": "编辑用户"
+      "menuCreated": "新增菜单", "menuDeleted": "删除菜单", "menuReordered": "调整菜单排序", "menuUpdated": "编辑菜单", "permissionCreated": "新增权限", "permissionDeleted": "删除权限", "permissionReordered": "调整权限排序", "permissionUpdated": "编辑权限", "roleAccessUpdated": "修改角色授权", "roleCreated": "新增角色", "roleDeleted": "删除角色", "roleUpdated": "编辑角色", "settingsUpdated": "编辑系统配置", "themeSettingsUpdated": "编辑主题配置", "userCreated": "新增用户", "userDeleted": "删除用户", "userUpdated": "编辑用户"
     },
     "subjectTypes": { "menu": "菜单", "permission": "权限", "role": "角色", "setting": "系统配置", "user": "用户" },
     "detail": { "after": "修改后", "before": "修改前", "changes": "变更详情", "context": "业务上下文", "field": "字段", "noChanges": "没有字段变更", "request": "请求信息", "requestId": "请求编号", "requestInput": "请求参数（已脱敏）", "routeName": "路由名称", "title": "操作日志详情 #{id}", "unknownActor": "未知操作者" }

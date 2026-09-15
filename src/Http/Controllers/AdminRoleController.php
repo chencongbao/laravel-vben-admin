@@ -35,6 +35,26 @@ final class AdminRoleController extends Controller
             ->paginate($perPage));
     }
 
+    public function accessOptions(Request $request): JsonResponse
+    {
+        $permissionIds = $this->privilegeGuard->accessiblePermissionIds($request->user());
+        $menuIds = $this->privilegeGuard->accessibleMenuIds($request->user());
+
+        return response()->json([
+            'permissions' => AdminPermission::query()
+                ->when($permissionIds !== null, fn ($query) => $query->whereKey($permissionIds))
+                ->orderBy('sort')
+                ->orderBy('id')
+                ->get(['id', 'parent_id', 'code', 'name']),
+            'menus' => AdminMenu::query()
+                ->where('code', '!=', 'dashboard.workspace')
+                ->when($menuIds !== null, fn ($query) => $query->whereKey($menuIds))
+                ->orderBy('sort')
+                ->orderBy('id')
+                ->get(['id', 'parent_id', 'code', 'title']),
+        ]);
+    }
+
     public function store(Request $request): JsonResponse
     {
         $data = $this->validateRole($request);

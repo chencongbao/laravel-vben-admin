@@ -21,10 +21,14 @@ import { useAuthStore } from '#/store';
 const { apiURL } = useAppConfig(import.meta.env, import.meta.env.PROD);
 
 const localizedErrorKeys: Record<string, string> = {
+  ADMIN_PERMISSION_DENIED: 'common.errors.permissionDenied',
   ADMIN_PRIVILEGE_ESCALATION_DENIED: 'common.errors.privilegeEscalationDenied',
   ADMIN_SELF_DEMOTION_DENIED: 'system.errors.adminSelfDemotionDenied',
   ADMIN_SELF_DISABLE_DENIED: 'system.errors.adminSelfDisableDenied',
+  ADMIN_SELF_ROLE_CHANGE_DENIED: 'system.errors.adminSelfRoleChangeDenied',
+  ADMIN_SELF_STATUS_CHANGE_DENIED: 'system.errors.adminSelfStatusChangeDenied',
   ADMIN_SUPER_ADMIN_REQUIRED: 'system.errors.superAdminRequired',
+  ADMIN_SUPER_ROLE_ASSIGNMENT_DENIED: 'system.errors.superRoleAssignmentDenied',
   ADMIN_USERNAME_IMMUTABLE: 'system.errors.usernameImmutable',
   BUILTIN_ADMIN_IDENTITY_PROTECTED: 'system.errors.builtInAdminIdentityProtected',
   BUILTIN_ADMIN_ROLE_PROTECTED: 'system.errors.builtInAdminRoleProtected',
@@ -40,6 +44,7 @@ const localizedErrorKeys: Record<string, string> = {
   PERMISSION_HAS_CHILDREN: 'system.errors.permissionHasChildren',
   PERMISSION_IN_USE: 'system.errors.permissionInUse',
   PERMISSION_REORDER_INCOMPLETE: 'system.errors.permissionReorderIncomplete',
+  PROTECTED_ADMIN_USER_DELETE_DENIED: 'system.errors.protectedAdminUserDeleteDenied',
   ROLE_IN_USE: 'system.errors.roleInUse',
   SYSTEM_MENU_PROTECTED: 'system.errors.systemMenuProtected',
   SYSTEM_PERMISSION_PROTECTED: 'system.errors.systemPermissionProtected',

@@ -12,6 +12,7 @@
     "search": "Search"
   },
   "errors": {
+    "permissionDenied": "You do not have permission to perform this action.",
     "privilegeEscalationDenied": "You cannot assign or modify roles and permissions beyond your authority.",
     "validationFailed": "The form is invalid. Check the fields and try again."
   },

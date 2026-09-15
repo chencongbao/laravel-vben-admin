@@ -10,6 +10,9 @@
   "errors": {
     "adminSelfDemotionDenied": "You cannot remove your own super administrator role.",
     "adminSelfDisableDenied": "You cannot disable the currently signed-in account.",
+    "adminSelfRoleChangeDenied": "You cannot change the role of your own account.",
+    "adminSelfStatusChangeDenied": "You cannot change the status of your own account.",
+    "superRoleAssignmentDenied": "The super administrator role cannot be assigned to a new user.",
     "builtInAdminIdentityProtected": "The built-in administrator identity cannot be changed.",
     "builtInAdminRoleProtected": "The fixed role of a built-in administrator cannot be changed.",
     "defaultMenuProtected": "The default workspace menu cannot be modified.",
@@ -20,6 +23,7 @@
     "permissionHasChildren": "Delete or move the child permissions first.",
     "permissionInUse": "This permission is assigned to a role and cannot be deleted.",
     "permissionReorderIncomplete": "Submit the complete permission tree when reordering.",
+    "protectedAdminUserDeleteDenied": "Administrator and super administrator accounts cannot be deleted.",
     "roleInUse": "This role is assigned to a user and cannot be deleted.",
     "superAdminRequired": "Only a super administrator can modify the manager role.",
     "systemMenuProtected": "System menus cannot be modified or deleted.",
@@ -31,9 +35,10 @@
   "userForm": {
     "actions": { "create": "Create User", "edit": "Edit User" },
     "fields": { "active": "Enabled", "loginAllowlist": "Login IP Allowlist", "name": "Name", "newPassword": "New Password (leave blank to keep it)", "password": "Password", "role": "Role", "security": "Login Security", "twoFactor": "Google 2FA", "username": "Username" },
-    "messages": { "required": "Complete the username, name, and password fields.", "saved": "User saved" },
+    "messages": { "deleted": "User deleted", "required": "Complete the username, name, and password fields.", "saved": "User saved" },
     "placeholders": { "allowlist": "Adding entries enables the allowlist; leave blank to disable it. One entry per line, for example:\n203.0.113.10\n10.0.0.0/24\n2001:db8::/32" },
-    "tips": { "allowlist": "Outside the local environment, the current IP must match a configured allowlist entry to sign in.", "password": "Use at least 12 characters with uppercase letters, lowercase letters, and numbers.", "twoFactor": "After the allowlist check passes, the user binds or verifies Google Authenticator on the login page." }
+    "tips": { "allowlist": "Outside the local environment, the current IP must match a configured allowlist entry to sign in.", "password": "Use at least 12 characters with uppercase letters, lowercase letters, and numbers.", "twoFactor": "After the allowlist check passes, the user binds or verifies Google Authenticator on the login page." },
+    "prompts": { "delete": "Delete this user?" }
   },
   "userList": {
     "fields": { "action": "Actions", "lastLoginAt": "Last Login At", "lastLoginIp": "Last Login IP", "loginAllowlist": "Login Allowlist", "name": "Name", "role": "Role", "status": "Status", "twoFactor": "Google 2FA", "username": "Username" },
@@ -67,7 +72,7 @@
       "access": "System Management",
       "logs": { "access": "System Logs" },
       "configuration": { "access": "Configuration" },
-      "user": { "view": "User Management", "create": "Create User", "update": "Update User" },
+      "user": { "view": "User Management", "create": "Create User", "update": "Update User", "delete": "Delete User" },
       "role": { "view": "Role Management", "create": "Create Role", "update": "Update Role", "delete": "Delete Role" },
       "permission": { "view": "Permission Management", "create": "Create Permission", "update": "Update Permission", "delete": "Delete Permission" },
       "menu": { "view": "Menu Management", "create": "Create Menu", "update": "Update Menu", "delete": "Delete Menu" },
@@ -119,7 +124,7 @@
     "actionTypes": { "created": "Create", "deleted": "Delete", "other": "Other", "updated": "Update" },
     "actionNames": {
       "avatarUpdated": "Update Avatar", "passwordUpdated": "Update Password", "profileUpdated": "Update Profile", "sessionRevoked": "Revoke Session", "sessionsRevoked": "Revoke Other Sessions", "twoFactorConfirmed": "Confirm Two-Factor Authentication", "twoFactorDisabled": "Disable Two-Factor Authentication", "twoFactorEnabled": "Enable Two-Factor Authentication",
-      "menuCreated": "Create Menu", "menuDeleted": "Delete Menu", "menuReordered": "Reorder Menus", "menuUpdated": "Update Menu", "permissionCreated": "Create Permission", "permissionDeleted": "Delete Permission", "permissionReordered": "Reorder Permissions", "permissionUpdated": "Update Permission", "roleAccessUpdated": "Update Role Access", "roleCreated": "Create Role", "roleDeleted": "Delete Role", "roleUpdated": "Update Role", "settingsUpdated": "Update System Settings", "themeSettingsUpdated": "Update Theme Settings", "userCreated": "Create User", "userUpdated": "Update User"
+      "menuCreated": "Create Menu", "menuDeleted": "Delete Menu", "menuReordered": "Reorder Menus", "menuUpdated": "Update Menu", "permissionCreated": "Create Permission", "permissionDeleted": "Delete Permission", "permissionReordered": "Reorder Permissions", "permissionUpdated": "Update Permission", "roleAccessUpdated": "Update Role Access", "roleCreated": "Create Role", "roleDeleted": "Delete Role", "roleUpdated": "Update Role", "settingsUpdated": "Update System Settings", "themeSettingsUpdated": "Update Theme Settings", "userCreated": "Create User", "userDeleted": "Delete User", "userUpdated": "Update User"
     },
     "subjectTypes": { "menu": "Menu", "permission": "Permission", "role": "Role", "setting": "System Settings", "user": "User" },
     "detail": { "after": "After", "before": "Before", "changes": "Change Details", "context": "Business Context", "field": "Field", "noChanges": "No field changes", "request": "Request Information", "requestId": "Request ID", "requestInput": "Request Input (Redacted)", "routeName": "Route Name", "title": "Operation Log Details #{id}", "unknownActor": "Unknown Actor" }

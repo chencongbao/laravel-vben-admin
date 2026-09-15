@@ -4,10 +4,11 @@ import type { TableColumnsType } from 'ant-design-vue';
 import { computed, onMounted, reactive, ref } from 'vue';
 
 import { Page } from '@vben/common-ui';
+import { useUserStore } from '@vben/stores';
 
-import { Card, Form, FormItem, Input, InputNumber, message, Modal, Select, Space, Switch, Table, Tag } from 'ant-design-vue';
+import { Card, Form, FormItem, Input, InputNumber, message, Modal, Popconfirm, Select, Space, Switch, Table, Tag } from 'ant-design-vue';
 
-import { createResource, getResource, updateResource } from '#/api/system';
+import { createResource, deleteResource, getCollection, getResource, updateResource } from '#/api/system';
 import ListRefreshButton from '#/components/system/list-refresh-button.vue';
 import ListSearchField from '#/components/system/list-search-field.vue';
 import ListSearchPanel from '#/components/system/list-search-panel.vue';
@@ -33,10 +34,12 @@ interface AdminUser {
 }
 
 const loading = ref(false);
+const userStore = useUserStore();
 const { setTableRef, tableScrollY } = useAdminTableScrollY();
 const saving = ref(false);
 const visible = ref(false);
 const editingId = ref<number>();
+const editingRole = ref<Role>();
 const users = ref<AdminUser[]>([]);
 const roles = ref<Role[]>([]);
 const pagination = reactive(createAdminPagination());
@@ -57,13 +60,25 @@ const columns = computed<TableColumnsType>(() => [
   { dataIndex: 'login_ip_whitelist', title: $t('system.userList.fields.loginAllowlist') },
   { dataIndex: 'last_login_ip', title: $t('system.userList.fields.lastLoginIp') },
   { dataIndex: 'last_login_at', title: $t('system.userList.fields.lastLoginAt') },
-  { dataIndex: 'is_active', title: $t('system.userList.fields.status') }, { dataIndex: 'action', fixed: 'right', title: $t('system.userList.fields.action'), width: 58 },
+  { dataIndex: 'is_active', title: $t('system.userList.fields.status') }, { dataIndex: 'action', fixed: 'right', title: $t('system.userList.fields.action'), width: 82 },
 ]);
 const isFixedRoleAccount = computed(() => editingId.value !== undefined && ['admin', 'cmsadmin'].includes(form.username));
+const isEditingSelf = computed(() => editingId.value !== undefined && String(editingId.value) === userStore.userInfo?.userId);
+const isRoleLocked = computed(() => isFixedRoleAccount.value || isEditingSelf.value);
+const roleOptions = computed(() => {
+  const availableRoles = [...roles.value];
+  if (editingRole.value && !availableRoles.some((role) => role.id === editingRole.value?.id)) {
+    availableRoles.push(editingRole.value);
+  }
+  return availableRoles.map((role) => ({ label: `${roleName(role)} (${role.code})`, value: role.id }));
+});
 function roleName(role: Role) {
   const roleNameKey = `system.roleNames.${role.code}`;
   const localizedName = $t(roleNameKey);
   return localizedName === roleNameKey ? $t(role.name) : localizedName;
+}
+function isProtectedAccount(user: Record<string, any>) {
+  return (user.roles ?? []).some((role: Role) => ['administrator', 'manager'].includes(role.code));
 }
 
 async function load() {
@@ -71,16 +86,17 @@ async function load() {
   try {
     const [userResult, roleResult] = await Promise.all([
       getResource('/system/users', { id: searchId.value, page: pagination.current, per_page: pagination.pageSize }),
-      getResource('/system/roles', { per_page: 100 }),
+      getCollection<{ roles: Role[] }>('/system/users/role-options'),
     ]);
     users.value = userResult.data as AdminUser[];
-    roles.value = roleResult.data as Role[];
+    roles.value = roleResult.roles;
     pagination.total = userResult.total;
   } finally { loading.value = false; }
 }
 
 function open(record?: any) {
   editingId.value = record?.id;
+  editingRole.value = record?.roles[0];
   Object.assign(form, {
     is_active: record?.is_active ?? true, name: record?.name ?? '', password: '',
     login_ip_whitelist: record?.login_ip_whitelist?.join('\n') ?? '',
@@ -103,10 +119,20 @@ async function save() {
       role_ids: form.role_id ? [form.role_id] : [],
     };
     delete payload.role_id;
+    if (isEditingSelf.value) {
+      delete payload.is_active;
+      delete payload.role_ids;
+    }
     if (!payload.password) delete payload.password;
     await (editingId.value ? updateResource('/system/users', editingId.value, payload) : createResource('/system/users', payload));
     visible.value = false; message.success($t('system.userForm.messages.saved')); await load();
   } finally { saving.value = false; }
+}
+
+async function remove(user: Record<string, any>) {
+  await deleteResource('/system/users', user.id);
+  message.success($t('system.userForm.messages.deleted'));
+  await load();
 }
 
 function changePage(page: { current?: number; pageSize?: number }) {
@@ -132,7 +158,12 @@ onMounted(load);
           <Tag v-else-if="column.dataIndex === 'login_ip_whitelist'" :color="text?.length ? 'green' : 'red'">{{ text?.length ? $t('system.userList.states.allowlistConfigured', { count: text.length }) : $t('system.userList.states.allowlistUnset') }}</Tag>
           <span v-else-if="column.dataIndex === 'last_login_ip'">{{ text || '—' }}</span>
           <span v-else-if="column.dataIndex === 'last_login_at'">{{ formatBeijingDateTime(text) }}</span>
-          <PermissionButton v-else-if="column.dataIndex === 'action'" icon="lucide:pencil" icon-only permission="system.user.update" :tooltip="$t('system.userForm.actions.edit')" type="text" @click="open(record)" />
+          <Space v-else-if="column.dataIndex === 'action'">
+            <PermissionButton icon="lucide:pencil" icon-only permission="system.user.update" :tooltip="$t('system.userForm.actions.edit')" type="text" @click="open(record)" />
+            <Popconfirm v-if="!isProtectedAccount(record)" v-access:code="'system.user.delete'" :title="$t('system.userForm.prompts.delete')" @confirm="remove(record)">
+              <PermissionButton danger icon="lucide:trash-2" icon-only permission="system.user.delete" :tooltip="$t('system.common.actions.delete')" type="text" />
+            </Popconfirm>
+          </Space>
         </template>
       </Table>
     </Card>
@@ -144,8 +175,8 @@ onMounted(load);
           <Input.Password v-model:value="form.password" />
           <div class="setting-tip">{{ $t('system.userForm.tips.password') }}</div>
         </FormItem>
-        <FormItem :label="$t('system.userForm.fields.role')"><Select v-model:value="form.role_id" allow-clear :disabled="isFixedRoleAccount" :options="roles.map((role) => ({ label: `${roleName(role)} (${role.code})`, value: role.id }))" /></FormItem>
-        <FormItem :label="$t('system.userForm.fields.active')"><Switch v-model:checked="form.is_active" /></FormItem>
+        <FormItem :label="$t('system.userForm.fields.role')"><Select v-model:value="form.role_id" allow-clear :disabled="isRoleLocked" :options="roleOptions" /></FormItem>
+        <FormItem :label="$t('system.userForm.fields.active')"><Switch v-model:checked="form.is_active" :disabled="isEditingSelf" /></FormItem>
         <div class="security-settings">
           <h3>{{ $t('system.userForm.fields.security') }}</h3>
           <FormItem :label="$t('system.userForm.fields.twoFactor')">

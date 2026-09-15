@@ -46,6 +46,17 @@ final class AdminUserController extends Controller
         return response()->json($users);
     }
 
+    public function roleOptions(): JsonResponse
+    {
+        return response()->json([
+            'roles' => AdminRole::query()
+                ->where('is_active', true)
+                ->where('is_super_admin', false)
+                ->latest('id')
+                ->get(['id', 'code', 'name']),
+        ]);
+    }
+
     public function store(Request $request): JsonResponse
     {
         $data = $request->validate([
@@ -63,6 +74,11 @@ final class AdminUserController extends Controller
             'role_ids' => ['sometimes', 'array', 'max:1'],
             'role_ids.*' => ['integer', 'distinct', Rule::exists(config('laravel-vben-admin.tables.roles', 'admin_roles'), 'id')->where('is_active', true)],
         ]);
+
+        if (array_key_exists('role_ids', $data)
+            && AdminRole::query()->whereKey($data['role_ids'])->where('is_super_admin', true)->exists()) {
+            return response()->json(['message' => 'The super administrator role cannot be assigned to a new user.', 'code' => 'ADMIN_SUPER_ROLE_ASSIGNMENT_DENIED'], 422);
+        }
 
         if (array_key_exists('role_ids', $data) && ! $this->privilegeGuard->canAssignRoles($request->user(), $data['role_ids'])) {
             return response()->json(['message' => 'Role assignment exceeds your authority.', 'code' => 'ADMIN_PRIVILEGE_ESCALATION_DENIED'], 403);
@@ -127,19 +143,24 @@ final class AdminUserController extends Controller
                 }
             }
         }
-        if ($adminUser->is($request->user()) && array_key_exists('is_active', $data) && ! $data['is_active']) {
-            return response()->json(['message' => 'You cannot disable your own account.', 'code' => 'ADMIN_SELF_DISABLE_DENIED'], 422);
+        if ($adminUser->is($request->user())
+            && array_key_exists('is_active', $data)
+            && (bool) $data['is_active'] !== (bool) $adminUser->is_active) {
+            return response()->json(['message' => 'You cannot modify the status of your own account.', 'code' => 'ADMIN_SELF_STATUS_CHANGE_DENIED'], 422);
+        }
+        if ($adminUser->is($request->user()) && array_key_exists('role_ids', $data)) {
+            $currentRoleIds = $adminUser->roles()->pluck('admin_roles.id')->map(fn ($id) => (int) $id)->sort()->values()->all();
+            $submittedRoleIds = collect($data['role_ids'])->map(fn ($id) => (int) $id)->sort()->values()->all();
+            if ($submittedRoleIds !== $currentRoleIds) {
+                return response()->json(['message' => 'You cannot modify the role of your own account.', 'code' => 'ADMIN_SELF_ROLE_CHANGE_DENIED'], 422);
+            }
+        }
+        if ($adminUser->is($request->user())) {
+            unset($data['is_active'], $data['role_ids']);
         }
         if (array_key_exists('role_ids', $data) && ! $this->privilegeGuard->canAssignRoles($request->user(), $data['role_ids'])) {
             return response()->json(['message' => 'Role assignment exceeds your authority.', 'code' => 'ADMIN_PRIVILEGE_ESCALATION_DENIED'], 403);
         }
-        if ($adminUser->is($request->user()) && array_key_exists('role_ids', $data)) {
-            $superRoleIds = AdminRole::query()->where('is_super_admin', true)->pluck('id')->all();
-            if ($adminUser->roles()->where('is_super_admin', true)->exists() && ! array_intersect($superRoleIds, $data['role_ids'])) {
-                return response()->json(['message' => 'You cannot remove your own super administrator role.', 'code' => 'ADMIN_SELF_DEMOTION_DENIED'], 422);
-            }
-        }
-
         DB::transaction(function () use ($data, $request, $adminUser): void {
             $trackedFields = ['username', 'name', 'is_active', 'two_factor_enabled', 'login_ip_whitelist'];
             $before = $adminUser->only($trackedFields);
@@ -157,5 +178,25 @@ final class AdminUserController extends Controller
         });
 
         return response()->json(['user' => $adminUser->load('roles:id,code,name')]);
+    }
+
+    public function destroy(Request $request, AdminUser $adminUser): JsonResponse
+    {
+        if ($adminUser->roles()->whereIn('code', ['administrator', 'manager'])->exists()) {
+            return response()->json([
+                'message' => 'Administrator and super administrator accounts cannot be deleted.',
+                'code' => 'PROTECTED_ADMIN_USER_DELETE_DENIED',
+            ], 422);
+        }
+
+        DB::transaction(function () use ($adminUser, $request): void {
+            $this->audit->record($request->user(), 'system.user.deleted', $adminUser, [
+                'before' => $adminUser->load('roles:id,code,name')->toArray(),
+            ]);
+            $adminUser->tokens()->delete();
+            $adminUser->delete();
+        });
+
+        return response()->json(status: 204);
     }
 }

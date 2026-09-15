@@ -4,6 +4,7 @@ namespace Chencongbao\LaravelVbenAdmin\Tests\Feature;
 
 use Chencongbao\LaravelVbenAdmin\Contracts\AuditRecorder;
 use Chencongbao\LaravelVbenAdmin\LaravelVbenAdminServiceProvider;
+use Chencongbao\LaravelVbenAdmin\Models\AdminPermission;
 use Chencongbao\LaravelVbenAdmin\Models\AdminUser;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
@@ -100,6 +101,50 @@ final class ActivityLogTest extends TestCase
         $this->deleteJson('/api/admin/system/login-logs/batch', ['ids' => [$failed->getKey()]])
             ->assertNotFound();
         self::assertTrue(Activity::query()->whereKey($failed->getKey())->exists());
+    }
+
+    public function test_only_super_administrators_can_view_super_administrator_login_logs(): void
+    {
+        $this->artisan('vben-admin:install')->assertSuccessful();
+        $this->app->detectEnvironment(fn (): string => 'local');
+
+        $this->postJson('/api/admin/auth/login', [
+            'username' => 'cmsadmin',
+            'password' => 'admin',
+        ])->assertOk();
+        $superSucceededLog = Activity::query()->where('event', 'auth.login.succeeded')->latest('id')->firstOrFail();
+
+        $this->postJson('/api/admin/auth/login', [
+            'username' => 'cmsadmin',
+            'password' => 'wrong-password',
+        ])->assertStatus(422);
+        $superFailedLog = Activity::query()->where('log_type', 'login')->latest('id')->firstOrFail();
+
+        $this->postJson('/api/admin/auth/login', [
+            'username' => 'admin',
+            'password' => 'wrong-password',
+        ])->assertStatus(422);
+        $administratorFailedLog = Activity::query()->where('log_type', 'login')->latest('id')->firstOrFail();
+
+        $superAdministrator = AdminUser::query()->where('username', 'cmsadmin')->firstOrFail();
+        $administrator = AdminUser::query()->where('username', 'admin')->firstOrFail();
+        $administrator->roles()->firstOrFail()->permissions()->syncWithoutDetaching([
+            AdminPermission::query()->where('code', 'system.login-log.view')->valueOrFail('id'),
+        ]);
+
+        Sanctum::actingAs($superAdministrator, ['admin']);
+        $this->getJson('/api/admin/system/login-logs?per_page=100')
+            ->assertOk()
+            ->assertJsonFragment(['id' => $superFailedLog->getKey()])
+            ->assertJsonFragment(['id' => $superSucceededLog->getKey()])
+            ->assertJsonFragment(['id' => $administratorFailedLog->getKey()]);
+
+        Sanctum::actingAs($administrator, ['admin']);
+        $this->getJson('/api/admin/system/login-logs?per_page=100')
+            ->assertOk()
+            ->assertJsonMissing(['id' => $superFailedLog->getKey()])
+            ->assertJsonMissing(['id' => $superSucceededLog->getKey()])
+            ->assertJsonFragment(['id' => $administratorFailedLog->getKey()]);
     }
 
     public function test_operation_audit_uses_spatie_and_redacts_sensitive_values(): void
