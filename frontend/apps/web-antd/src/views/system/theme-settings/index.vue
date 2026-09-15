@@ -10,6 +10,7 @@ import { computed, onMounted, ref } from 'vue';
 
 import { Page } from '@vben/common-ui';
 import {
+  IconifyIcon,
   InspectionPanel,
   MoonStar,
   PanelLeft,
@@ -675,6 +676,7 @@ onMounted(load);
 
         <div class="theme-actions">
           <Button :loading="saving" size="large" type="primary" @click="save">
+            <IconifyIcon icon="lucide:save" />
             {{ $t('configuration.themeForm.save') }}
           </Button>
         </div>

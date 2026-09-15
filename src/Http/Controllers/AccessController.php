@@ -45,23 +45,24 @@ final class AccessController extends Controller
         }
 
         $menus = $query->get()->map(fn (AdminMenu $menu) => [
+            'id' => $menu->getKey(),
             'code' => $menu->code,
-            'parent_code' => $menu->parent_code,
+            'parent_id' => $menu->parent_id,
             'type' => $menu->type,
             'name' => $menu->route_name,
             'path' => $menu->route_path,
             'view_key' => $menu->view_key,
             'meta' => ['title' => $menu->title, 'icon' => $menu->icon, 'order' => $menu->sort, 'hidden' => $menu->is_hidden, 'authority' => array_values(array_filter([$menu->permission_code]))],
             'children' => [],
-        ])->keyBy('code')->all();
+        ])->keyBy('id')->all();
 
         $tree = [];
-        foreach ($menus as $code => &$menu) {
-            $parentCode = $menu['parent_code'];
-            unset($menu['parent_code']);
+        foreach ($menus as $id => &$menu) {
+            $parentId = $menu['parent_id'];
+            unset($menu['id'], $menu['parent_id']);
 
-            if ($parentCode && isset($menus[$parentCode])) {
-                $menus[$parentCode]['children'][] = &$menu;
+            if ($parentId && isset($menus[$parentId])) {
+                $menus[$parentId]['children'][] = &$menu;
             } else {
                 $tree[] = &$menu;
             }

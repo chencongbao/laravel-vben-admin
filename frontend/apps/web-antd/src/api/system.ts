@@ -53,7 +53,7 @@ export function updateRoleAccess(
 }
 
 export function reorderMenus(
-  items: Array<{ id: number; parent_code: null | string; sort: number }>,
+  items: Array<{ id: number; parent_id: null | number; sort: number }>,
 ) {
   return requestClient.put('/system/menus/reorder', { items });
 }

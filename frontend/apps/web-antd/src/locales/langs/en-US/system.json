@@ -5,7 +5,7 @@
   "roles": "Roles",
   "rolesDescription": "Create and maintain roles, then assign menus and operation permissions.",
   "permissions": "Permissions",
-  "permissionsDescription": "Maintain server-side permission codes, active status, and sensitive-operation markers.",
+  "permissionsDescription": "Maintain permission hierarchy, server-side codes, API audit metadata, related menus, and sensitive-operation markers.",
   "menus": "Menus",
   "menusDescription": "Maintain menu hierarchy, routes, icons, ordering, and access permissions.",
   "loginLogs": "Login Logs",
@@ -25,9 +25,6 @@
   "settings": "Settings",
   "settingsDescription": "Manage the system name, default page size, and login-page settings in one place.",
   "settingsForm": {
-    "actions": {
-      "save": "Save settings"
-    },
     "fields": {
       "systemName": {
         "description": "The system name displayed in the upper-left corner of the administration panel.",

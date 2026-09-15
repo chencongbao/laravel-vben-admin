@@ -1,4 +1,6 @@
 <script lang="ts" setup>
+import type { Key } from 'ant-design-vue/es/_util/type';
+
 import { computed, onMounted, reactive, ref } from 'vue';
 
 import { useAccess } from '@vben/access';
@@ -8,8 +10,8 @@ import { $t } from '@vben/locales';
 
 import { Draggable } from '@he-tree/vue';
 import {
-  Button,
   Card,
+  Checkbox,
   Empty,
   Form,
   FormItem,
@@ -20,7 +22,7 @@ import {
   Select,
   Space,
   Switch,
-  TreeSelect,
+  Tree,
 } from 'ant-design-vue';
 
 import {
@@ -44,8 +46,9 @@ interface MenuItem {
   is_active: boolean;
   is_hidden: boolean;
   is_system: boolean;
-  parent_code?: null | string;
+  parent_id?: null | number;
   permission_code?: null | string;
+  permissions?: Permission[];
   route_name?: null | string;
   route_path?: null | string;
   sort: number;
@@ -63,11 +66,18 @@ interface Permission {
   code: string;
   id: number;
   name: string;
+  parent_id?: null | number;
+}
+
+interface PermissionTreeNode {
+  children?: PermissionTreeNode[];
+  key: Key;
+  title: string;
 }
 
 interface MenuOrderItem {
   id: number;
-  parent_code: null | string;
+  parent_id: null | number;
   sort: number;
 }
 
@@ -78,9 +88,9 @@ interface MenuTreeController {
 }
 
 interface MenuParentOption {
-  children: MenuParentOption[];
   label: string;
-  value: string;
+  searchText: string;
+  value: number;
 }
 
 interface MenuTreeStat {
@@ -94,6 +104,8 @@ const saving = ref(false);
 const menus = ref<MenuItem[]>([]);
 const draggableMenus = ref<MenuTreeNode[]>([]);
 const permissions = ref<Permission[]>([]);
+const checkedPermissionKeys = ref<Key[]>([]);
+const expandedPermissionKeys = ref<Key[]>([]);
 const editing = ref<MenuItem>();
 const selectedCode = ref<string>();
 const draggedCode = ref<string>();
@@ -105,7 +117,7 @@ const form = reactive({
   icon: '',
   is_active: true,
   is_hidden: false,
-  parent_code: undefined as string | undefined,
+  parent_id: 0,
   permission_code: undefined as string | undefined,
   route_name: '',
   route_path: '',
@@ -116,11 +128,11 @@ const form = reactive({
 });
 
 function buildMenuTree(items: MenuItem[]) {
-  const nodes = new Map<string, MenuTreeNode>();
-  items.forEach((item) => nodes.set(item.code, { ...item, children: [], key: item.code }));
+  const nodes = new Map<number, MenuTreeNode>();
+  items.forEach((item) => nodes.set(item.id, { ...item, children: [], key: item.code }));
   const roots: MenuTreeNode[] = [];
   nodes.forEach((item) => {
-    const parent = item.parent_code ? nodes.get(item.parent_code) : undefined;
+    const parent = item.parent_id ? nodes.get(item.parent_id) : undefined;
     if (parent) parent.children.push(item);
     else roots.push(item);
   });
@@ -129,39 +141,91 @@ function buildMenuTree(items: MenuItem[]) {
 
 const treeMenus = computed<MenuTreeNode[]>(() => buildMenuTree(menus.value));
 
-function descendantCodes(code: string) {
-  const descendants = new Set<string>();
-  const visit = (parentCode: string) => {
-    menus.value.filter((item) => item.parent_code === parentCode).forEach((item) => {
-      descendants.add(item.code);
-      visit(item.code);
+function descendantIds(id: number) {
+  const descendants = new Set<number>();
+  const visit = (parentId: number) => {
+    menus.value.filter((item) => item.parent_id === parentId).forEach((item) => {
+      descendants.add(item.id);
+      visit(item.id);
     });
   };
-  visit(code);
+  visit(id);
   return descendants;
 }
 
-const parentTree = computed(() => {
-  const excluded = editing.value ? descendantCodes(editing.value.code) : new Set<string>();
-  if (editing.value) excluded.add(editing.value.code);
-  const mapNode = (node: MenuTreeNode): MenuParentOption | undefined => {
-    if (excluded.has(node.code)) return undefined;
-    return {
-      children: node.children.flatMap((child) => {
-        const item = mapNode(child);
-        return item ? [item] : [];
-      }),
-      label: `${$t(node.title)}（${node.code}）`,
-      value: node.code,
-    };
+const parentOptions = computed<MenuParentOption[]>(() => {
+  const excluded = editing.value ? descendantIds(editing.value.id) : new Set<number>();
+  if (editing.value) excluded.add(editing.value.id);
+  const options: MenuParentOption[] = [{
+    label: '顶级菜单',
+    searchText: '顶级菜单',
+    value: 0,
+  }];
+  const appendNodes = (nodes: MenuTreeNode[], ancestorLast: boolean[] = []) => {
+    const visibleNodes = nodes.filter((node) => !excluded.has(node.id));
+    visibleNodes.forEach((node, index) => {
+      const isLast = index === visibleNodes.length - 1;
+      const title = $t(node.title);
+      const path = node.route_path || '';
+      const indentation = ancestorLast
+        .map((parentIsLast) => parentIsLast ? '　　' : '│　')
+        .join('');
+      options.push({
+        label: `${indentation}${isLast ? '└─ ' : '├─ '}${title}`,
+        searchText: `${title} ${path} ${node.code}`.toLowerCase(),
+        value: node.id,
+      });
+      appendNodes(node.children, [...ancestorLast, isLast]);
+    });
   };
-  return treeMenus.value.flatMap((node) => {
-    const item = mapNode(node);
-    return item ? [item] : [];
-  });
+  appendNodes(treeMenus.value);
+  return options;
 });
 
 const formTitle = computed(() => editing.value ? `编辑：${$t(editing.value.title)}` : '新增菜单');
+
+const permissionTree = computed<PermissionTreeNode[]>(() => {
+  const groups = new Map<string, Permission[]>();
+  permissions.value.forEach((permission) => {
+    const segments = permission.code.split('.');
+    const groupCode = segments.length > 2 ? segments.slice(0, -1).join('.') : permission.code;
+    groups.set(groupCode, [...(groups.get(groupCode) ?? []), permission]);
+  });
+  return [...groups.entries()].map(([groupCode, items]) => {
+    const owner = menus.value.find((menu) => {
+      if (!menu.permission_code) return false;
+      const segments = menu.permission_code.split('.');
+      return segments.slice(0, -1).join('.') === groupCode;
+    });
+    return {
+      children: items.map((permission) => ({
+        key: permission.id,
+        title: `${permission.name}（${permission.code}）`,
+      })),
+      key: `permission-group:${groupCode}`,
+      title: owner ? $t(owner.title) : groupCode,
+    };
+  });
+});
+
+const allPermissionKeys = computed<Key[]>(() => permissions.value.map((permission) => permission.id));
+const allPermissionGroupKeys = computed<Key[]>(() => permissionTree.value.map((group) => group.key));
+const permissionsExpanded = computed({
+  get: () => allPermissionGroupKeys.value.length > 0 && allPermissionGroupKeys.value.every((key) => expandedPermissionKeys.value.includes(key)),
+  set: (expanded: boolean) => {
+    expandedPermissionKeys.value = expanded ? [...allPermissionGroupKeys.value] : [];
+  },
+});
+const allPermissionsChecked = computed({
+  get: () => allPermissionKeys.value.length > 0 && allPermissionKeys.value.every((key) => checkedPermissionKeys.value.includes(key)),
+  set: (checked: boolean) => {
+    checkedPermissionKeys.value = checked ? [...allPermissionKeys.value] : [];
+  },
+});
+const permissionIndeterminate = computed(() => {
+  const checkedCount = allPermissionKeys.value.filter((key) => checkedPermissionKeys.value.includes(key)).length;
+  return checkedCount > 0 && checkedCount < allPermissionKeys.value.length;
+});
 
 async function load(selectCode?: string) {
   loading.value = true;
@@ -182,14 +246,20 @@ async function load(selectCode?: string) {
   }
 }
 
-function resetForm(parentCode?: string) {
+function createEmptyForm(parentId = 0) {
+  return {
+    code: '', icon: '', is_active: true, is_hidden: false,
+    parent_id: parentId, permission_code: undefined, route_name: '',
+    route_path: '', sort: 0, title: '', type: 'page', view_key: '',
+  };
+}
+
+function openCreate(parentId?: number) {
   editing.value = undefined;
   selectedCode.value = undefined;
-  Object.assign(form, {
-    code: '', icon: '', is_active: true, is_hidden: false,
-    parent_code: parentCode, permission_code: undefined, route_name: '',
-    route_path: '', sort: 0, title: '', type: 'page', view_key: '',
-  });
+  Object.assign(form, createEmptyForm(parentId));
+  checkedPermissionKeys.value = [];
+  expandedPermissionKeys.value = [...allPermissionGroupKeys.value];
 }
 
 function selectMenu(item: MenuItem) {
@@ -197,37 +267,87 @@ function selectMenu(item: MenuItem) {
   selectedCode.value = item.code;
   Object.assign(form, {
     code: item.code, icon: item.icon ?? '', is_active: item.is_active,
-    is_hidden: item.is_hidden, parent_code: item.parent_code ?? undefined,
+    is_hidden: item.is_hidden, parent_id: item.parent_id ?? 0,
     permission_code: item.permission_code ?? undefined,
     route_name: item.route_name ?? '', route_path: item.route_path ?? '',
     sort: item.sort, title: item.title, type: item.type, view_key: item.view_key ?? '',
   });
+  checkedPermissionKeys.value = (item.permissions ?? []).map((permission) => permission.id);
+  expandedPermissionKeys.value = [...allPermissionGroupKeys.value];
+}
+
+function resetEditor() {
+  if (editing.value) selectMenu(editing.value);
+  else Object.assign(form, createEmptyForm(form.parent_id));
+}
+
+function closeEditor() {
+  openCreate();
 }
 
 function addChild(item: MenuTreeNode) {
-  resetForm(item.code);
   const tree = menuTreeRef.value;
   if (tree) tree.getStat(item).open = true;
+  openCreate(item.id);
+}
+
+function codeFromRoutePath(path: string) {
+  return path
+    .split(/[?#]/, 1)[0]
+    ?.replaceAll(/^\/+|\/+$/g, '')
+    .replaceAll(/\/+/g, '.')
+    .toLowerCase() ?? '';
+}
+
+function routeNameFromCode(code: string) {
+  return code
+    .split(/[^a-zA-Z0-9]+/)
+    .filter(Boolean)
+    .map((segment) => `${segment.charAt(0).toUpperCase()}${segment.slice(1)}`)
+    .join('');
+}
+
+function syncGeneratedRouteFields() {
+  if (editing.value?.is_system) return;
+  const code = codeFromRoutePath(form.route_path);
+  form.code = code;
+  form.route_name = routeNameFromCode(code);
+  form.view_key = form.type === 'page' ? code : '';
+}
+
+function handleRoutePathInput(value: string) {
+  form.route_path = value;
+  syncGeneratedRouteFields();
 }
 
 async function save() {
+  syncGeneratedRouteFields();
   if (!form.code || !form.title || !form.type) {
-    return void message.warning('请填写菜单编码、标题和类型');
+    return void message.warning('请填写菜单标题、路由路径和类型');
   }
   saving.value = true;
   try {
+    const permissionIds = checkedPermissionKeys.value
+      .filter((key): key is number => typeof key === 'number');
+    const selectedPermissions = permissions.value.filter((permission) => permissionIds.includes(permission.id));
+    let permissionCode = form.permission_code;
+    if (!selectedPermissions.some((permission) => permission.code === permissionCode)) {
+      permissionCode = selectedPermissions.find((permission) => permission.code.endsWith('.view'))?.code ?? selectedPermissions[0]?.code;
+    }
     const payload = {
       ...form,
       icon: form.icon || null,
-      parent_code: form.parent_code || null,
-      permission_code: form.permission_code || null,
+      parent_id: form.parent_id || null,
+      permission_code: permissionCode || null,
+      permission_ids: permissionIds,
       route_name: form.route_name || null,
       route_path: form.route_path || null,
       view_key: form.view_key || null,
     };
     await (editing.value ? updateResource('/system/menus', editing.value.id, payload) : createResource('/system/menus', payload));
     message.success('菜单保存成功');
-    await load(form.code);
+    await load();
+    closeEditor();
   } finally {
     saving.value = false;
   }
@@ -236,7 +356,7 @@ async function save() {
 async function remove(item: MenuItem) {
   await deleteResource('/system/menus', item.id);
   message.success('菜单已删除');
-  resetForm(item.parent_code ?? undefined);
+  closeEditor();
   await load();
 }
 
@@ -248,10 +368,10 @@ function collapseAll() {
   menuTreeRef.value?.closeAll();
 }
 
-function flattenOrder(nodes: MenuTreeNode[], parentCode: null | string = null): MenuOrderItem[] {
+function flattenOrder(nodes: MenuTreeNode[], parentId: null | number = null): MenuOrderItem[] {
   return nodes.flatMap((node, index) => [
-    { id: node.id, parent_code: parentCode, sort: (index + 1) * 10 },
-    ...flattenOrder(node.children, node.code),
+    { id: node.id, parent_id: parentId, sort: (index + 1) * 10 },
+    ...flattenOrder(node.children, node.id),
   ]);
 }
 
@@ -282,8 +402,8 @@ onMounted(() => load());
 
 <template>
   <Page :description="$t('system.menusDescription')" :title="$t('system.menus')">
-    <div class="grid min-h-[680px] grid-cols-1 gap-4 xl:grid-cols-[minmax(360px,0.9fr)_minmax(560px,1.4fr)]">
-      <Card :loading="loading" title="菜单树">
+    <div class="admin-menu-workspace min-h-[680px]">
+      <Card :loading="loading" class="admin-menu-workspace__tree" title="菜单列表">
         <ListToolbar>
           <template #left>
             <ListRefreshButton :loading="loading" />
@@ -291,7 +411,7 @@ onMounted(() => load());
             <PermissionButton icon="lucide:chevrons-up-down" @click="collapseAll">收起</PermissionButton>
           </template>
           <template #right>
-            <PermissionButton icon="lucide:list-plus" permission="system.menu.create" type="primary" @click="resetForm()">新增根菜单</PermissionButton>
+            <PermissionButton icon="lucide:list-plus" permission="system.menu.create" type="primary" @click="openCreate()">新增菜单</PermissionButton>
           </template>
         </ListToolbar>
 
@@ -333,6 +453,7 @@ onMounted(() => load());
                 <span class="admin-menu-tree__route">{{ node.route_path || node.code }}</span>
               </button>
               <Space size="small">
+                <PermissionButton icon="lucide:pencil" icon-only permission="system.menu.update" tooltip="编辑菜单" type="text" @click.stop="selectMenu(node)" />
                 <PermissionButton icon="lucide:plus" icon-only permission="system.menu.create" tooltip="新增子级" type="text" @click.stop="addChild(node)" />
                 <Popconfirm v-if="!node.is_system" v-access:code="'system.menu.delete'" title="确定删除该菜单？" @confirm="remove(node)">
                   <PermissionButton danger icon="lucide:trash-2" icon-only permission="system.menu.delete" tooltip="删除菜单" type="text" @click.stop />
@@ -348,49 +469,60 @@ onMounted(() => load());
         <Empty v-else description="暂无菜单" />
       </Card>
 
-      <Card :title="formTitle">
-        <Form layout="vertical">
-          <div class="grid grid-cols-1 gap-x-4 md:grid-cols-2">
-            <FormItem class="md:col-span-2" label="父级菜单">
-              <TreeSelect v-model:value="form.parent_code" :tree-data="parentTree" allow-clear placeholder="不选择则为根菜单" tree-default-expand-all />
-            </FormItem>
-            <FormItem label="菜单编码" required>
-              <Input v-model:value="form.code" :disabled="editing?.is_system" placeholder="例如：content.articles" />
-            </FormItem>
-            <FormItem label="菜单标题" required>
-              <Input v-model:value="form.title" placeholder="支持语言键，例如：system.title" />
-            </FormItem>
-            <FormItem label="菜单类型" required>
-              <Select v-model:value="form.type" :options="[{ label: '目录', value: 'directory' }, { label: '页面', value: 'page' }, { label: '外部链接', value: 'external' }]" />
-            </FormItem>
-            <FormItem label="图标">
-              <Input v-model:value="form.icon" placeholder="例如：lucide:menu" />
-            </FormItem>
-            <FormItem label="路由名称">
-              <Input v-model:value="form.route_name" placeholder="前端路由唯一名称" />
-            </FormItem>
-            <FormItem label="路由路径">
-              <Input v-model:value="form.route_path" placeholder="例如：/content/articles" />
-            </FormItem>
-            <FormItem v-if="form.type === 'page'" label="视图标识 view_key">
-              <Input v-model:value="form.view_key" placeholder="必须由前端组件白名单注册" />
-            </FormItem>
-            <FormItem label="访问权限">
-              <Select v-model:value="form.permission_code" :options="permissions.map((item) => ({ label: `${item.name}（${item.code}）`, value: item.code }))" allow-clear show-search />
-            </FormItem>
-            <FormItem label="排序">
-              <InputNumber v-model:value="form.sort" class="w-full" />
-            </FormItem>
-            <FormItem label="启用状态">
-              <Switch v-model:checked="form.is_active" />
-            </FormItem>
-            <FormItem label="菜单隐藏">
-              <Switch v-model:checked="form.is_hidden" />
-            </FormItem>
-          </div>
-          <div class="flex justify-end gap-3 border-t pt-4">
-            <Button @click="resetForm(form.parent_code)">重置</Button>
-            <Button v-access:code="editing ? 'system.menu.update' : 'system.menu.create'" :loading="saving" type="primary" @click="save">保存</Button>
+      <Card class="admin-menu-editor admin-menu-workspace__editor" :title="formTitle">
+        <Form :label-col="{ span: 4 }" :wrapper-col="{ span: 18 }">
+          <FormItem label="父级菜单">
+            <Select
+              v-model:value="form.parent_id"
+              :filter-option="true"
+              option-filter-prop="searchText"
+              :options="parentOptions"
+              placeholder="请选择父级菜单"
+              show-search
+            />
+          </FormItem>
+          <FormItem label="菜单标题" required>
+            <Input v-model:value="form.title" placeholder="请输入菜单标题或语言键">
+              <template #prefix><IconifyIcon icon="lucide:pencil" /></template>
+            </Input>
+          </FormItem>
+          <FormItem label="图标">
+            <Input v-model:value="form.icon" placeholder="例如：lucide:menu">
+              <template #prefix><IconifyIcon icon="lucide:shapes" /></template>
+            </Input>
+            <div class="admin-menu-editor__help">使用 Iconify 图标编码，例如 lucide:menu。</div>
+          </FormItem>
+          <FormItem label="路由路径">
+            <Input :value="form.route_path" placeholder="例如：/content/articles" @update:value="handleRoutePathInput">
+              <template #prefix><IconifyIcon icon="lucide:link" /></template>
+            </Input>
+          </FormItem>
+          <FormItem label="菜单类型" required>
+            <Select v-model:value="form.type" :options="[{ label: '目录', value: 'directory' }, { label: '页面', value: 'page' }, { label: '外部链接', value: 'external' }]" />
+          </FormItem>
+          <FormItem label="权限">
+            <div class="admin-menu-permissions">
+              <div class="admin-menu-permissions__actions">
+                <Checkbox v-model:checked="allPermissionsChecked" :indeterminate="permissionIndeterminate">全选</Checkbox>
+                <Checkbox v-model:checked="permissionsExpanded">展开</Checkbox>
+              </div>
+              <Tree v-model:checked-keys="checkedPermissionKeys" v-model:expanded-keys="expandedPermissionKeys" :tree-data="permissionTree" checkable />
+            </div>
+          </FormItem>
+          <FormItem label="显示设置">
+            <Space size="large">
+              <span class="admin-menu-editor__switch"><Switch v-model:checked="form.is_active" /> 启用菜单</span>
+              <span class="admin-menu-editor__switch"><Switch v-model:checked="form.is_hidden" /> 隐藏菜单</span>
+            </Space>
+          </FormItem>
+          <FormItem label="排序">
+            <InputNumber v-model:value="form.sort" class="admin-menu-editor__sort" />
+          </FormItem>
+          <div class="admin-menu-editor__footer">
+            <PermissionButton icon="lucide:rotate-ccw" @click="resetEditor">重置</PermissionButton>
+            <PermissionButton icon="lucide:save" :loading="saving" :permission="editing ? 'system.menu.update' : 'system.menu.create'" type="primary" @click="save">
+              {{ $t('common.submit') }}
+            </PermissionButton>
           </div>
         </Form>
       </Card>

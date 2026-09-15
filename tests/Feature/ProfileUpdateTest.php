@@ -41,4 +41,23 @@ final class ProfileUpdateTest extends TestCase
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['name']);
     }
+
+    public function test_authenticated_user_without_roles_can_update_own_profile(): void
+    {
+        $this->artisan('vben-admin:install')->assertSuccessful();
+        $user = AdminUser::query()->create([
+            'username' => 'profile-user',
+            'password' => 'ValidPassword123',
+            'name' => 'Profile User',
+            'is_active' => true,
+        ]);
+        self::assertFalse($user->roles()->exists());
+        Sanctum::actingAs($user, ['admin']);
+
+        $this->patchJson('/api/admin/auth/profile', ['name' => 'Updated Profile'])
+            ->assertOk()
+            ->assertJsonPath('user.name', 'Updated Profile');
+
+        self::assertSame('Updated Profile', $user->fresh()->name);
+    }
 }

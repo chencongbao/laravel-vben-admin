@@ -6,6 +6,27 @@
   border-radius: 0 !important;
 }
 
+input[type='email'],
+input[type='number'],
+input[type='password'],
+input[type='search'],
+input[type='tel'],
+input[type='text'],
+input[type='url'],
+select,
+textarea,
+.ant-input,
+.ant-input-affix-wrapper,
+.ant-input-group-addon,
+.ant-input-number,
+.ant-input-number-group-addon,
+.ant-mentions,
+.ant-picker,
+.ant-select-selector,
+.ant-tree-select .ant-select-selector {
+  border-radius: 0 !important;
+}
+
 .permission-button {
   border-radius: 0;
 }
@@ -318,6 +339,37 @@
   padding-block: 8px;
 }
 
+.admin-menu-workspace {
+  display: grid;
+  grid-template-columns: minmax(560px, 3fr) minmax(440px, 2fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.admin-menu-workspace__tree,
+.admin-menu-workspace__editor {
+  min-width: 0;
+}
+
+.admin-menu-workspace__tree .ant-card-body {
+  padding: 16px;
+}
+
+.admin-menu-permissions {
+  min-height: 160px;
+}
+
+.admin-menu-permissions__actions {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.admin-menu-permissions .ant-tree {
+  background: transparent;
+}
+
 .admin-menu-tree .tree-node {
   outline: none;
   border: 1px solid transparent;
@@ -428,6 +480,55 @@
   height: 100%;
 }
 
+.admin-menu-editor .ant-card-body {
+  padding: 24px 20px 0;
+}
+
+.admin-menu-editor .ant-form {
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+.admin-menu-editor .ant-form-item {
+  margin-bottom: 22px;
+}
+
+.admin-menu-editor .ant-form-item-label > label {
+  font-weight: 500;
+}
+
+.admin-menu-editor__help {
+  margin-top: 6px;
+  font-size: 12px;
+  color: hsl(var(--muted-foreground));
+}
+
+.admin-menu-editor__switch {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.admin-menu-editor__sort {
+  width: 180px;
+}
+
+.admin-menu-editor__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 8.333%;
+  margin: 8px -24px 0;
+  border-top: 1px solid hsl(var(--border));
+}
+
+@media (max-width: 1180px) {
+  .admin-menu-workspace {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 640px) {
   .admin-list-toolbar {
     align-items: stretch;
@@ -451,6 +552,24 @@
 
   .admin-table-row-actions__mobile {
     display: inline-flex;
+  }
+
+  .admin-menu-editor .ant-card-body {
+    padding: 20px 16px 0;
+  }
+
+  .admin-menu-editor .ant-form-item-row {
+    display: block;
+  }
+
+  .admin-menu-editor .ant-form-item-label,
+  .admin-menu-editor .ant-form-item-control {
+    max-width: 100%;
+  }
+
+  .admin-menu-editor__footer {
+    padding: 16px 0;
+    margin: 8px -16px 0;
   }
 }
 

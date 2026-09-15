@@ -2,6 +2,7 @@
 import { onMounted, ref } from 'vue';
 
 import { Page } from '@vben/common-ui';
+import { IconifyIcon } from '@vben/icons';
 import { updatePreferences } from '@vben/preferences';
 
 import {
@@ -152,7 +153,8 @@ onMounted(load);
             type="primary"
             @click="save"
           >
-            {{ $t('system.settingsForm.actions.save') }}
+            <IconifyIcon icon="lucide:save" />
+            {{ $t('common.submit') }}
           </Button>
         </div>
       </Form>

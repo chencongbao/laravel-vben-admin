@@ -5,7 +5,7 @@
   "roles": "角色管理",
   "rolesDescription": "创建和维护角色，并为角色分配菜单及操作权限。",
   "permissions": "权限管理",
-  "permissionsDescription": "维护服务端权限编码、启用状态及敏感操作标记。",
+  "permissionsDescription": "维护权限层级、服务端权限编码、接口审计元数据、关联菜单及敏感操作标记。",
   "menus": "菜单管理",
   "menusDescription": "维护后台菜单层级、路由、图标、排序与访问权限。",
   "loginLogs": "登录日志",
@@ -25,9 +25,6 @@
   "settings": "系统设置",
   "settingsDescription": "集中维护系统名称、默认分页数量及登录页面相关设置。",
   "settingsForm": {
-    "actions": {
-      "save": "保存设置"
-    },
     "fields": {
       "systemName": {
         "description": "显示在管理后台左上角的系统名称。",

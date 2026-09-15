@@ -49,8 +49,25 @@ final class SyncSystemDataCommand extends Command
             }
 
             foreach ($menus as $menu) {
-                AdminMenu::query()->updateOrCreate(['code' => $menu['code']], $menu);
+                AdminMenu::query()->updateOrCreate(
+                    ['code' => $menu['code']],
+                    collect($menu)->except('parent_menu_code')->all(),
+                );
             }
+
+            foreach ($menus as $menu) {
+                $parentId = $menu['parent_menu_code'] === null
+                    ? null
+                    : AdminMenu::query()->where('code', $menu['parent_menu_code'])->value('id');
+                AdminMenu::query()->where('code', $menu['code'])->update(['parent_id' => $parentId]);
+            }
+
+            AdminMenu::query()->whereNotNull('permission_code')->each(function (AdminMenu $menu): void {
+                $permission = AdminPermission::query()->where('code', $menu->permission_code)->first();
+                if ($permission !== null) {
+                    $permission->menus()->syncWithoutDetaching([$menu->getKey()]);
+                }
+            });
 
             foreach ([
                 'configuration' => ['system.settings', 'system.theme-settings'],
@@ -114,21 +131,21 @@ final class SyncSystemDataCommand extends Command
     {
         $items = [
             [
-                'code' => 'dashboard.workspace', 'parent_code' => null, 'title' => 'dashboard.workspace', 'type' => 'page',
+                'code' => 'dashboard.workspace', 'parent_menu_code' => null, 'title' => 'dashboard.workspace', 'type' => 'page',
                 'route_name' => 'Workspace', 'route_path' => '/workspace', 'view_key' => 'dashboard.workspace',
                 'permission_code' => null, 'icon' => 'carbon:workspace', 'sort' => -1000,
                 'is_active' => true, 'is_hidden' => false, 'is_system' => true,
             ],
             [
-                'code' => 'system', 'parent_code' => null, 'title' => 'system.title', 'type' => 'directory', 'route_name' => 'System', 'route_path' => '/system', 'view_key' => null,
+                'code' => 'system', 'parent_menu_code' => null, 'title' => 'system.title', 'type' => 'directory', 'route_name' => 'System', 'route_path' => '/system', 'view_key' => null,
                 'permission_code' => 'system.access', 'icon' => 'lucide:settings', 'sort' => 1000, 'is_active' => true, 'is_hidden' => false, 'is_system' => true,
             ],
             [
-                'code' => 'configuration', 'parent_code' => null, 'title' => 'configuration.title', 'type' => 'directory', 'route_name' => 'Configuration', 'route_path' => '/configuration', 'view_key' => null,
+                'code' => 'configuration', 'parent_menu_code' => null, 'title' => 'configuration.title', 'type' => 'directory', 'route_name' => 'Configuration', 'route_path' => '/configuration', 'view_key' => null,
                 'permission_code' => 'system.setting.view', 'icon' => 'lucide:sliders-horizontal', 'sort' => 3000, 'is_active' => true, 'is_hidden' => false, 'is_system' => true,
             ],
             [
-                'code' => 'system.logs', 'parent_code' => null, 'title' => 'system.logsTitle', 'type' => 'directory', 'route_name' => 'SystemLogs', 'route_path' => '/system-logs', 'view_key' => null,
+                'code' => 'system.logs', 'parent_menu_code' => null, 'title' => 'system.logsTitle', 'type' => 'directory', 'route_name' => 'SystemLogs', 'route_path' => '/system-logs', 'view_key' => null,
                 'permission_code' => null, 'icon' => 'lucide:notebook-tabs', 'sort' => 2000, 'is_active' => true, 'is_hidden' => false, 'is_system' => true,
             ],
         ];
@@ -140,21 +157,21 @@ final class SyncSystemDataCommand extends Command
             ['system.menus', 'system.menus', 'SystemMenus', '/system/menus', 'system.menus', 'system.menu.view', 'lucide:list-tree', 40],
         ] as [$code, $title, $routeName, $routePath, $viewKey, $permissionCode, $icon, $sort]) {
             $items[] = [
-                'code' => $code, 'parent_code' => 'system', 'title' => $title, 'type' => 'page', 'route_name' => $routeName,
+                'code' => $code, 'parent_menu_code' => 'system', 'title' => $title, 'type' => 'page', 'route_name' => $routeName,
                 'route_path' => $routePath, 'view_key' => $viewKey, 'permission_code' => $permissionCode, 'icon' => $icon,
                 'sort' => $sort, 'is_active' => true, 'is_hidden' => false, 'is_system' => true,
             ];
         }
 
         $items[] = [
-            'code' => 'system.settings', 'parent_code' => 'configuration', 'title' => 'system.settings', 'type' => 'page',
+            'code' => 'system.settings', 'parent_menu_code' => 'configuration', 'title' => 'system.settings', 'type' => 'page',
             'route_name' => 'SystemSettings', 'route_path' => '/system/settings', 'view_key' => 'system.settings',
             'permission_code' => 'system.setting.view', 'icon' => 'lucide:settings-2', 'sort' => 10,
             'is_active' => true, 'is_hidden' => false, 'is_system' => true,
         ];
 
         $items[] = [
-            'code' => 'system.theme-settings', 'parent_code' => 'configuration', 'title' => 'configuration.themeSettings', 'type' => 'page',
+            'code' => 'system.theme-settings', 'parent_menu_code' => 'configuration', 'title' => 'configuration.themeSettings', 'type' => 'page',
             'route_name' => 'ThemeSettings', 'route_path' => '/configuration/theme', 'view_key' => 'system.theme-settings',
             'permission_code' => null, 'icon' => 'lucide:palette', 'sort' => 20,
             'is_active' => true, 'is_hidden' => false, 'is_system' => true,
@@ -165,7 +182,7 @@ final class SyncSystemDataCommand extends Command
             ['system.audit-logs', 'system.auditLogs', 'SystemAuditLogs', '/system/audit-logs', 'system.audit-logs', 'system.audit.view', 'lucide:clipboard-list', 20],
         ] as [$code, $title, $routeName, $routePath, $viewKey, $permissionCode, $icon, $sort]) {
             $items[] = [
-                'code' => $code, 'parent_code' => 'system.logs', 'title' => $title, 'type' => 'page', 'route_name' => $routeName,
+                'code' => $code, 'parent_menu_code' => 'system.logs', 'title' => $title, 'type' => 'page', 'route_name' => $routeName,
                 'route_path' => $routePath, 'view_key' => $viewKey, 'permission_code' => $permissionCode, 'icon' => $icon,
                 'sort' => $sort, 'is_active' => true, 'is_hidden' => false, 'is_system' => true,
             ];
@@ -174,7 +191,7 @@ final class SyncSystemDataCommand extends Command
         foreach ($registry->all() as $module) {
             foreach ($module->menus() as $menu) {
                 $items[] = [
-                    'code' => $menu->code, 'parent_code' => $menu->parentCode, 'title' => $menu->title, 'type' => $menu->type,
+                    'code' => $menu->code, 'parent_menu_code' => $menu->parentCode, 'title' => $menu->title, 'type' => $menu->type,
                     'route_name' => $menu->routeName, 'route_path' => $menu->routePath, 'view_key' => $menu->viewKey,
                     'permission_code' => $menu->permissionCode, 'icon' => null, 'sort' => $menu->sort,
                     'is_active' => true, 'is_hidden' => false, 'is_system' => false,

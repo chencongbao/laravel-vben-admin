@@ -28,6 +28,7 @@ return [
         'user_roles' => 'admin_user_roles',
         'role_permissions' => 'admin_role_permissions',
         'role_menus' => 'admin_role_menus',
+        'permission_menus' => 'admin_permission_menus',
         'settings' => 'admin_settings',
         // Used only by the legacy log backfill/drop migrations.
         'login_logs' => 'admin_login_logs',

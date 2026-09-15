@@ -3,20 +3,23 @@ import type { TableColumnsType } from 'ant-design-vue';
 import type { Key } from 'ant-design-vue/es/_util/type';
 
 import { computed, onMounted, reactive, ref } from 'vue';
+
 import { Page } from '@vben/common-ui';
 import { $t } from '@vben/locales';
+
 import { Card, Checkbox, Form, FormItem, Input, InputNumber, message, Modal, Popconfirm, Space, Switch, Table, Tag, Tree } from 'ant-design-vue';
+
 import { createResource, deleteResource, getCollection, getResource, getResourceDetail, updateResource } from '#/api/system';
-import ListToolbar from '#/components/system/list-toolbar.vue';
 import ListRefreshButton from '#/components/system/list-refresh-button.vue';
 import ListSearchField from '#/components/system/list-search-field.vue';
 import ListSearchPanel from '#/components/system/list-search-panel.vue';
+import ListToolbar from '#/components/system/list-toolbar.vue';
 import PermissionButton from '#/components/system/permission-button.vue';
 import { formatBeijingDateTime } from '#/utils/datetime';
 import { createAdminPagination } from '#/utils/pagination';
 import { useAdminTableScrollY } from '#/utils/table';
 
-interface MenuItem { code: string; id: number; parent_code?: null | string; permission_code?: null | string; title: string }
+interface MenuItem { code: string; id: number; parent_id?: null | number; permission_code?: null | string; title: string }
 interface PermissionItem { code: string; id: number; name: string }
 interface Role { code: string; created_at: string; id: number; is_active: boolean; is_super_admin: boolean; is_system: boolean; menus_count: number; name: string; permissions_count: number; updated_at: string }
 interface AccessTreeNode { children?: AccessTreeNode[]; key: string; title: string }
@@ -45,21 +48,21 @@ function permissionOwnerCode(permission: PermissionItem) {
       const prefix = permissionPrefix(menu.permission_code);
       return prefix && (permission.code === menu.permission_code || permission.code.startsWith(`${prefix}.`));
     })
-    .sort((left, right) => (permissionPrefix(right.permission_code)?.length ?? 0) - (permissionPrefix(left.permission_code)?.length ?? 0))[0]?.code;
+    .toSorted((left, right) => (permissionPrefix(right.permission_code)?.length ?? 0) - (permissionPrefix(left.permission_code)?.length ?? 0))[0]?.code;
 }
 
 const accessTree = computed<AccessTreeNode[]>(() => {
-  const childrenByParent = new Map<null | string, MenuItem[]>();
+  const childrenByParent = new Map<null | number, MenuItem[]>();
   for (const menu of menus.value) {
-    const parent = menu.parent_code ?? null;
+    const parent = menu.parent_id ?? null;
     childrenByParent.set(parent, [...(childrenByParent.get(parent) ?? []), menu]);
   }
   const buildMenu = (menu: MenuItem): AccessTreeNode => {
     const permissionNodes = permissions.value.filter((permission) => permissionOwnerCode(permission) === menu.code).map((permission) => ({ key: permissionKey(permission.id), title: `${permission.name}（${permission.code}）` }));
-    const childMenus = (childrenByParent.get(menu.code) ?? []).map(buildMenu);
+    const childMenus = (childrenByParent.get(menu.id) ?? []).map((item) => buildMenu(item));
     return { children: [...childMenus, ...permissionNodes], key: menuKey(menu.id), title: `${$t(menu.title)}（${menu.code}）` };
   };
-  return (childrenByParent.get(null) ?? []).map(buildMenu);
+  return (childrenByParent.get(null) ?? []).map((item) => buildMenu(item));
 });
 const allTreeKeys = computed<Key[]>(() => {
   const keys: Key[] = [];
@@ -106,9 +109,14 @@ function selectedAccess() {
     const ownerCode = permissionOwnerCode(permission);
     if (ownerCode) selectedMenuCodes.add(ownerCode);
   }
-  for (const code of [...selectedMenuCodes]) {
-    let parentCode = menus.value.find((menu) => menu.code === code)?.parent_code;
-    while (parentCode) { selectedMenuCodes.add(parentCode); parentCode = menus.value.find((menu) => menu.code === parentCode)?.parent_code; }
+  for (const code of selectedMenuCodes) {
+    let parentId = menus.value.find((menu) => menu.code === code)?.parent_id;
+    while (parentId) {
+      const parent = menus.value.find((menu) => menu.id === parentId);
+      if (!parent) break;
+      selectedMenuCodes.add(parent.code);
+      parentId = parent.parent_id;
+    }
   }
   return { menu_ids: menus.value.filter((item) => selectedMenuCodes.has(item.code)).map((item) => item.id), permission_ids: permissionIds };
 }
@@ -119,7 +127,7 @@ async function saveRole() {
   saving.value = true;
   try {
     const payload = { ...form, ...access };
-    if (editingRole.value) await updateResource('/system/roles', editingRole.value.id, payload); else await createResource('/system/roles', payload);
+    await (editingRole.value ? updateResource('/system/roles', editingRole.value.id, payload) : createResource('/system/roles', payload));
     visible.value = false; message.success('角色和权限保存成功'); await load();
   } finally { saving.value = false; }
 }
@@ -128,7 +136,7 @@ function toggleExpand(checked: boolean) { expandAll.value = checked; expandedKey
 function changePage(page: { current?: number; pageSize?: number }) { pagination.current = page.current ?? 1; pagination.pageSize = page.pageSize ?? pagination.pageSize; void load(); }
 function search() { pagination.current = 1; void load(); }
 function resetSearch() { searchId.value = undefined; search(); }
-function handleModalOk() { if (isProtected.value) visible.value = false; else void saveRole(); }
+function handleModalOk() { isProtected.value ? visible.value = false : void saveRole(); }
 onMounted(load);
 </script>
 

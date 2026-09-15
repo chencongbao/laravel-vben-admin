@@ -73,30 +73,23 @@ final class InstallCommandTest extends TestCase
         self::assertArrayNotHasKey('custom', $advancedPreferences);
         self::assertDatabaseHas('admin_menus', [
             'code' => 'configuration',
-            'parent_code' => null,
+            'parent_id' => null,
             'title' => 'configuration.title',
         ]);
         self::assertDatabaseHas('admin_permissions', [
             'code' => 'system.login-log.delete',
             'is_sensitive' => true,
         ]);
-        self::assertDatabaseHas('admin_menus', [
-            'code' => 'system.settings',
-            'parent_code' => 'configuration',
-        ]);
+        $configuration = AdminMenu::query()->where('code', 'configuration')->firstOrFail();
+        self::assertDatabaseHas('admin_menus', ['code' => 'system.settings', 'parent_id' => $configuration->getKey()]);
         self::assertDatabaseHas('admin_menus', [
             'code' => 'system.logs',
-            'parent_code' => null,
+            'parent_id' => null,
             'title' => 'system.logsTitle',
         ]);
-        self::assertDatabaseHas('admin_menus', [
-            'code' => 'system.login-logs',
-            'parent_code' => 'system.logs',
-        ]);
-        self::assertDatabaseHas('admin_menus', [
-            'code' => 'system.audit-logs',
-            'parent_code' => 'system.logs',
-        ]);
+        $logs = AdminMenu::query()->where('code', 'system.logs')->firstOrFail();
+        self::assertDatabaseHas('admin_menus', ['code' => 'system.login-logs', 'parent_id' => $logs->getKey()]);
+        self::assertDatabaseHas('admin_menus', ['code' => 'system.audit-logs', 'parent_id' => $logs->getKey()]);
 
         $superAdministrator->update(['password' => 'changed-super-password']);
         $administrator->update(['password' => 'changed-manager-password']);
