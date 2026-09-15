@@ -147,7 +147,7 @@ onMounted(load);
 
         <div class="settings-actions">
           <Button
-            v-access:code="'system.setting.update'"
+            v-access:code="'system.setting.view'"
             :loading="saving"
             size="large"
             type="primary"

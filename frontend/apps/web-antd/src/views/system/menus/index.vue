@@ -110,9 +110,10 @@ const draggedCode = ref<string>();
 const menuTreeRef = ref<MenuTreeController>();
 const { hasAccessByCodes } = useAccess();
 const canReorder = computed(() => hasAccessByCodes(['system.menu.update']));
+const DEFAULT_MENU_ICON = 'lucide:list';
 const form = reactive({
   code: '',
-  icon: '',
+  icon: DEFAULT_MENU_ICON,
   parent_id: 0,
   permission_code: undefined as string | undefined,
   route_name: '',
@@ -181,6 +182,12 @@ const parentOptions = computed<MenuParentOption[]>(() => {
 
 const formTitle = computed(() => editing.value ? `编辑：${$t(editing.value.title)}` : '新增菜单');
 
+function permissionName(permission: Pick<Permission, 'code' | 'name'>) {
+  const systemNameKey = `system.permissionNames.${permission.code}`;
+  const systemName = $t(systemNameKey);
+  return systemName === systemNameKey ? $t(permission.name) : systemName;
+}
+
 const permissionTree = computed<PermissionTreeNode[]>(() => {
   const groups = new Map<string, Permission[]>();
   permissions.value.forEach((permission) => {
@@ -197,7 +204,7 @@ const permissionTree = computed<PermissionTreeNode[]>(() => {
     return {
       children: items.map((permission) => ({
         key: permission.id,
-        title: `${permission.name}（${permission.code}）`,
+        title: `${permissionName(permission)}（${permission.code}）`,
       })),
       key: `permission-group:${groupCode}`,
       title: owner ? $t(owner.title) : groupCode,
@@ -245,7 +252,7 @@ async function load(selectCode?: string) {
 
 function createEmptyForm(parentId = 0) {
   return {
-    code: '', icon: '',
+    code: '', icon: DEFAULT_MENU_ICON,
     parent_id: parentId, permission_code: undefined, route_name: '',
     route_path: '', sort: 0, title: '', type: 'page', view_key: '',
   };
@@ -263,7 +270,7 @@ function selectMenu(item: MenuItem) {
   editing.value = item;
   selectedCode.value = item.code;
   Object.assign(form, {
-    code: item.code, icon: item.icon ?? '', parent_id: item.parent_id ?? 0,
+    code: item.code, icon: item.icon || DEFAULT_MENU_ICON, parent_id: item.parent_id ?? 0,
     permission_code: item.permission_code ?? undefined,
     route_name: item.route_name ?? '', route_path: item.route_path ?? '',
     sort: item.sort, title: item.title, type: item.type, view_key: item.view_key ?? '',
@@ -318,8 +325,8 @@ function handleRoutePathInput(value: string) {
 
 async function save() {
   syncGeneratedRouteFields();
-  if (!form.code || !form.title || !form.type) {
-    return void message.warning('请填写菜单标题、路由路径和类型');
+  if (!form.code || !form.title || !form.type || !form.icon || !form.route_path) {
+    return void message.warning('请填写父级菜单、菜单标题、菜单图标、路由路径和菜单类型');
   }
   saving.value = true;
   try {
@@ -332,7 +339,7 @@ async function save() {
     }
     const payload = {
       ...form,
-      icon: form.icon || null,
+      icon: form.icon || DEFAULT_MENU_ICON,
       parent_id: form.parent_id || null,
       permission_code: permissionCode || null,
       permission_ids: permissionIds,
@@ -455,7 +462,7 @@ onMounted(() => load());
                 <Popconfirm v-if="!node.is_system" v-access:code="'system.menu.delete'" title="确定删除该菜单？" @confirm="remove(node)">
                   <PermissionButton danger icon="lucide:trash-2" icon-only permission="system.menu.delete" tooltip="删除菜单" type="text" @click.stop />
                 </Popconfirm>
-                <PermissionButton v-else danger disabled icon="lucide:lock-keyhole" icon-only tooltip="系统菜单不可删除" type="text" @click.stop />
+                <PermissionButton v-else danger disabled icon="lucide:trash-2" icon-only tooltip="系统菜单不可删除" type="text" @click.stop />
               </Space>
             </div>
           </template>
@@ -468,7 +475,7 @@ onMounted(() => load());
 
       <Card class="admin-menu-editor admin-menu-workspace__editor" :title="formTitle">
         <Form :label-col="{ span: 4 }" :wrapper-col="{ span: 18 }">
-          <FormItem label="父级菜单">
+          <FormItem label="父级菜单" required>
             <Select
               v-model:value="form.parent_id"
               :filter-option="true"
@@ -497,7 +504,7 @@ onMounted(() => load());
               <template #prefix><IconifyIcon icon="lucide:pencil" /></template>
             </Input>
           </FormItem>
-          <FormItem label="菜单图标">
+          <FormItem label="菜单图标" required>
             <IconPicker
               v-model="form.icon"
               :page-size="30"
@@ -505,7 +512,7 @@ onMounted(() => load());
               @change="form.icon = $event"
             />
           </FormItem>
-          <FormItem label="路由路径">
+          <FormItem label="路由路径" required>
             <Input :value="form.route_path" placeholder="例如：/content/articles" @update:value="handleRoutePathInput">
               <template #prefix><IconifyIcon icon="lucide:link" /></template>
             </Input>
@@ -513,13 +520,17 @@ onMounted(() => load());
           <FormItem label="菜单类型" required>
             <Select v-model:value="form.type" :options="[{ label: '目录', value: 'directory' }, { label: '页面', value: 'page' }, { label: '外部链接', value: 'external' }]" />
           </FormItem>
-          <FormItem label="权限">
+          <FormItem label="菜单权限">
             <div class="admin-menu-permissions">
               <div class="admin-menu-permissions__actions">
                 <Checkbox v-model:checked="allPermissionsChecked" :indeterminate="permissionIndeterminate">全选</Checkbox>
                 <Checkbox v-model:checked="permissionsExpanded">展开</Checkbox>
               </div>
-              <Tree v-model:checked-keys="checkedPermissionKeys" v-model:expanded-keys="expandedPermissionKeys" :tree-data="permissionTree" checkable />
+              <Tree v-model:checked-keys="checkedPermissionKeys" v-model:expanded-keys="expandedPermissionKeys" :show-line="{ showLeafIcon: false }" :tree-data="permissionTree" checkable>
+                <template #switcherIcon="{ expanded }">
+                  <span class="admin-menu-permissions__switcher" aria-hidden="true">{{ expanded ? '−' : '+' }}</span>
+                </template>
+              </Tree>
             </div>
           </FormItem>
           <div class="admin-menu-editor__footer">

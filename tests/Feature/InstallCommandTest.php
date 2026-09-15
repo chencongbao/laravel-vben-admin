@@ -4,6 +4,7 @@ namespace Chencongbao\LaravelVbenAdmin\Tests\Feature;
 
 use Chencongbao\LaravelVbenAdmin\LaravelVbenAdminServiceProvider;
 use Chencongbao\LaravelVbenAdmin\Models\AdminMenu;
+use Chencongbao\LaravelVbenAdmin\Models\AdminPermission;
 use Chencongbao\LaravelVbenAdmin\Models\AdminRole;
 use Chencongbao\LaravelVbenAdmin\Models\AdminUser;
 use Chencongbao\LaravelVbenAdmin\Support\SystemSettings;
@@ -76,10 +77,15 @@ final class InstallCommandTest extends TestCase
             'parent_id' => null,
             'title' => 'configuration.title',
         ]);
-        self::assertDatabaseHas('admin_permissions', [
-            'code' => 'system.login-log.delete',
-            'is_sensitive' => true,
-        ]);
+        self::assertDatabaseMissing('admin_permissions', ['code' => 'system.login-log.delete']);
+        $systemLogsPermission = AdminPermission::query()->where('code', 'system.logs.access')->firstOrFail();
+        $configurationPermission = AdminPermission::query()->where('code', 'system.configuration.access')->firstOrFail();
+        self::assertDatabaseHas('admin_permissions', ['code' => 'system.login-log.view', 'parent_id' => $systemLogsPermission->getKey()]);
+        self::assertDatabaseHas('admin_permissions', ['code' => 'system.audit.view', 'parent_id' => $systemLogsPermission->getKey()]);
+        self::assertDatabaseHas('admin_permissions', ['code' => 'system.setting.view', 'parent_id' => $configurationPermission->getKey()]);
+        self::assertDatabaseHas('admin_permissions', ['code' => 'system.theme-setting.view', 'parent_id' => $configurationPermission->getKey()]);
+        self::assertDatabaseMissing('admin_permissions', ['code' => 'system.setting.update']);
+        self::assertDatabaseMissing('admin_permissions', ['code' => 'system.theme-setting.update']);
         $configuration = AdminMenu::query()->where('code', 'configuration')->firstOrFail();
         self::assertDatabaseHas('admin_menus', ['code' => 'system.settings', 'parent_id' => $configuration->getKey()]);
         self::assertDatabaseHas('admin_menus', [

@@ -9,11 +9,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class AdminMenu extends Model
 {
-    protected $fillable = ['code', 'parent_id', 'title', 'type', 'route_name', 'route_path', 'view_key', 'permission_code', 'icon', 'sort', 'is_active', 'is_hidden', 'is_system'];
+    protected $fillable = ['code', 'parent_id', 'title', 'type', 'route_name', 'route_path', 'view_key', 'permission_code', 'icon', 'sort', 'is_system'];
 
     protected function casts(): array
     {
-        return ['is_active' => 'boolean', 'is_hidden' => 'boolean', 'is_system' => 'boolean'];
+        return ['is_system' => 'boolean'];
     }
 
     public function getTable(): string

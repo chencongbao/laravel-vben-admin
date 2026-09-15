@@ -54,8 +54,6 @@ return new class extends Migration
             $table->string('permission_code', 160)->nullable()->index();
             $table->string('icon', 160)->nullable();
             $table->integer('sort')->default(0)->index();
-            $table->boolean('is_active')->default(true)->index();
-            $table->boolean('is_hidden')->default(false);
             $table->boolean('is_system')->default(false);
             $table->timestamps();
         });

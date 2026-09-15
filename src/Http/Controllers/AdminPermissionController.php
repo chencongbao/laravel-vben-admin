@@ -8,12 +8,16 @@ use Chencongbao\LaravelVbenAdmin\Support\AdminPagination;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 final class AdminPermissionController extends Controller
 {
-    public function __construct(private readonly AuditRecorder $audit) {}
+    public function __construct(
+        private readonly AuditRecorder $audit,
+        private readonly Router $router,
+    ) {}
 
     public function index(Request $request): JsonResponse
     {
@@ -48,6 +52,63 @@ final class AdminPermissionController extends Controller
     public function show(AdminPermission $adminPermission): JsonResponse
     {
         return response()->json(['permission' => $adminPermission->load('menus:id,code,title')]);
+    }
+
+    public function httpPaths(): JsonResponse
+    {
+        $paths = collect($this->router->getRoutes()->getRoutes())
+            ->map(fn ($route): string => '/'.ltrim($route->uri(), '/'))
+            ->filter(fn (string $path): bool => str_starts_with($path, '/api/admin/'))
+            ->unique()
+            ->sort()
+            ->values();
+
+        return response()->json(['paths' => $paths]);
+    }
+
+    public function reorder(Request $request): JsonResponse
+    {
+        $permissionTable = config('laravel-vben-admin.tables.permissions', 'admin_permissions');
+        $data = $request->validate([
+            'items' => ['required', 'array', 'min:1'],
+            'items.*.id' => ['required', 'integer', 'distinct', Rule::exists($permissionTable, 'id')],
+            'items.*.parent_id' => ['nullable', 'integer', Rule::exists($permissionTable, 'id')],
+            'items.*.sort' => ['required', 'integer', 'min:-100000', 'max:100000'],
+        ]);
+
+        $permissions = AdminPermission::query()->get()->keyBy('id');
+        $submittedIds = collect($data['items'])->pluck('id')->sort()->values();
+        if ($submittedIds->all() !== $permissions->keys()->sort()->values()->all()) {
+            return response()->json(['message' => 'The complete permission tree is required.', 'code' => 'PERMISSION_REORDER_INCOMPLETE'], 422);
+        }
+
+        $parentById = collect($data['items'])->mapWithKeys(fn (array $item) => [$item['id'] => $item['parent_id']]);
+        foreach ($parentById as $id => $parentId) {
+            $visited = [];
+            while ($parentId !== null) {
+                if ($parentId === $id || isset($visited[$parentId])) {
+                    return response()->json(['message' => 'The permission hierarchy contains a cycle.', 'code' => 'PERMISSION_CYCLE'], 422);
+                }
+                $visited[$parentId] = true;
+                $parentId = $parentById[$parentId] ?? null;
+            }
+        }
+
+        $before = $permissions->map(fn (AdminPermission $permission) => $permission->only(['id', 'parent_id', 'sort']))->values()->all();
+        DB::transaction(function () use ($before, $data, $request): void {
+            foreach ($data['items'] as $item) {
+                AdminPermission::query()->whereKey($item['id'])->update([
+                    'parent_id' => $item['parent_id'],
+                    'sort' => $item['sort'],
+                ]);
+            }
+            $this->audit->record($request->user(), 'system.permission.reordered', null, [
+                'before' => $before,
+                'after' => $data['items'],
+            ]);
+        });
+
+        return $this->index($request);
     }
 
     public function update(Request $request, AdminPermission $adminPermission): JsonResponse

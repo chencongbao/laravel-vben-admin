@@ -6,6 +6,21 @@
   "rolesDescription": "Create and maintain roles, then assign menus and operation permissions.",
   "permissions": "Permissions",
   "permissionsDescription": "Maintain permission hierarchy, server-side codes, API audit metadata, related menus, and sensitive-operation markers.",
+  "permissionNames": {
+    "system": {
+      "access": "System Management",
+      "logs": { "access": "System Logs" },
+      "configuration": { "access": "Configuration" },
+      "user": { "view": "User Management", "create": "Create User", "update": "Update User" },
+      "role": { "view": "Role Management", "create": "Create Role", "update": "Update Role", "delete": "Delete Role" },
+      "permission": { "view": "Permission Management", "create": "Create Permission", "update": "Update Permission", "delete": "Delete Permission" },
+      "menu": { "view": "Menu Management", "create": "Create Menu", "update": "Update Menu", "delete": "Delete Menu" },
+      "audit": { "view": "Operation Logs" },
+      "login-log": { "view": "Login Logs" },
+      "setting": { "view": "System Configuration" },
+      "theme-setting": { "view": "Theme Configuration" }
+    }
+  },
   "menus": "Menus",
   "menusDescription": "Maintain menu hierarchy, routes, icons, ordering, and access permissions.",
   "loginLogs": "Login Logs",

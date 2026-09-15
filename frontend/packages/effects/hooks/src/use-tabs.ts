@@ -94,6 +94,7 @@ export function useTabs() {
 
     const { meta } = tab;
     const affixTab = meta?.affixTab ?? false;
+    const tabClosable = meta?.tabClosable ?? true;
     const isCurrentTab = route.path === tab.path;
 
     // 当前处于最左侧或者减去固定标签页的数量等于0
@@ -106,7 +107,7 @@ export function useTabs() {
       disabled || !isCurrentTab || tabs.length - affixTabs.length <= 1;
     return {
       disabledCloseAll: disabled,
-      disabledCloseCurrent: !!affixTab || disabled,
+      disabledCloseCurrent: !tabClosable || !!affixTab || disabled,
       disabledCloseLeft,
       disabledCloseOther,
       disabledCloseRight,

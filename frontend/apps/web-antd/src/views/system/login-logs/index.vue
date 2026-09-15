@@ -12,4 +12,4 @@ const filters = [
   { key: 'succeeded', label: '登录结果', options: [{ label: '成功', value: '1' }, { label: '失败', value: '0' }] },
 ];
 </script>
-<template><LogPage batch-delete-permission="system.login-log.delete" :columns="columns" :description="$t('system.loginLogsDescription')" :filters="filters" path="/system/login-logs" permission="system.login-log.view" :title="$t('system.loginLogs')" /></template>
+<template><LogPage :columns="columns" :description="$t('system.loginLogsDescription')" :filters="filters" path="/system/login-logs" permission="system.login-log.view" :title="$t('system.loginLogs')" /></template>

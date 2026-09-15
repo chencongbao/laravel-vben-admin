@@ -38,14 +38,16 @@ Route::middleware(['auth:sanctum', 'admin.user'])->group(function (): void {
     Route::patch('system/users/{adminUser}', [AdminUserController::class, 'update'])->middleware('admin.permission:system.user.update');
 
     Route::get('system/roles', [AdminRoleController::class, 'index'])->middleware('admin.permission:system.role.view');
-    Route::post('system/roles', [AdminRoleController::class, 'store'])->middleware(['admin.permission:system.role.create', 'admin.permission:system.role.assign-access']);
+    Route::post('system/roles', [AdminRoleController::class, 'store'])->middleware('admin.permission:system.role.create');
     Route::get('system/roles/{adminRole}', [AdminRoleController::class, 'show'])->middleware('admin.permission:system.role.view');
-    Route::patch('system/roles/{adminRole}', [AdminRoleController::class, 'update'])->middleware(['admin.permission:system.role.update', 'admin.permission:system.role.assign-access']);
+    Route::patch('system/roles/{adminRole}', [AdminRoleController::class, 'update'])->middleware('admin.permission:system.role.update');
     Route::delete('system/roles/{adminRole}', [AdminRoleController::class, 'destroy'])->middleware('admin.permission:system.role.delete');
-    Route::put('system/roles/{adminRole}/access', [AdminRoleController::class, 'access'])->middleware('admin.permission:system.role.assign-access');
+    Route::put('system/roles/{adminRole}/access', [AdminRoleController::class, 'access'])->middleware('admin.permission:system.role.update');
 
     Route::get('system/permissions', [AdminPermissionController::class, 'index'])->middleware('admin.permission:system.permission.view');
+    Route::get('system/permissions/http-paths', [AdminPermissionController::class, 'httpPaths'])->middleware('admin.permission:system.permission.view');
     Route::post('system/permissions', [AdminPermissionController::class, 'store'])->middleware('admin.permission:system.permission.create');
+    Route::put('system/permissions/reorder', [AdminPermissionController::class, 'reorder'])->middleware('admin.permission:system.permission.update');
     Route::get('system/permissions/{adminPermission}', [AdminPermissionController::class, 'show'])->middleware('admin.permission:system.permission.view');
     Route::patch('system/permissions/{adminPermission}', [AdminPermissionController::class, 'update'])->middleware('admin.permission:system.permission.update');
     Route::delete('system/permissions/{adminPermission}', [AdminPermissionController::class, 'destroy'])->middleware('admin.permission:system.permission.delete');
@@ -59,9 +61,8 @@ Route::middleware(['auth:sanctum', 'admin.user'])->group(function (): void {
 
     Route::get('system/audit-logs', [AdminLogController::class, 'audit'])->middleware('admin.permission:system.audit.view');
     Route::get('system/login-logs', [AdminLogController::class, 'login'])->middleware('admin.permission:system.login-log.view');
-    Route::delete('system/login-logs/batch', [AdminLogController::class, 'destroyLoginBatch'])->middleware('admin.permission:system.login-log.delete');
     Route::get('system/settings', [AdminSettingController::class, 'index'])->middleware('admin.permission:system.setting.view');
-    Route::put('system/settings', [AdminSettingController::class, 'update'])->middleware('admin.permission:system.setting.update');
-    Route::get('system/theme-settings', [AdminSettingController::class, 'theme'])->middleware('admin.super-admin');
-    Route::put('system/theme-settings', [AdminSettingController::class, 'updateTheme'])->middleware('admin.super-admin');
+    Route::put('system/settings', [AdminSettingController::class, 'update'])->middleware('admin.permission:system.setting.view');
+    Route::get('system/theme-settings', [AdminSettingController::class, 'theme'])->middleware('admin.permission:system.theme-setting.view');
+    Route::put('system/theme-settings', [AdminSettingController::class, 'updateTheme'])->middleware('admin.permission:system.theme-setting.view');
 });

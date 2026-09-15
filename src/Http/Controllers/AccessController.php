@@ -48,7 +48,6 @@ final class AccessController extends Controller
                             ->where(fn ($permissionQuery) => $permissionQuery->whereNull('permission_code')->orWhereIn('permission_code', $permissionCodes));
                     });
             });
-            $query->where('code', '!=', 'system.theme-settings');
         }
 
         $menus = $query->get()->map(fn (AdminMenu $menu) => [
@@ -59,7 +58,14 @@ final class AccessController extends Controller
             'name' => $menu->route_name,
             'path' => $menu->route_path,
             'view_key' => $menu->view_key,
-            'meta' => ['title' => $menu->title, 'icon' => $menu->icon, 'order' => $menu->code === self::DEFAULT_MENU_CODE ? self::DEFAULT_MENU_ORDER : $menu->sort, 'authority' => array_values(array_filter([$menu->permission_code]))],
+            'meta' => [
+                'title' => $menu->title,
+                'icon' => $menu->icon,
+                'order' => $menu->code === self::DEFAULT_MENU_CODE ? self::DEFAULT_MENU_ORDER : $menu->sort,
+                'affixTab' => $menu->code === self::DEFAULT_MENU_CODE,
+                'tabClosable' => $menu->code !== self::DEFAULT_MENU_CODE,
+                'authority' => array_values(array_filter([$menu->permission_code])),
+            ],
             'children' => [],
         ])->keyBy('id')->all();
 

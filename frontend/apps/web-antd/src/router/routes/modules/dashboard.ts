@@ -27,7 +27,10 @@ const routes: RouteRecordRaw[] = [
         path: '/workspace',
         component: () => import('#/views/dashboard/workspace/index.vue'),
         meta: {
+          affixTab: true,
+          affixTabOrder: -100_001,
           icon: 'carbon:workspace',
+          tabClosable: false,
           title: $t('dashboard.workspace'),
         },
       },

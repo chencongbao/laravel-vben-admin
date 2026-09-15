@@ -31,13 +31,6 @@ export function deleteResource(path: string, id: number) {
   return requestClient.delete(`${path}/${id}`);
 }
 
-export function batchDeleteResources(path: string, ids: number[]) {
-  return requestClient.request<{ deleted_count: number }>(`${path}/batch`, {
-    data: { ids },
-    method: 'DELETE',
-  });
-}
-
 export function getResourceDetail<T = Record<string, any>>(
   path: string,
   id: number,
@@ -56,6 +49,12 @@ export function reorderMenus(
   items: Array<{ id: number; parent_id: null | number; sort: number }>,
 ) {
   return requestClient.put('/system/menus/reorder', { items });
+}
+
+export function reorderPermissions(
+  items: Array<{ id: number; parent_id: null | number; sort: number }>,
+) {
+  return requestClient.put('/system/permissions/reorder', { items });
 }
 
 export function updateSettings(settings: Array<{ key: string; value: any }>) {

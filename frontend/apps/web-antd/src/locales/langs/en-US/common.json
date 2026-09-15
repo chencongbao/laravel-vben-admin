@@ -11,12 +11,6 @@
     "reset": "Reset",
     "search": "Search"
   },
-  "batch": {
-    "confirmDelete": "Delete",
-    "deleteConfirm": "Delete the selected {count} login logs? This cannot be undone.",
-    "deleteSelected": "Batch Delete",
-    "deleteTitle": "Delete Login Logs"
-  },
   "errors": {
     "privilegeEscalationDenied": "You cannot assign or modify roles and permissions beyond your authority."
   },

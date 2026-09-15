@@ -138,6 +138,7 @@ export function useTabbar() {
         text: $t('preferences.tabbar.contextMenu.close'),
       },
       {
+        disabled: tab?.meta?.tabClosable === false,
         handler: async () => {
           await toggleTabPin(tab);
         },

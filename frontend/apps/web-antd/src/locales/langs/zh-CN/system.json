@@ -6,6 +6,21 @@
   "rolesDescription": "创建和维护角色，并为角色分配菜单及操作权限。",
   "permissions": "权限管理",
   "permissionsDescription": "维护权限层级、服务端权限编码、接口审计元数据、关联菜单及敏感操作标记。",
+  "permissionNames": {
+    "system": {
+      "access": "系统管理",
+      "logs": { "access": "系统日志" },
+      "configuration": { "access": "配置管理" },
+      "user": { "view": "用户管理", "create": "新增用户", "update": "编辑用户" },
+      "role": { "view": "角色管理", "create": "新增角色", "update": "编辑角色", "delete": "删除角色" },
+      "permission": { "view": "权限管理", "create": "新增权限", "update": "编辑权限", "delete": "删除权限" },
+      "menu": { "view": "菜单管理", "create": "新增菜单", "update": "编辑菜单", "delete": "删除菜单" },
+      "audit": { "view": "操作日志" },
+      "login-log": { "view": "登录日志" },
+      "setting": { "view": "系统配置" },
+      "theme-setting": { "view": "主题配置" }
+    }
+  },
   "menus": "菜单管理",
   "menusDescription": "维护后台菜单层级、路由、图标、排序与访问权限。",
   "loginLogs": "登录日志",

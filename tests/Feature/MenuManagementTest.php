@@ -6,6 +6,7 @@ use Chencongbao\LaravelVbenAdmin\LaravelVbenAdminServiceProvider;
 use Chencongbao\LaravelVbenAdmin\Models\AdminMenu;
 use Chencongbao\LaravelVbenAdmin\Models\AdminPermission;
 use Chencongbao\LaravelVbenAdmin\Models\AdminUser;
+use Illuminate\Support\Facades\Schema;
 use Laravel\Sanctum\Sanctum;
 use Laravel\Sanctum\SanctumServiceProvider;
 use Orchestra\Testbench\TestCase;
@@ -40,7 +41,9 @@ final class MenuManagementTest extends TestCase
         $this->getJson('/api/admin/access/menus')
             ->assertOk()
             ->assertJsonPath('menus.0.code', 'dashboard.workspace')
-            ->assertJsonPath('menus.0.meta.order', -100001);
+            ->assertJsonPath('menus.0.meta.order', -100001)
+            ->assertJsonPath('menus.0.meta.affixTab', true)
+            ->assertJsonPath('menus.0.meta.tabClosable', false);
 
         $this->getJson('/api/admin/system/menus')
             ->assertOk()
@@ -94,13 +97,14 @@ final class MenuManagementTest extends TestCase
             'view_key' => 'content.articles',
             'permission_code' => $view->code,
             'permission_ids' => [$view->getKey(), $update->getKey()],
-            'is_active' => true,
         ])->assertCreated()
+            ->assertJsonPath('menu.icon', 'lucide:list')
             ->assertJsonPath('menu.permission_code', $view->code)
             ->assertJsonCount(2, 'menu.permissions');
 
         $menuId = $response->json('menu.id');
         $menu = AdminMenu::query()->findOrFail($menuId);
+        self::assertSame('lucide:list', $menu->icon);
         self::assertEqualsCanonicalizing(
             [$view->getKey(), $update->getKey()],
             $menu->permissions()->pluck('admin_permissions.id')->all(),
@@ -112,42 +116,26 @@ final class MenuManagementTest extends TestCase
             ->assertJsonFragment(['code' => 'system.menu.update']);
     }
 
-    public function test_legacy_visibility_flags_do_not_hide_effective_menus(): void
+    public function test_menu_table_has_no_visibility_columns(): void
     {
-        AdminMenu::query()->where('code', 'system')->update([
-            'is_active' => false,
-            'is_hidden' => true,
-        ]);
+        $menus = config('laravel-vben-admin.tables.menus', 'admin_menus');
 
-        $response = $this->getJson('/api/admin/access/menus')->assertOk();
-        $system = collect($response->json('menus'))->firstWhere('code', 'system');
-
-        self::assertNotNull($system);
-        self::assertArrayNotHasKey('hidden', $system['meta']);
+        self::assertFalse(Schema::hasColumn($menus, 'is_active'));
+        self::assertFalse(Schema::hasColumn($menus, 'is_hidden'));
     }
 
-    public function test_menu_visibility_flags_are_not_configurable(): void
+    public function test_menu_visibility_columns_migration_is_reversible(): void
     {
-        $response = $this->postJson('/api/admin/system/menus', [
-            'code' => 'content.visible',
-            'title' => 'Visible menu',
-            'type' => 'page',
-            'is_active' => false,
-            'is_hidden' => true,
-        ])->assertCreated();
+        $menus = config('laravel-vben-admin.tables.menus', 'admin_menus');
+        $migration = require dirname(__DIR__, 2).'/database/migrations/2026_09_15_000011_remove_admin_menu_visibility_columns.php';
 
-        $menu = AdminMenu::query()->findOrFail($response->json('menu.id'));
-        self::assertTrue($menu->is_active);
-        self::assertFalse($menu->is_hidden);
+        $migration->down();
+        self::assertTrue(Schema::hasColumn($menus, 'is_active'));
+        self::assertTrue(Schema::hasColumn($menus, 'is_hidden'));
 
-        $this->patchJson('/api/admin/system/menus/'.$menu->getKey(), [
-            'title' => 'Still visible',
-            'is_active' => false,
-            'is_hidden' => true,
-        ])->assertOk();
-
-        self::assertTrue($menu->fresh()->is_active);
-        self::assertFalse($menu->fresh()->is_hidden);
+        $migration->up();
+        self::assertFalse(Schema::hasColumn($menus, 'is_active'));
+        self::assertFalse(Schema::hasColumn($menus, 'is_hidden'));
     }
 
     public function test_primary_permission_must_be_selected_in_permission_tree(): void

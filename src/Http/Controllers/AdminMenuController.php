@@ -16,6 +16,8 @@ final class AdminMenuController extends Controller
 {
     private const DEFAULT_MENU_CODE = 'dashboard.workspace';
 
+    private const DEFAULT_MENU_ICON = 'lucide:list';
+
     public function __construct(private readonly AuditRecorder $audit) {}
 
     public function index(): JsonResponse
@@ -37,8 +39,6 @@ final class AdminMenuController extends Controller
         unset($data['permission_ids']);
         $menu = DB::transaction(function () use ($data, $permissionIds, $request): AdminMenu {
             $menu = AdminMenu::query()->create($data + [
-                'is_active' => true,
-                'is_hidden' => false,
                 'is_system' => false,
             ]);
             $menu->permissions()->sync($permissionIds);
@@ -171,6 +171,10 @@ final class AdminMenuController extends Controller
             'icon' => ['nullable', 'string', 'max:160'],
             'sort' => ['sometimes', 'integer', 'min:-100000', 'max:100000'],
         ]);
+
+        if ((! $menu || array_key_exists('icon', $data)) && blank($data['icon'] ?? null)) {
+            $data['icon'] = self::DEFAULT_MENU_ICON;
+        }
 
         if (array_key_exists('permission_ids', $data) && ($data['permission_code'] ?? null) !== null) {
             $selectedCodes = AdminPermission::query()->whereKey($data['permission_ids'])->pluck('code');

@@ -61,6 +61,14 @@ final class PermissionManagementTest extends TestCase
         self::assertTrue($permission->menus()->whereKey($menu->getKey())->exists());
     }
 
+    public function test_http_paths_can_be_searched_from_registered_admin_routes(): void
+    {
+        $this->getJson('/api/admin/system/permissions/http-paths')
+            ->assertOk()
+            ->assertJsonFragment(['/api/admin/system/users'])
+            ->assertJsonFragment(['/api/admin/system/permissions/{adminPermission}']);
+    }
+
     public function test_invalid_methods_and_hierarchy_cycles_are_rejected_without_partial_writes(): void
     {
         $this->postJson('/api/admin/system/permissions', [
@@ -77,5 +85,20 @@ final class PermissionManagementTest extends TestCase
             ->assertUnprocessable()
             ->assertJsonPath('code', 'PERMISSION_CYCLE');
         self::assertNull($parent->fresh()->parent_id);
+    }
+
+    public function test_complete_permission_tree_can_be_reordered(): void
+    {
+        $permissions = AdminPermission::query()->orderBy('id')->get();
+        $first = $permissions->firstOrFail();
+        $items = $permissions->map(fn (AdminPermission $permission, int $index) => [
+            'id' => $permission->getKey(),
+            'parent_id' => $permission->getKey() === $first->getKey() ? null : $permission->parent_id,
+            'sort' => ($index + 1) * 10,
+        ])->all();
+
+        $this->putJson('/api/admin/system/permissions/reorder', ['items' => $items])->assertOk();
+
+        self::assertSame(10, $first->fresh()->sort);
     }
 }

@@ -1,16 +1,18 @@
 <script lang="ts" setup>
 import { computed, onMounted, reactive, ref } from 'vue';
+
 import { Page } from '@vben/common-ui';
-import { Card, Input, InputNumber, Modal, Select, Table, Tag } from 'ant-design-vue';
-import { batchDeleteResources, getResource } from '#/api/system';
+
+import { Card, Input, InputNumber, Select, Table, Tag } from 'ant-design-vue';
+
+import { getResource } from '#/api/system';
 import AutoRefresh from '#/components/system/auto-refresh.vue';
-import ListToolbar from '#/components/system/list-toolbar.vue';
 import ListRefreshButton from '#/components/system/list-refresh-button.vue';
-import ListSearchPanel from '#/components/system/list-search-panel.vue';
 import ListSearchField from '#/components/system/list-search-field.vue';
+import ListSearchPanel from '#/components/system/list-search-panel.vue';
+import ListToolbar from '#/components/system/list-toolbar.vue';
 import PermissionButton from '#/components/system/permission-button.vue';
 import TableExportButton from '#/components/system/table-export-button.vue';
-import TableBatchActions from '#/components/system/table-batch-actions.vue';
 import { $t } from '#/locales';
 import { formatBeijingDateTime, isDateTimeField } from '#/utils/datetime';
 import { createAdminPagination } from '#/utils/pagination';
@@ -25,7 +27,6 @@ interface LogFilter {
 
 const props = defineProps<{
   columns: Array<{ dataIndex: string; title: string }>;
-  batchDeletePermission?: string;
   description?: string;
   filters: LogFilter[];
   path: string;
@@ -37,7 +38,6 @@ const { setTableRef, tableScrollY } = useAdminTableScrollY();
 const showFilters = ref(true);
 const values = reactive<Record<string, any>>({});
 const pagination = reactive(createAdminPagination());
-const selectedRowKeys = ref<number[]>([]);
 const effectiveFilters = computed<LogFilter[]>(() => props.filters.some((filter) => filter.key === 'id')
   ? props.filters
   : [{ key: 'id', label: $t('common.fields.id'), type: 'number' }, ...props.filters]);
@@ -53,20 +53,6 @@ async function load() {
 function search() { pagination.current = 1; void load(); }
 function reset() { Object.keys(values).forEach((key) => delete values[key]); search(); }
 function changePage(page: { current?: number; pageSize?: number }) { pagination.current = page.current ?? 1; pagination.pageSize = page.pageSize ?? pagination.pageSize; void load(); }
-function batchAction(key: string) {
-  if (key !== 'delete' || selectedRowKeys.value.length === 0) return;
-  Modal.confirm({
-    content: $t('common.batch.deleteConfirm', { count: selectedRowKeys.value.length }),
-    okButtonProps: { danger: true },
-    okText: $t('common.batch.confirmDelete'),
-    title: $t('common.batch.deleteTitle'),
-    async onOk() {
-      await batchDeleteResources(props.path, selectedRowKeys.value);
-      selectedRowKeys.value = [];
-      await load();
-    },
-  });
-}
 onMounted(load);
 </script>
 
@@ -76,17 +62,11 @@ onMounted(load);
       <template #left>
         <ListRefreshButton :loading="loading" />
         <PermissionButton icon="lucide:filter" @click="showFilters = !showFilters">{{ $t('common.actions.filter') }}</PermissionButton>
-        <TableBatchActions
-          v-if="batchDeletePermission"
-          :actions="[{ danger: true, icon: 'lucide:trash-2', key: 'delete', label: $t('common.batch.deleteSelected'), permission: batchDeletePermission }]"
-          :selected-count="selectedRowKeys.length"
-          @action="batchAction"
-        />
       </template>
       <template #right>
         <AutoRefresh :loading="loading" :storage-key="path" />
         <TableExportButton :columns="columns" :filename="title" :permission="permission" :rows="rows" />
-        <slot name="actions" />
+        <slot name="actions"></slot>
       </template>
     </ListToolbar>
     <ListSearchPanel v-if="showFilters">
@@ -101,7 +81,7 @@ onMounted(load);
       </template>
     </ListSearchPanel>
     <Card :body-style="{ padding: 0 }" :bordered="false" class="admin-table-card">
-      <Table :ref="setTableRef" bordered class="admin-data-table" :columns="columns" :data-source="rows" :loading="loading" :pagination="pagination" :row-selection="batchDeletePermission ? { selectedRowKeys, onChange: (keys: (number | string)[]) => selectedRowKeys = keys.map(Number) } : undefined" row-key="id" :scroll="{ y: tableScrollY }" @change="changePage">
+      <Table :ref="setTableRef" bordered class="admin-data-table" :columns="columns" :data-source="rows" :loading="loading" :pagination="pagination" row-key="id" :scroll="{ y: tableScrollY }" @change="changePage">
         <template #bodyCell="{ column, text }">
           <Tag v-if="column.dataIndex === 'succeeded'" :color="text ? 'green' : 'red'">{{ text ? '成功' : '失败' }}</Tag>
           <span v-else-if="isDateTimeField(String(column.dataIndex ?? ''))">{{ formatBeijingDateTime(text) }}</span>

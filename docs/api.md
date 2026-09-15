@@ -64,9 +64,9 @@ Authentication error responses expose stable codes such as `INVALID_CREDENTIALS`
 | Method | Path | Permission |
 | --- | --- | --- |
 | GET | `/system/users` | `system.user.view` |
-| POST | `/system/users` | `system.user.create`; assigning roles additionally requires `system.user.assign-roles` |
+| POST | `/system/users` | `system.user.create` |
 | GET | `/system/users/{adminUser}` | `system.user.view` |
-| PATCH | `/system/users/{adminUser}` | `system.user.update`; assigning roles additionally requires `system.user.assign-roles` |
+| PATCH | `/system/users/{adminUser}` | `system.user.update` |
 
 `GET /system/users` accepts an optional positive integer `id` query parameter for exact identifier filtering. All paginated administration list endpoints follow the same default identifier-filter convention.
 
@@ -77,11 +77,11 @@ Administrator create and update requests also accept `two_factor_enabled` and `l
 | Method | Path | Permission |
 | --- | --- | --- |
 | GET | `/system/roles` | `system.role.view` |
-| POST | `/system/roles` | `system.role.create` and `system.role.assign-access` |
+| POST | `/system/roles` | `system.role.create` |
 | GET | `/system/roles/{adminRole}` | `system.role.view` |
-| PATCH | `/system/roles/{adminRole}` | `system.role.update` and `system.role.assign-access` |
+| PATCH | `/system/roles/{adminRole}` | `system.role.update` |
 | DELETE | `/system/roles/{adminRole}` | `system.role.delete` |
-| PUT | `/system/roles/{adminRole}/access` | `system.role.assign-access` |
+| PUT | `/system/roles/{adminRole}/access` | `system.role.update` |
 
 Creating and updating a non-super role accepts `code`, `name`, `is_active`, `permission_ids`, and `menu_ids` in one atomic request. The built-in `administrator` role is immutable and has implicit full access. The built-in `manager` identity is protected, while its access assignments can be updated. A role assigned to administrators cannot be deleted.
 
@@ -91,9 +91,9 @@ Creating and updating a non-super role accepts `code`, `name`, `is_active`, `per
 
 Permission CRUD uses `/system/permissions`; menu CRUD uses `/system/menus`. Each action has a distinct `system.permission.*` or `system.menu.*` permission. System records are protected, referenced permissions cannot be deleted, menus with children cannot be deleted, and cyclic menu parents are rejected.
 
-Menu create and update requests do not accept `is_active` or `is_hidden`. New menus are always stored as enabled and visible, and the effective menu API does not filter or hide menus by these legacy compatibility columns.
+Menu create and update requests do not accept `is_active` or `is_hidden`. The menu table does not contain these columns; effective menus are displayed according to the stored hierarchy and the administrator's role and permission assignments.
 
-Permission create and update requests accept `parent_id`, `code`, `name`, nullable `description`, nullable `http_methods`, nullable `http_paths`, `sort`, `is_active`, `is_sensitive`, and `menu_ids`. `http_methods` is limited to `GET`, `POST`, `PUT`, `PATCH`, `DELETE`, and `OPTIONS`; both metadata arrays are bounded and validated. Permission data and menu bindings are saved in one transaction. Responses include the related menus. Cyclic parents are rejected with `PERMISSION_CYCLE`, and a permission with children returns `PERMISSION_HAS_CHILDREN` when deletion is attempted. HTTP metadata supports route-coverage review only; stable permission codes and Laravel middleware remain authoritative.
+Permission create and update requests accept `parent_id`, `code`, `name`, nullable `description`, nullable `http_methods`, nullable `http_paths`, `sort`, `is_active`, `is_sensitive`, and `menu_ids`. `http_methods` is limited to `GET`, `POST`, `PUT`, `PATCH`, `DELETE`, and `OPTIONS`; both metadata arrays are bounded and validated. `GET /system/permissions/http-paths` returns the registered `/api/admin/*` paths for the searchable multi-select in the permission editor. Permission data and menu bindings are saved in one transaction. Responses include the related menus. Cyclic parents are rejected with `PERMISSION_CYCLE`, and a permission with children returns `PERMISSION_HAS_CHILDREN` when deletion is attempted. `PUT /api/admin/system/permissions/reorder` accepts the complete permission tree as `id`, `parent_id`, and `sort`, then saves hierarchy and order in one transaction. HTTP metadata supports route-coverage review only; stable permission codes and Laravel middleware remain authoritative.
 
 `PUT /system/menus/reorder` requires `system.menu.update` and atomically accepts the complete menu tree as `items` containing `id`, `parent_code`, and `sort`. Incomplete trees and cyclic parent relationships are rejected.
 
@@ -104,18 +104,15 @@ The effective menu API returns a tree. A non-super administrator only receives m
 | Method | Path | Permission |
 | --- | --- | --- |
 | GET | `/system/login-logs` | `system.login-log.view` |
-| DELETE | `/system/login-logs/batch` | `system.login-log.delete` |
 | GET | `/system/audit-logs` | `system.audit.view` |
 
 Both endpoints read the shared Spatie Activitylog `activity_log` table. `log_type=login` identifies authentication events and `log_type=operation` identifies administration changes; the stable API paths remain unchanged so existing pages do not depend on Spatie's storage schema.
 
 Both log endpoints accept an optional positive integer `id` query parameter for exact activity identifier filtering. Their existing feature-specific filters remain available and are combined with `id` when supplied.
 
-Batch login-log deletion accepts `{"ids":[1,2]}` with 1–100 distinct positive identifiers. The request is rejected atomically if any identifier does not belong to a login log in the configured administration log. A successful deletion creates one `system.login-log.batch-deleted` operation audit containing only the deleted identifiers and count. Operation logs cannot be deleted through this endpoint.
-
 Login-log items expose the existing `username`, `succeeded`, `failure_code`, `ip_address`, and `created_at` fields, plus `client_type` and `user_agent`. Audit-log items expose the existing actor, action, subject, changes, context, IP, and creation time fields, plus `description`, `method`, `path`, and `user_agent`. Timestamps use standard ISO-8601 serialization and are rendered as Beijing time by the administration client.
 
-Audit changes, context, and captured request input recursively redact keys containing password, token, secret, credential, authorization, cookie, private key, captcha, TOTP, or two-factor data. Uploaded files are represented only by safe metadata. Records are append-only through these APIs.
+Audit changes, context, and captured request input recursively redact keys containing password, token, secret, credential, authorization, cookie, private key, captcha, TOTP, or two-factor data. Uploaded files are represented only by safe metadata. Login and operation records are read-only through these APIs.
 
 Updating several system or theme settings in one request creates one `system.settings.updated` operation record containing all changed keys and their before/after values. A request that produces no value changes does not create an audit record.
 
@@ -124,11 +121,11 @@ Updating several system or theme settings in one request creates one `system.set
 | Method | Path | Permission |
 | --- | --- | --- |
 | GET | `/system/settings` | `system.setting.view` |
-| PUT | `/system/settings` | `system.setting.update` |
-| GET | `/system/theme-settings` | Super administrator only |
-| PUT | `/system/theme-settings` | Super administrator only |
+| PUT | `/system/settings` | `system.setting.view` |
+| GET | `/system/theme-settings` | `system.theme-setting.view` |
+| PUT | `/system/theme-settings` | `system.theme-setting.view` |
 
-The package owns the built-in `system.name`, `system.page_size`, `system.login_remember_me`, `system.login_description`, login appearance, administration appearance, `system.tabbar_*`, and `system.advanced_preferences` definitions; their runtime values are stored in `admin_settings` instead of duplicated in the published package configuration. The regular settings endpoint exposes the system name, page size, one language-independent login description, and whether the login page displays Remember Me. The dedicated theme settings endpoints expose login appearance, administration appearance, tab-bar behavior, and the remaining shared interface preferences, and require an active super-administrator role independently of assignable permissions. Watermark, footer, copyright, tenant mode, form-fullscreen, default-table-size, and report-title preferences are intentionally not registered by this package. These values are returned by the public application bootstrap so the selected behavior and appearance are applied before authentication and after refresh. `system.page_size` is also the default for every paginated administration endpoint when `per_page` is omitted and for every list created by the shared frontend pagination factory; an explicit bounded `per_page` or a page-size selection remains a request/page-local override. The page-size selector includes the configured value even when it is not one of the common presets. The supported types are string, bounded integer, boolean, enum, JSON, and IANA timezone. Secrets and credentials are deliberately unsupported.
+The package owns the built-in `system.name`, `system.page_size`, `system.login_remember_me`, `system.login_description`, login appearance, administration appearance, `system.tabbar_*`, and `system.advanced_preferences` definitions; their runtime values are stored in `admin_settings` instead of duplicated in the published package configuration. Configuration permissions are page-level: `system.setting.view` and `system.theme-setting.view` each authorize both viewing and editing their corresponding page. Watermark, footer, copyright, tenant mode, form-fullscreen, default-table-size, and report-title preferences are intentionally not registered by this package. These values are returned by the public application bootstrap so the selected behavior and appearance are applied before authentication and after refresh. `system.page_size` is also the default for every paginated administration endpoint when `per_page` is omitted and for every list created by the shared frontend pagination factory; an explicit bounded `per_page` or a page-size selection remains a request/page-local override. The page-size selector includes the configured value even when it is not one of the common presets. The supported types are string, bounded integer, boolean, enum, JSON, and IANA timezone. Secrets and credentials are deliberately unsupported.
 
 Setting validation errors use the concrete `settings.{key}` error field. The administration request layer maps known system setting fields to localized, user-facing messages and falls back to a shared localized settings error instead of displaying internal setting keys or server-side English validation text.
 

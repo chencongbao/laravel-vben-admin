@@ -98,12 +98,8 @@ final class ActivityLogTest extends TestCase
             ->assertJsonPath('data.0.client_type', 'desktop');
 
         $this->deleteJson('/api/admin/system/login-logs/batch', ['ids' => [$failed->getKey()]])
-            ->assertOk()
-            ->assertJsonPath('deleted_count', 1);
-        self::assertFalse(Activity::query()->whereKey($failed->getKey())->exists());
-        $deletionAudit = Activity::query()->where('event', 'system.login-log.batch-deleted')->firstOrFail();
-        self::assertSame(1, $deletionAudit->getProperty('context.deleted_count'));
-        self::assertSame([$failed->getKey()], $deletionAudit->getProperty('context.deleted_ids'));
+            ->assertNotFound();
+        self::assertTrue(Activity::query()->whereKey($failed->getKey())->exists());
     }
 
     public function test_operation_audit_uses_spatie_and_redacts_sensitive_values(): void
@@ -148,9 +144,6 @@ final class ActivityLogTest extends TestCase
             ->assertJsonPath('data.0.method', 'PUT')
             ->assertJsonPath('data.0.path', '/api/admin/system/settings');
 
-        $this->deleteJson('/api/admin/system/login-logs/batch', ['ids' => [$activity->getKey()]])
-            ->assertUnprocessable();
-        self::assertTrue(Activity::query()->whereKey($activity->getKey())->exists());
     }
 
     public function test_setting_batch_creates_one_audit_record_and_unchanged_values_create_none(): void

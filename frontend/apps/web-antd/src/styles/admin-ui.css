@@ -2,7 +2,10 @@
   border-radius: 0 !important;
 }
 
-.ant-checkbox .ant-checkbox-inner {
+.ant-cascader-checkbox-inner,
+.ant-checkbox-inner,
+.ant-select-tree-checkbox-inner,
+.ant-tree-checkbox-inner {
   border-radius: 0 !important;
 }
 
@@ -363,11 +366,44 @@ textarea,
   display: flex;
   gap: 20px;
   align-items: center;
+  min-height: 32px;
   margin-bottom: 8px;
 }
 
 .admin-menu-permissions .ant-tree {
   background: transparent;
+}
+
+.admin-menu-permissions .ant-tree-node-content-wrapper {
+  min-height: 24px;
+  padding-inline: 4px;
+  line-height: 24px;
+  border-radius: 2px;
+}
+
+.admin-menu-permissions .ant-tree-treenode {
+  min-height: 24px;
+  padding-block: 0;
+}
+
+.admin-menu-permissions .ant-tree-checkbox {
+  margin-block-start: 5px;
+}
+
+.admin-menu-permissions .ant-tree-switcher {
+  line-height: 24px;
+}
+
+.admin-menu-permissions__switcher {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  font-size: 13px;
+  line-height: 12px;
+  color: hsl(var(--muted-foreground));
+  border: 1px solid hsl(var(--border));
 }
 
 .admin-menu-parent-dropdown .ant-select-item-option {
@@ -421,11 +457,11 @@ textarea,
 
 .admin-menu-tree .tree-node {
   outline: none;
-  border: 1px solid transparent;
 }
 
 .admin-menu-tree .tree-node:focus-visible {
-  border-color: hsl(var(--primary));
+  outline: 1px solid hsl(var(--primary));
+  outline-offset: -1px;
 }
 
 .admin-menu-tree .tree-node-inner {

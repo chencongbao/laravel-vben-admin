@@ -104,7 +104,7 @@ final class AdminRoleController extends Controller
 
         $data = $request->validate([
             'permission_ids' => ['required', 'array', 'max:500'], 'permission_ids.*' => ['integer', 'distinct', Rule::exists(config('laravel-vben-admin.tables.permissions', 'admin_permissions'), 'id')->where('is_active', true)],
-            'menu_ids' => ['required', 'array', 'max:500'], 'menu_ids.*' => ['integer', 'distinct', Rule::exists(config('laravel-vben-admin.tables.menus', 'admin_menus'), 'id')->where('is_active', true)],
+            'menu_ids' => ['required', 'array', 'max:500'], 'menu_ids.*' => ['integer', 'distinct', Rule::exists(config('laravel-vben-admin.tables.menus', 'admin_menus'), 'id')],
         ]);
         if (! $this->privilegeGuard->canAssignPermissions($request->user(), $data['permission_ids'])) {
             return response()->json(['message' => 'Permission assignment exceeds your authority.', 'code' => 'ADMIN_PRIVILEGE_ESCALATION_DENIED'], 403);
@@ -134,7 +134,7 @@ final class AdminRoleController extends Controller
             'permission_ids' => ['required', 'array', 'min:1', 'max:500'],
             'permission_ids.*' => ['integer', 'distinct', Rule::exists(config('laravel-vben-admin.tables.permissions', 'admin_permissions'), 'id')->where('is_active', true)],
             'menu_ids' => ['required', 'array', 'min:1', 'max:500'],
-            'menu_ids.*' => ['integer', 'distinct', Rule::exists(config('laravel-vben-admin.tables.menus', 'admin_menus'), 'id')->where('is_active', true)],
+            'menu_ids.*' => ['integer', 'distinct', Rule::exists(config('laravel-vben-admin.tables.menus', 'admin_menus'), 'id')],
         ]);
     }
 }

@@ -2,19 +2,14 @@
 
 namespace Chencongbao\LaravelVbenAdmin\Http\Controllers;
 
-use Chencongbao\LaravelVbenAdmin\Contracts\AuditRecorder;
 use Chencongbao\LaravelVbenAdmin\Support\AdminPagination;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\ValidationException;
 use Spatie\Activitylog\Models\Activity;
 
 final class AdminLogController extends Controller
 {
-    public function __construct(private readonly AuditRecorder $audit) {}
-
     public function audit(Request $request): JsonResponse
     {
         $filters = $request->validate(['id' => ['nullable', 'integer', 'min:1'], 'action' => ['nullable', 'string', 'max:160'], 'actor_id' => ['nullable', 'integer', 'min:1'], 'per_page' => ['nullable', 'integer', 'min:1', 'max:100']]);
@@ -78,30 +73,4 @@ final class AdminLogController extends Controller
         return response()->json($logs);
     }
 
-    public function destroyLoginBatch(Request $request): JsonResponse
-    {
-        $validated = $request->validate([
-            'ids' => ['required', 'array', 'min:1', 'max:100'],
-            'ids.*' => ['required', 'integer', 'min:1', 'distinct'],
-        ]);
-        $ids = array_values(array_map('intval', $validated['ids']));
-        $query = Activity::query()
-            ->where('log_name', config('laravel-vben-admin.activity_log.log_name', 'admin'))
-            ->where('log_type', 'login')
-            ->whereKey($ids);
-
-        if ((clone $query)->count() !== count($ids)) {
-            throw ValidationException::withMessages(['ids' => ['The selected login logs are invalid.']]);
-        }
-
-        DB::transaction(function () use ($ids, $query, $request): void {
-            $query->delete();
-            $this->audit->record($request->user(), 'system.login-log.batch-deleted', context: [
-                'deleted_count' => count($ids),
-                'deleted_ids' => $ids,
-            ]);
-        });
-
-        return response()->json(['deleted_count' => count($ids)]);
-    }
 }
