@@ -55,8 +55,6 @@ final class ActivityLogTest extends TestCase
             'method',
             'path',
             'user_agent',
-            'legacy_source',
-            'legacy_id',
         ]));
         self::assertFalse(Schema::hasTable('admin_login_logs'));
         self::assertFalse(Schema::hasTable('admin_audit_logs'));

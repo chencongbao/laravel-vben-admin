@@ -122,20 +122,6 @@ final class MenuManagementTest extends TestCase
         self::assertFalse(Schema::hasColumn($menus, 'is_hidden'));
     }
 
-    public function test_menu_visibility_columns_migration_is_reversible(): void
-    {
-        $menus = config('laravel-vben-admin.tables.menus', 'admin_menus');
-        $migration = require dirname(__DIR__, 2).'/database/migrations/2026_09_15_000011_remove_admin_menu_visibility_columns.php';
-
-        $migration->down();
-        self::assertTrue(Schema::hasColumn($menus, 'is_active'));
-        self::assertTrue(Schema::hasColumn($menus, 'is_hidden'));
-
-        $migration->up();
-        self::assertFalse(Schema::hasColumn($menus, 'is_active'));
-        self::assertFalse(Schema::hasColumn($menus, 'is_hidden'));
-    }
-
     public function test_menu_table_uses_only_the_permission_pivot(): void
     {
         self::assertFalse(Schema::hasColumn(config('laravel-vben-admin.tables.menus', 'admin_menus'), 'permission_code'));

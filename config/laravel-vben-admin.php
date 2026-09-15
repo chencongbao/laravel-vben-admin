@@ -30,8 +30,5 @@ return [
         'role_menus' => 'admin_role_menus',
         'permission_menus' => 'admin_permission_menus',
         'settings' => 'admin_settings',
-        // Used only by the legacy log backfill/drop migrations.
-        'login_logs' => 'admin_login_logs',
-        'audit_logs' => 'admin_audit_logs',
     ],
 ];

@@ -91,7 +91,7 @@ final class InstallCommandTest extends TestCase
             'system.permission.view',
         ])->exists());
         self::assertTrue(Schema::hasColumns('personal_access_tokens', ['ip_address', 'user_agent']));
-        self::assertTrue(Schema::hasColumns('activity_log', ['log_name', 'log_type', 'event', 'attribute_changes', 'properties', 'legacy_source', 'legacy_id']));
+        self::assertTrue(Schema::hasColumns('activity_log', ['log_name', 'log_type', 'event', 'attribute_changes', 'properties']));
         self::assertFalse(Schema::hasTable('admin_login_logs'));
         self::assertFalse(Schema::hasTable('admin_audit_logs'));
         self::assertFalse(Schema::hasColumn('admin_menus', 'permission_code'));

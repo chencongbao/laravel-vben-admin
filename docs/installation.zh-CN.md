@@ -44,7 +44,7 @@ php artisan vben-admin:publish-assets
 4. 同步内置的 `administrator`（超级管理员）、`manager`（管理员）、权限和菜单；
 5. 首次安装时创建默认超级管理员。
 
-安装或升级还会创建统一的 Spatie Activitylog `activity_log` 表。已有 `admin_login_logs` 和 `admin_audit_logs` 数据会按原始主键幂等回填；后续 migration 只有在确认每一条旧记录都已进入统一表后，才删除这两张旧表。升级前仍应备份数据库，因为回滚只会恢复旧表结构，无法恢复已经删除的旧表数据；完整历史日志继续保存在 `activity_log`。
+安装会直接创建统一的 Spatie Activitylog `activity_log` 表，不再创建旧的 `admin_login_logs` 和 `admin_audit_logs` 表。本项目只支持全新安装，不提供旧版本数据库的迁移或日志回填路径。
 
 默认登录信息：
 
@@ -199,14 +199,12 @@ php artisan vben-admin:install
 php artisan vben-admin:publish-assets --force
 ```
 
-安装命令可以重复执行：它会执行新增 migration 并同步包拥有的基础权限和菜单，但不会删除业务项目的自定义记录，也不会重置已有 `admin` 密码。
-
-更新前建议备份数据库，并先在测试环境验证 migration 和自定义后台模块兼容性。
+当前迁移只支持空数据库全新安装，不提供旧版本数据库升级路径。`vben-admin:install` 在同一套已完成安装的数据库中可重复执行，用于同步包拥有的基础权限和菜单；它不会删除业务项目的自定义记录，也不会重置已有 `admin` 密码。旧版本数据库不得直接使用当前基础迁移升级，应重新建立空数据库并按业务要求导入数据。
 
 ## 7. 常用命令
 
 ```bash
-# 安装或升级基础结构
+# 全新安装基础结构
 php artisan vben-admin:install
 
 # 预览角色、权限和菜单同步内容，不写数据库
