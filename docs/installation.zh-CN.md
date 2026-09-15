@@ -49,11 +49,23 @@ php artisan vben-admin:publish-assets
 默认登录信息：
 
 ```text
-超级管理员：cmsadmin / admin（administrator 角色）
-管理员：admin / admin（manager 角色）
+超级管理员：cmsadmin / admin（固定绑定 administrator 角色）
+管理员：admin / admin（固定绑定 manager 角色）
 ```
 
-如果项目中已经存在同名管理员，重复执行安装命令不会覆盖其密码或角色。正式环境首次登录后应立即修改两个默认密码。
+两个内置账号的用户名和角色关系不可在用户管理或 API 中修改。如果项目中已经存在同名管理员，重复执行安装命令不会覆盖其密码，但会恢复上述固定角色关系。正式环境首次登录后应立即修改两个默认密码。
+
+全新安装会把当前内置 RBAC 基线完整写入数据库：
+
+- 创建并固定 `administrator`（超级管理员）和 `manager`（管理员）两个系统角色；
+- 创建当前系统管理、系统日志、配置管理的权限父子树，只包含当前产品保留的权限；
+- 创建工作台、系统管理、系统日志、配置管理及其子菜单，并写入 `parent_id`、前端路由、图标和 `sort`；
+- 使用 `admin_permission_menus` 写入每个系统菜单对应的访问权限；
+- `cmsadmin` 只绑定 `administrator`，`admin` 只绑定 `manager`；
+- `administrator` 通过超级管理员规则隐式拥有全部权限和菜单，不批量写入角色权限、角色菜单关联；
+- 新安装的 `manager` 默认关联全部内置系统权限，以及除固定工作台外的全部内置系统菜单；工作台由登录态自动提供，不写入 `admin_role_menus`。
+
+`vben-admin:sync` 会保留已有自定义数据和非空角色授权。只有当内置 `manager` 的权限或菜单关联为空时，才补齐上述默认权限或默认菜单，避免普通管理员在全新安装后没有可访问功能。
 
 `vben-admin:publish-assets` 会把包内已经编译的前端资源复制到 Laravel 的 `public/admin`。如果目标目录已经存在且需要更新，执行：
 

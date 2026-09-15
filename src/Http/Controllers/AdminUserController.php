@@ -19,6 +19,11 @@ use Illuminate\Validation\Rules\Password;
 
 final class AdminUserController extends Controller
 {
+    private const FIXED_ACCOUNT_ROLES = [
+        'admin' => 'manager',
+        'cmsadmin' => 'administrator',
+    ];
+
     public function __construct(
         private readonly AuditRecorder $audit,
         private readonly PrivilegeAssignmentGuard $privilegeGuard,
@@ -28,7 +33,15 @@ final class AdminUserController extends Controller
     public function index(Request $request): JsonResponse
     {
         $validated = $request->validate(['id' => ['nullable', 'integer', 'min:1'], 'keyword' => ['nullable', 'string', 'max:120'], 'status' => ['nullable', Rule::in(['active', 'disabled'])], 'per_page' => ['nullable', 'integer', 'min:1', 'max:100']]);
-        $users = AdminUser::query()->with('roles:id,code,name')->when($validated['id'] ?? null, fn ($query, $id) => $query->whereKey($id))->when($validated['keyword'] ?? null, fn ($query, $keyword) => $query->where(fn ($nested) => $nested->where('username', 'like', "%{$keyword}%")->orWhere('name', 'like', "%{$keyword}%")))->when(isset($validated['status']), fn ($query) => $query->where('is_active', $validated['status'] === 'active'))->latest('id')->paginate(AdminPagination::perPage($validated['per_page'] ?? null));
+        $isSuperAdmin = $this->privilegeGuard->isSuperAdmin($request->user());
+        $users = AdminUser::query()
+            ->with('roles:id,code,name')
+            ->when(! $isSuperAdmin, fn ($query) => $query->whereDoesntHave('roles', fn ($roleQuery) => $roleQuery->where('is_super_admin', true)))
+            ->when($validated['id'] ?? null, fn ($query, $id) => $query->whereKey($id))
+            ->when($validated['keyword'] ?? null, fn ($query, $keyword) => $query->where(fn ($nested) => $nested->where('username', 'like', "%{$keyword}%")->orWhere('name', 'like', "%{$keyword}%")))
+            ->when(isset($validated['status']), fn ($query) => $query->where('is_active', $validated['status'] === 'active'))
+            ->latest('id')
+            ->paginate(AdminPagination::perPage($validated['per_page'] ?? null));
 
         return response()->json($users);
     }
@@ -47,7 +60,7 @@ final class AdminUserController extends Controller
                     $fail('The login IP whitelist contains an invalid IP address or CIDR range.');
                 }
             }],
-            'role_ids' => ['sometimes', 'array', 'max:100'],
+            'role_ids' => ['sometimes', 'array', 'max:1'],
             'role_ids.*' => ['integer', 'distinct', Rule::exists(config('laravel-vben-admin.tables.roles', 'admin_roles'), 'id')->where('is_active', true)],
         ]);
 
@@ -70,8 +83,12 @@ final class AdminUserController extends Controller
         return response()->json(['user' => $user->load('roles:id,code,name')], 201);
     }
 
-    public function show(AdminUser $adminUser): JsonResponse
+    public function show(Request $request, AdminUser $adminUser): JsonResponse
     {
+        if (! $this->privilegeGuard->canManageUser($request->user(), $adminUser)) {
+            abort(404);
+        }
+
         return response()->json(['user' => $adminUser->load('roles:id,code,name')]);
     }
 
@@ -89,12 +106,26 @@ final class AdminUserController extends Controller
                     $fail('The login IP whitelist contains an invalid IP address or CIDR range.');
                 }
             }],
-            'role_ids' => ['sometimes', 'array', 'max:100'],
+            'role_ids' => ['sometimes', 'array', 'max:1'],
             'role_ids.*' => ['integer', 'distinct', Rule::exists(config('laravel-vben-admin.tables.roles', 'admin_roles'), 'id')->where('is_active', true)],
         ]);
 
         if (! $this->privilegeGuard->canManageUser($request->user(), $adminUser)) {
             return response()->json(['message' => 'This administrator exceeds your authority.', 'code' => 'ADMIN_PRIVILEGE_ESCALATION_DENIED'], 403);
+        }
+        $fixedRoleCode = self::FIXED_ACCOUNT_ROLES[$adminUser->username] ?? null;
+        if (array_key_exists('username', $data) && $data['username'] !== $adminUser->username) {
+            $code = $fixedRoleCode === null ? 'ADMIN_USERNAME_IMMUTABLE' : 'BUILTIN_ADMIN_IDENTITY_PROTECTED';
+
+            return response()->json(['message' => 'Administrator username cannot be modified after creation.', 'code' => $code], 422);
+        }
+        if ($fixedRoleCode !== null) {
+            if (array_key_exists('role_ids', $data)) {
+                $fixedRoleId = AdminRole::query()->where('code', $fixedRoleCode)->valueOrFail('id');
+                if ($data['role_ids'] !== [$fixedRoleId]) {
+                    return response()->json(['message' => 'Built-in administrator role cannot be modified.', 'code' => 'BUILTIN_ADMIN_ROLE_PROTECTED'], 422);
+                }
+            }
         }
         if ($adminUser->is($request->user()) && array_key_exists('is_active', $data) && ! $data['is_active']) {
             return response()->json(['message' => 'You cannot disable your own account.', 'code' => 'ADMIN_SELF_DISABLE_DENIED'], 422);

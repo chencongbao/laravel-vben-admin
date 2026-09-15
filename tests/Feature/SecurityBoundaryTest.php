@@ -3,6 +3,7 @@
 namespace Chencongbao\LaravelVbenAdmin\Tests\Feature;
 
 use Chencongbao\LaravelVbenAdmin\LaravelVbenAdminServiceProvider;
+use Chencongbao\LaravelVbenAdmin\Models\AdminMenu;
 use Chencongbao\LaravelVbenAdmin\Models\AdminPermission;
 use Chencongbao\LaravelVbenAdmin\Models\AdminRole;
 use Chencongbao\LaravelVbenAdmin\Models\AdminUser;
@@ -60,6 +61,156 @@ final class SecurityBoundaryTest extends TestCase
             ->assertJsonPath('code', 'ADMIN_PRIVILEGE_ESCALATION_DENIED');
 
         self::assertNotSame('Tampered', $target->fresh()->name);
+    }
+
+    public function test_only_super_administrators_can_view_super_administrator_users(): void
+    {
+        $this->artisan('vben-admin:install')->assertSuccessful();
+        $superAdministrator = AdminUser::query()->where('username', 'cmsadmin')->firstOrFail();
+        $administrator = AdminUser::query()->where('username', 'admin')->firstOrFail();
+        $userViewPermission = AdminPermission::query()->where('code', 'system.user.view')->firstOrFail();
+        $administrator->roles()->firstOrFail()->permissions()->syncWithoutDetaching([$userViewPermission->getKey()]);
+
+        Sanctum::actingAs($superAdministrator, ['admin']);
+        $this->getJson('/api/admin/system/users?per_page=100')
+            ->assertOk()
+            ->assertJsonFragment(['username' => 'cmsadmin'])
+            ->assertJsonFragment(['username' => 'admin']);
+        $this->getJson('/api/admin/system/users/'.$superAdministrator->getKey())
+            ->assertOk()
+            ->assertJsonPath('user.username', 'cmsadmin');
+
+        Sanctum::actingAs($administrator, ['admin']);
+        $this->getJson('/api/admin/system/users?per_page=100')
+            ->assertOk()
+            ->assertJsonMissing(['username' => 'cmsadmin'])
+            ->assertJsonFragment(['username' => 'admin']);
+        $this->getJson('/api/admin/system/users/'.$superAdministrator->getKey())->assertNotFound();
+        $this->getJson('/api/admin/system/users/'.$administrator->getKey())
+            ->assertOk()
+            ->assertJsonPath('user.username', 'admin');
+    }
+
+    public function test_administrator_create_accepts_at_most_one_role(): void
+    {
+        $this->artisan('vben-admin:install')->assertSuccessful();
+        $superAdministrator = AdminUser::query()->where('username', 'cmsadmin')->firstOrFail();
+        $roleIds = AdminRole::query()->limit(2)->pluck('id')->all();
+        Sanctum::actingAs($superAdministrator, ['admin']);
+
+        $this->postJson('/api/admin/system/users', [
+            'name' => 'Multiple roles user',
+            'password' => 'SecurePassword123',
+            'role_ids' => $roleIds,
+            'username' => 'multiple-roles-user',
+        ])->assertUnprocessable()->assertJsonValidationErrors('role_ids');
+
+        self::assertFalse(AdminUser::query()->where('username', 'multiple-roles-user')->exists());
+    }
+
+    public function test_default_administrator_accounts_keep_their_fixed_roles_and_usernames(): void
+    {
+        $this->artisan('vben-admin:install')->assertSuccessful();
+        $superAdministrator = AdminUser::query()->where('username', 'cmsadmin')->firstOrFail();
+        $administrator = AdminUser::query()->where('username', 'admin')->firstOrFail();
+        $superRole = AdminRole::query()->where('code', 'administrator')->firstOrFail();
+        $managerRole = AdminRole::query()->where('code', 'manager')->firstOrFail();
+        Sanctum::actingAs($superAdministrator, ['admin']);
+
+        $this->patchJson('/api/admin/system/users/'.$superAdministrator->getKey(), ['role_ids' => [$managerRole->getKey()]])
+            ->assertUnprocessable()
+            ->assertJsonPath('code', 'BUILTIN_ADMIN_ROLE_PROTECTED');
+        $this->patchJson('/api/admin/system/users/'.$administrator->getKey(), ['role_ids' => [$superRole->getKey()]])
+            ->assertUnprocessable()
+            ->assertJsonPath('code', 'BUILTIN_ADMIN_ROLE_PROTECTED');
+        $this->patchJson('/api/admin/system/users/'.$administrator->getKey(), ['username' => 'renamed-admin'])
+            ->assertUnprocessable()
+            ->assertJsonPath('code', 'BUILTIN_ADMIN_IDENTITY_PROTECTED');
+
+        self::assertTrue($superAdministrator->roles()->whereKey($superRole->getKey())->exists());
+        self::assertTrue($administrator->roles()->whereKey($managerRole->getKey())->exists());
+        self::assertSame('admin', $administrator->fresh()->username);
+    }
+
+    public function test_administrator_username_is_immutable_after_creation(): void
+    {
+        $this->artisan('vben-admin:install')->assertSuccessful();
+        $superAdministrator = AdminUser::query()->where('username', 'cmsadmin')->firstOrFail();
+        $administrator = AdminUser::query()->create([
+            'username' => 'content-operator',
+            'name' => 'Content operator',
+            'password' => 'SecurePassword123',
+            'is_active' => true,
+        ]);
+        Sanctum::actingAs($superAdministrator, ['admin']);
+
+        $this->patchJson('/api/admin/system/users/'.$administrator->getKey(), [
+            'username' => 'renamed-content-operator',
+        ])->assertUnprocessable()
+            ->assertJsonPath('code', 'ADMIN_USERNAME_IMMUTABLE');
+
+        self::assertSame('content-operator', $administrator->fresh()->username);
+    }
+
+    public function test_non_super_administrator_only_sees_assigned_permissions_and_menus(): void
+    {
+        $this->artisan('vben-admin:install')->assertSuccessful();
+        $actor = AdminUser::query()->create([
+            'username' => 'limited-manager',
+            'name' => 'Limited manager',
+            'password' => 'SecurePassword123',
+            'is_active' => true,
+        ]);
+        $role = AdminRole::query()->create([
+            'code' => 'limited-manager',
+            'name' => 'Limited manager',
+            'is_active' => true,
+        ]);
+        $permissionView = AdminPermission::query()->where('code', 'system.permission.view')->firstOrFail();
+        $menuView = AdminPermission::query()->where('code', 'system.menu.view')->firstOrFail();
+        $hiddenPermission = AdminPermission::query()->where('code', 'system.user.view')->firstOrFail();
+        $visibleMenu = AdminMenu::query()->where('code', 'system.menus')->firstOrFail();
+        $hiddenMenu = AdminMenu::query()->where('code', 'system.users')->firstOrFail();
+        $role->permissions()->sync([$permissionView->getKey(), $menuView->getKey()]);
+        $role->menus()->sync([$visibleMenu->getKey()]);
+        $actor->roles()->sync([$role->getKey()]);
+        Sanctum::actingAs($actor, ['admin']);
+
+        $this->getJson('/api/admin/system/permissions?per_page=100')
+            ->assertOk()
+            ->assertJsonFragment(['code' => 'system.permission.view'])
+            ->assertJsonFragment(['code' => 'system.menu.view'])
+            ->assertJsonMissing(['code' => 'system.user.view']);
+        $this->getJson('/api/admin/system/permissions/'.$hiddenPermission->getKey())->assertNotFound();
+
+        $this->getJson('/api/admin/system/menus')
+            ->assertOk()
+            ->assertJsonFragment(['code' => 'system.menus'])
+            ->assertJsonMissing(['code' => 'system.users']);
+        $this->getJson('/api/admin/system/menus/'.$hiddenMenu->getKey())->assertNotFound();
+    }
+
+    public function test_role_menu_assignment_includes_all_ancestors(): void
+    {
+        $this->artisan('vben-admin:install')->assertSuccessful();
+        $superAdministrator = AdminUser::query()->where('username', 'cmsadmin')->firstOrFail();
+        $permission = AdminPermission::query()->where('code', 'system.user.view')->firstOrFail();
+        $parentMenu = AdminMenu::query()->where('code', 'system')->firstOrFail();
+        $childMenu = AdminMenu::query()->where('code', 'system.users')->firstOrFail();
+        Sanctum::actingAs($superAdministrator, ['admin']);
+
+        $response = $this->postJson('/api/admin/system/roles', [
+            'code' => 'user-viewer',
+            'name' => 'User viewer',
+            'permission_ids' => [$permission->getKey()],
+            'menu_ids' => [$childMenu->getKey()],
+        ])->assertCreated();
+
+        $role = AdminRole::query()->findOrFail($response->json('role.id'));
+        self::assertEqualsCanonicalizing(
+            [$parentMenu->getKey(), $childMenu->getKey()],
+            $role->menus()->pluck('admin_menus.id')->all(),
+        );
     }
 
     public function test_only_super_administrators_can_view_built_in_administrator_roles(): void

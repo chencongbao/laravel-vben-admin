@@ -358,11 +358,11 @@ textarea,
   padding: 16px;
 }
 
-.admin-menu-permissions {
+.admin-access-tree-selector {
   min-height: 160px;
 }
 
-.admin-menu-permissions__actions {
+.admin-access-tree-selector__actions {
   display: flex;
   gap: 20px;
   align-items: center;
@@ -370,52 +370,52 @@ textarea,
   margin-bottom: 8px;
 }
 
-.admin-menu-permissions .ant-tree {
+.admin-access-tree-selector .ant-tree {
   --admin-permission-tree-line: hsl(var(--muted-foreground) / 55%);
 
   background: transparent;
 }
 
-.admin-menu-permissions .ant-tree-show-line .ant-tree-indent-unit::before,
-.admin-menu-permissions .ant-tree-switcher-leaf-line::before {
+.admin-access-tree-selector .ant-tree-show-line .ant-tree-indent-unit::before,
+.admin-access-tree-selector .ant-tree-switcher-leaf-line::before {
   border-inline-end-color: var(--admin-permission-tree-line);
 }
 
-.admin-menu-permissions .ant-tree-switcher-leaf-line::after {
+.admin-access-tree-selector .ant-tree-switcher-leaf-line::after {
   border-bottom-color: var(--admin-permission-tree-line);
 }
 
-.admin-menu-permissions .ant-tree-node-content-wrapper {
+.admin-access-tree-selector .ant-tree-node-content-wrapper {
   min-height: 24px;
   padding-inline: 4px;
   line-height: 24px;
   border-radius: 2px;
 }
 
-.admin-menu-permissions .ant-tree-node-content-wrapper:hover {
+.admin-access-tree-selector .ant-tree-node-content-wrapper:hover {
   color: hsl(var(--foreground));
   background: hsl(var(--accent));
 }
 
-.admin-menu-permissions .ant-tree-treenode {
+.admin-access-tree-selector .ant-tree-treenode {
   min-height: 24px;
   padding-block: 0;
 }
 
-.admin-menu-permissions .ant-tree-indent-unit,
-.admin-menu-permissions .ant-tree-switcher {
+.admin-access-tree-selector .ant-tree-indent-unit,
+.admin-access-tree-selector .ant-tree-switcher {
   width: 22px;
 }
 
-.admin-menu-permissions .ant-tree-checkbox {
+.admin-access-tree-selector .ant-tree-checkbox {
   margin-block-start: 5px;
 }
 
-.admin-menu-permissions .ant-tree-switcher {
+.admin-access-tree-selector .ant-tree-switcher {
   line-height: 24px;
 }
 
-.admin-menu-permissions__switcher {
+.admin-access-tree-selector__switcher {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -574,6 +574,53 @@ textarea,
   align-items: center;
   gap: 8px;
 }
+
+.admin-role-editor-modal .ant-modal-content {
+  display: flex;
+  flex-direction: column;
+  height: min(820px, calc(100vh - 48px));
+  padding: 0;
+  overflow: hidden;
+}
+
+.admin-role-editor-modal .ant-modal-header {
+  flex: 0 0 auto;
+  padding: 20px 24px 16px;
+  margin: 0;
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+.admin-role-editor-modal .ant-modal-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 16px 24px;
+  overflow-y: auto;
+}
+
+.admin-role-editor-modal .ant-modal-footer {
+  flex: 0 0 auto;
+  padding: 12px 24px;
+  margin: 0;
+  border-top: 1px solid hsl(var(--border));
+}
+
+.admin-role-editor-modal .ant-modal-close {
+  top: 14px;
+  inset-inline-end: 18px;
+}
+
+.admin-role-access-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+  align-items: start;
+}
+
+.admin-role-access-grid .admin-role-access-section {
+  min-width: 0;
+  margin-bottom: 0;
+}
+
 
 .admin-menu-tree .tree-line {
   background: hsl(var(--border));

@@ -11,7 +11,6 @@ import { $t } from '@vben/locales';
 import { Draggable } from '@he-tree/vue';
 import {
   Card,
-  Checkbox,
   Empty,
   Form,
   FormItem,
@@ -20,7 +19,6 @@ import {
   Popconfirm,
   Select,
   Space,
-  Tree,
 } from 'ant-design-vue';
 
 import {
@@ -31,6 +29,7 @@ import {
   reorderMenus,
   updateResource,
 } from '#/api/system';
+import AccessTreeSelector from '#/components/system/access-tree-selector.vue';
 import ListRefreshButton from '#/components/system/list-refresh-button.vue';
 import ListToolbar from '#/components/system/list-toolbar.vue';
 import PermissionButton from '#/components/system/permission-button.vue';
@@ -202,7 +201,6 @@ const permissionTree = computed<PermissionTreeNode[]>(() => {
   return roots;
 });
 
-const allPermissionKeys = computed<Key[]>(() => permissions.value.map((permission) => permission.id));
 const allPermissionGroupKeys = computed<Key[]>(() => {
   const keys: Key[] = [];
   const collectExpandableKeys = (nodes: PermissionTreeNode[]) => {
@@ -215,27 +213,6 @@ const allPermissionGroupKeys = computed<Key[]>(() => {
   collectExpandableKeys(permissionTree.value);
   return keys;
 });
-const permissionsExpanded = computed({
-  get: () => allPermissionGroupKeys.value.length > 0 && allPermissionGroupKeys.value.every((key) => expandedPermissionKeys.value.includes(key)),
-  set: (expanded: boolean) => {
-    expandedPermissionKeys.value = expanded ? [...allPermissionGroupKeys.value] : [];
-  },
-});
-const allPermissionsChecked = computed({
-  get: () => allPermissionKeys.value.length > 0 && allPermissionKeys.value.every((key) => checkedPermissionKeys.value.includes(key)),
-  set: (checked: boolean) => {
-    checkedPermissionKeys.value = checked ? [...allPermissionKeys.value] : [];
-  },
-});
-const permissionIndeterminate = computed(() => {
-  const checkedCount = allPermissionKeys.value.filter((key) => checkedPermissionKeys.value.includes(key)).length;
-  return checkedCount > 0 && checkedCount < allPermissionKeys.value.length;
-});
-
-function handlePermissionCheck(keys: Key[] | { checked: Key[] }) {
-  checkedPermissionKeys.value = Array.isArray(keys) ? keys : keys.checked;
-}
-
 async function load(selectCode?: string) {
   loading.value = true;
   try {
@@ -521,17 +498,7 @@ onMounted(() => load());
             <Select v-model:value="form.type" :options="[{ label: '目录', value: 'directory' }, { label: '页面', value: 'page' }, { label: '外部链接', value: 'external' }]" />
           </FormItem>
           <FormItem label="菜单权限">
-            <div class="admin-menu-permissions">
-              <div class="admin-menu-permissions__actions">
-                <Checkbox v-model:checked="allPermissionsChecked" :indeterminate="permissionIndeterminate">全选</Checkbox>
-                <Checkbox v-model:checked="permissionsExpanded">展开</Checkbox>
-              </div>
-              <Tree :checked-keys="checkedPermissionKeys" v-model:expanded-keys="expandedPermissionKeys" :check-strictly="true" :show-line="{ showLeafIcon: false }" :tree-data="permissionTree" checkable @check="handlePermissionCheck">
-                <template #switcherIcon="{ expanded }">
-                  <span class="admin-menu-permissions__switcher" aria-hidden="true">{{ expanded ? '−' : '+' }}</span>
-                </template>
-              </Tree>
-            </div>
+            <AccessTreeSelector v-model:checked-keys="checkedPermissionKeys" v-model:expanded-keys="expandedPermissionKeys" check-strictly :tree-data="permissionTree" />
           </FormItem>
           <div class="admin-menu-editor__footer">
             <PermissionButton icon="lucide:rotate-ccw" @click="resetEditor">重置</PermissionButton>

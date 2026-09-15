@@ -3,7 +3,9 @@
 namespace Chencongbao\LaravelVbenAdmin\Http\Controllers;
 
 use Chencongbao\LaravelVbenAdmin\Contracts\AuditRecorder;
+use Chencongbao\LaravelVbenAdmin\Models\AdminMenu;
 use Chencongbao\LaravelVbenAdmin\Models\AdminPermission;
+use Chencongbao\LaravelVbenAdmin\Services\PrivilegeAssignmentGuard;
 use Chencongbao\LaravelVbenAdmin\Support\AdminPagination;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -15,6 +17,7 @@ final class AdminPermissionController extends Controller
 {
     public function __construct(
         private readonly AuditRecorder $audit,
+        private readonly PrivilegeAssignmentGuard $privilegeGuard,
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -22,9 +25,15 @@ final class AdminPermissionController extends Controller
         $validated = $request->validate(['id' => ['nullable', 'integer', 'min:1'], 'per_page' => ['nullable', 'integer', 'min:1', 'max:100']]);
         $perPage = AdminPagination::perPage($validated['per_page'] ?? null);
         $id = $validated['id'] ?? null;
+        $permissionIds = $this->privilegeGuard->accessiblePermissionIds($request->user());
+        $menuIds = $this->privilegeGuard->accessibleMenuIds($request->user());
+        $menuTable = (new AdminMenu)->getTable();
 
         return response()->json(AdminPermission::query()
-            ->with('menus:id,code,title')
+            ->with(['menus' => fn ($query) => $query
+                ->select($menuTable.'.id', 'code', 'title')
+                ->when($menuIds !== null, fn ($query) => $query->whereKey($menuIds))])
+            ->when($permissionIds !== null, fn ($query) => $query->whereKey($permissionIds))
             ->when($id, fn ($query) => $query->whereKey($id))
             ->orderBy('sort')->orderBy('id')->paginate($perPage));
     }
@@ -47,9 +56,15 @@ final class AdminPermissionController extends Controller
         return response()->json(['permission' => $permission->load('menus:id,code,title')], 201);
     }
 
-    public function show(AdminPermission $adminPermission): JsonResponse
+    public function show(Request $request, AdminPermission $adminPermission): JsonResponse
     {
-        return response()->json(['permission' => $adminPermission->load('menus:id,code,title')]);
+        abort_unless($this->privilegeGuard->canAccessPermission($request->user(), $adminPermission), 404);
+        $menuIds = $this->privilegeGuard->accessibleMenuIds($request->user());
+        $menuTable = (new AdminMenu)->getTable();
+
+        return response()->json(['permission' => $adminPermission->load(['menus' => fn ($query) => $query
+            ->select($menuTable.'.id', 'code', 'title')
+            ->when($menuIds !== null, fn ($query) => $query->whereKey($menuIds))])]);
     }
 
     public function reorder(Request $request): JsonResponse
@@ -62,7 +77,11 @@ final class AdminPermissionController extends Controller
             'items.*.sort' => ['required', 'integer', 'min:-100000', 'max:100000'],
         ]);
 
-        $permissions = AdminPermission::query()->get()->keyBy('id');
+        $permissionIds = $this->privilegeGuard->accessiblePermissionIds($request->user());
+        $permissions = AdminPermission::query()
+            ->when($permissionIds !== null, fn ($query) => $query->whereKey($permissionIds))
+            ->get()
+            ->keyBy('id');
         $submittedIds = collect($data['items'])->pluck('id')->sort()->values();
         if ($submittedIds->all() !== $permissions->keys()->sort()->values()->all()) {
             return response()->json(['message' => 'The complete permission tree is required.', 'code' => 'PERMISSION_REORDER_INCOMPLETE'], 422);
@@ -99,6 +118,8 @@ final class AdminPermissionController extends Controller
 
     public function update(Request $request, AdminPermission $adminPermission): JsonResponse
     {
+        abort_unless($this->privilegeGuard->canAccessPermission($request->user(), $adminPermission), 404);
+
         $changesSystemIdentity = $adminPermission->is_system && (
             $request->has('code') && $request->string('code')->toString() !== $adminPermission->code
         );
@@ -129,6 +150,8 @@ final class AdminPermissionController extends Controller
 
     public function destroy(Request $request, AdminPermission $adminPermission): JsonResponse
     {
+        abort_unless($this->privilegeGuard->canAccessPermission($request->user(), $adminPermission), 404);
+
         if ($adminPermission->is_system) {
             return response()->json(['message' => 'System permissions cannot be deleted.', 'code' => 'SYSTEM_PERMISSION_PROTECTED'], 422);
         }

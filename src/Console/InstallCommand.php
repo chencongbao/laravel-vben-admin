@@ -64,13 +64,15 @@ final class InstallCommand extends Command
 
     private function createDefaultAccount(string $username, string $name, string $roleCode): void
     {
-        if (AdminUser::query()->where('username', $username)->exists()) {
-            $this->components->warn("Administrator [{$username}] already exists; its password and roles were not changed.");
+        $role = AdminRole::query()->where('code', $roleCode)->firstOrFail();
+        $existingUser = AdminUser::query()->where('username', $username)->first();
+        if ($existingUser) {
+            $existingUser->roles()->sync([$role->getKey()]);
+            $this->components->warn("Administrator [{$username}] already exists; its password was not changed and its fixed role [{$roleCode}] was restored.");
 
             return;
         }
 
-        $role = AdminRole::query()->where('code', $roleCode)->firstOrFail();
         $user = AdminUser::query()->create([
             'username' => $username,
             'name' => $name,

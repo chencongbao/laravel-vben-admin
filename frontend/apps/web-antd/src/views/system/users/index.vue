@@ -1,13 +1,17 @@
 <script lang="ts" setup>
-import { onMounted, reactive, ref } from 'vue';
 import type { TableColumnsType } from 'ant-design-vue';
+
+import { computed, onMounted, reactive, ref } from 'vue';
+
 import { Page } from '@vben/common-ui';
+
 import { Card, Form, FormItem, Input, InputNumber, message, Modal, Select, Space, Switch, Table, Tag } from 'ant-design-vue';
+
 import { createResource, getResource, updateResource } from '#/api/system';
-import ListToolbar from '#/components/system/list-toolbar.vue';
 import ListRefreshButton from '#/components/system/list-refresh-button.vue';
 import ListSearchField from '#/components/system/list-search-field.vue';
 import ListSearchPanel from '#/components/system/list-search-panel.vue';
+import ListToolbar from '#/components/system/list-toolbar.vue';
 import PermissionButton from '#/components/system/permission-button.vue';
 import { $t } from '#/locales';
 import { formatBeijingDateTime } from '#/utils/datetime';
@@ -42,7 +46,7 @@ const form = reactive({
   login_ip_whitelist: '',
   name: '',
   password: '',
-  role_ids: [] as number[],
+  role_id: undefined as number | undefined,
   two_factor_enabled: false,
   username: '',
 });
@@ -55,6 +59,7 @@ const columns: TableColumnsType = [
   { dataIndex: 'last_login_at', title: '最近登录时间' },
   { dataIndex: 'is_active', title: '状态' }, { dataIndex: 'action', fixed: 'right', title: '操作', width: 58 },
 ];
+const isFixedRoleAccount = computed(() => editingId.value !== undefined && ['admin', 'cmsadmin'].includes(form.username));
 
 async function load() {
   loading.value = true;
@@ -74,7 +79,7 @@ function open(record?: any) {
   Object.assign(form, {
     is_active: record?.is_active ?? true, name: record?.name ?? '', password: '',
     login_ip_whitelist: record?.login_ip_whitelist?.join('\n') ?? '',
-    role_ids: record?.roles.map((role: Role) => role.id) ?? [], username: record?.username ?? '',
+    role_id: record?.roles[0]?.id, username: record?.username ?? '',
     two_factor_enabled: record?.two_factor_enabled ?? false,
   });
   visible.value = true;
@@ -87,10 +92,14 @@ async function save() {
   const whitelist = [...new Set(form.login_ip_whitelist.split(/[,\n]/).map((item) => item.trim()).filter(Boolean))];
   saving.value = true;
   try {
-    const payload: Record<string, any> = { ...form, login_ip_whitelist: whitelist };
+    const payload: Record<string, any> = {
+      ...form,
+      login_ip_whitelist: whitelist,
+      role_ids: form.role_id ? [form.role_id] : [],
+    };
+    delete payload.role_id;
     if (!payload.password) delete payload.password;
-    if (editingId.value) await updateResource('/system/users', editingId.value, payload);
-    else await createResource('/system/users', payload);
+    await (editingId.value ? updateResource('/system/users', editingId.value, payload) : createResource('/system/users', payload));
     visible.value = false; message.success('用户保存成功'); await load();
   } finally { saving.value = false; }
 }
@@ -124,10 +133,13 @@ onMounted(load);
     </Card>
     <Modal v-model:open="visible" :confirm-loading="saving" :title="editingId ? '编辑用户' : '新增用户'" width="680px" @ok="save">
       <Form layout="vertical">
-        <FormItem label="用户名" required><Input v-model:value="form.username" /></FormItem>
+        <FormItem label="用户名" required><Input v-model:value="form.username" :disabled="editingId !== undefined" /></FormItem>
         <FormItem label="姓名" required><Input v-model:value="form.name" /></FormItem>
-        <FormItem :label="editingId ? '新密码（不修改请留空）' : '密码'" :required="!editingId"><Input.Password v-model:value="form.password" /></FormItem>
-        <FormItem label="角色"><Select v-model:value="form.role_ids" :options="roles.map((role) => ({ label: `${role.name} (${role.code})`, value: role.id }))" mode="multiple" /></FormItem>
+        <FormItem :label="editingId ? '新密码（不修改请留空）' : '密码'" :required="!editingId">
+          <Input.Password v-model:value="form.password" />
+          <div class="setting-tip">密码至少 12 位，并且必须同时包含大写字母、小写字母和数字。</div>
+        </FormItem>
+        <FormItem label="角色"><Select v-model:value="form.role_id" allow-clear :disabled="isFixedRoleAccount" :options="roles.map((role) => ({ label: `${role.name} (${role.code})`, value: role.id }))" /></FormItem>
         <FormItem label="启用"><Switch v-model:checked="form.is_active" /></FormItem>
         <div class="security-settings">
           <h3>登录安全</h3>

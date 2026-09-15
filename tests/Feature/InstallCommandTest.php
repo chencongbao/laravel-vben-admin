@@ -46,13 +46,33 @@ final class InstallCommandTest extends TestCase
         self::assertTrue(Hash::check('admin', $administrator->password));
         self::assertTrue($superAdministrator->roles()->where('code', 'administrator')->exists());
         self::assertTrue($administrator->roles()->where('code', 'manager')->exists());
+        self::assertSame(1, $superAdministrator->roles()->count());
+        self::assertSame(1, $administrator->roles()->count());
         self::assertFalse($administrator->roles()->where('is_super_admin', true)->exists());
         self::assertTrue(AdminRole::query()->where('code', 'administrator')->where('is_super_admin', true)->exists());
         self::assertTrue(AdminRole::query()->where('code', 'manager')->where('is_super_admin', false)->exists());
+        $superRole = AdminRole::query()->where('code', 'administrator')->firstOrFail();
+        $manager = AdminRole::query()->where('code', 'manager')->firstOrFail();
+        self::assertEqualsCanonicalizing(
+            AdminPermission::query()->where('is_system', true)->pluck('id')->all(),
+            $manager->permissions()->pluck('id')->all(),
+        );
+        self::assertEqualsCanonicalizing(
+            AdminMenu::query()->where('is_system', true)->where('code', '!=', 'dashboard.workspace')->pluck('id')->all(),
+            $manager->menus()->pluck('id')->all(),
+        );
+        self::assertFalse($manager->menus()->where('code', 'dashboard.workspace')->exists());
         self::assertTrue(Schema::hasColumns('personal_access_tokens', ['ip_address', 'user_agent']));
         self::assertTrue(Schema::hasColumns('activity_log', ['log_name', 'log_type', 'event', 'attribute_changes', 'properties', 'legacy_source', 'legacy_id']));
         self::assertFalse(Schema::hasTable('admin_login_logs'));
         self::assertFalse(Schema::hasTable('admin_audit_logs'));
+        self::assertFalse(Schema::hasColumn('admin_menus', 'permission_code'));
+        self::assertFalse(Schema::hasColumn('admin_menus', 'parent_code'));
+        self::assertFalse(Schema::hasColumn('admin_permissions', 'description'));
+        self::assertFalse(Schema::hasColumn('admin_permissions', 'http_methods'));
+        self::assertFalse(Schema::hasColumn('admin_permissions', 'http_paths'));
+        self::assertFalse(Schema::hasColumn('admin_permissions', 'is_active'));
+        self::assertFalse(Schema::hasColumn('admin_permissions', 'is_sensitive'));
         self::assertSame('default', SystemSettings::value('system.login_theme'));
         self::assertSame('panel-right', SystemSettings::value('system.login_layout'));
         self::assertTrue(SystemSettings::value('system.login_remember_me'));
@@ -103,11 +123,15 @@ final class InstallCommandTest extends TestCase
 
         $superAdministrator->update(['password' => 'changed-super-password']);
         $administrator->update(['password' => 'changed-manager-password']);
+        $superAdministrator->roles()->sync([$manager->getKey()]);
+        $administrator->roles()->sync([$superRole->getKey()]);
 
         $this->artisan('vben-admin:install')->assertSuccessful();
 
         self::assertTrue(Hash::check('changed-super-password', $superAdministrator->fresh()->password));
         self::assertTrue(Hash::check('changed-manager-password', $administrator->fresh()->password));
+        self::assertEqualsCanonicalizing([$superRole->getKey()], $superAdministrator->roles()->pluck('id')->all());
+        self::assertEqualsCanonicalizing([$manager->getKey()], $administrator->roles()->pluck('id')->all());
     }
 
     public function test_sync_preserves_settings_access_after_adding_the_configuration_parent(): void

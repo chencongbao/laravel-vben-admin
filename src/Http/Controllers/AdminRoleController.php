@@ -3,6 +3,7 @@
 namespace Chencongbao\LaravelVbenAdmin\Http\Controllers;
 
 use Chencongbao\LaravelVbenAdmin\Contracts\AuditRecorder;
+use Chencongbao\LaravelVbenAdmin\Models\AdminMenu;
 use Chencongbao\LaravelVbenAdmin\Models\AdminRole;
 use Chencongbao\LaravelVbenAdmin\Services\PrivilegeAssignmentGuard;
 use Chencongbao\LaravelVbenAdmin\Support\AdminPagination;
@@ -27,10 +28,9 @@ final class AdminRoleController extends Controller
         $isSuperAdmin = $this->privilegeGuard->isSuperAdmin($request->user());
 
         return response()->json(AdminRole::query()
-            ->withCount('permissions', 'menus')
             ->when(! $isSuperAdmin, fn ($query) => $query->whereNotIn('code', self::HIDDEN_FROM_NON_SUPER_ADMINS))
             ->when($id, fn ($query) => $query->whereKey($id))
-            ->orderBy('id')
+            ->latest('id')
             ->paginate($perPage));
     }
 
@@ -38,7 +38,9 @@ final class AdminRoleController extends Controller
     {
         $data = $this->validateRole($request);
         $access = $this->validateAccess($request);
-        if (! $this->privilegeGuard->canAssignPermissions($request->user(), $access['permission_ids'])) {
+        $access['menu_ids'] = $this->includeMenuAncestors($access['menu_ids']);
+        if (! $this->privilegeGuard->canAssignPermissions($request->user(), $access['permission_ids'])
+            || ! $this->privilegeGuard->canAssignMenus($request->user(), $access['menu_ids'])) {
             return response()->json(['message' => 'Permission assignment exceeds your authority.', 'code' => 'ADMIN_PRIVILEGE_ESCALATION_DENIED'], 403);
         }
 
@@ -71,7 +73,9 @@ final class AdminRoleController extends Controller
 
         $data = $this->validateRole($request, $adminRole);
         $access = $this->validateAccess($request);
-        if (! $this->privilegeGuard->canAssignPermissions($request->user(), $access['permission_ids'])) {
+        $access['menu_ids'] = $this->includeMenuAncestors($access['menu_ids']);
+        if (! $this->privilegeGuard->canAssignPermissions($request->user(), $access['permission_ids'])
+            || ! $this->privilegeGuard->canAssignMenus($request->user(), $access['menu_ids'])) {
             return response()->json(['message' => 'Permission assignment exceeds your authority.', 'code' => 'ADMIN_PRIVILEGE_ESCALATION_DENIED'], 403);
         }
         $before = $adminRole->only(['code', 'name', 'is_active']);
@@ -119,7 +123,9 @@ final class AdminRoleController extends Controller
             'permission_ids' => ['required', 'array', 'max:500'], 'permission_ids.*' => ['integer', 'distinct', Rule::exists(config('laravel-vben-admin.tables.permissions', 'admin_permissions'), 'id')],
             'menu_ids' => ['required', 'array', 'max:500'], 'menu_ids.*' => ['integer', 'distinct', Rule::exists(config('laravel-vben-admin.tables.menus', 'admin_menus'), 'id')],
         ]);
-        if (! $this->privilegeGuard->canAssignPermissions($request->user(), $data['permission_ids'])) {
+        $data['menu_ids'] = $this->includeMenuAncestors($data['menu_ids']);
+        if (! $this->privilegeGuard->canAssignPermissions($request->user(), $data['permission_ids'])
+            || ! $this->privilegeGuard->canAssignMenus($request->user(), $data['menu_ids'])) {
             return response()->json(['message' => 'Permission assignment exceeds your authority.', 'code' => 'ADMIN_PRIVILEGE_ESCALATION_DENIED'], 403);
         }
 
@@ -155,5 +161,23 @@ final class AdminRoleController extends Controller
     {
         return $this->privilegeGuard->isSuperAdmin($request->user())
             || ! in_array($role->code, self::HIDDEN_FROM_NON_SUPER_ADMINS, true);
+    }
+
+    private function includeMenuAncestors(array $menuIds): array
+    {
+        $parentById = AdminMenu::query()->pluck('parent_id', 'id');
+        $selected = collect($menuIds)->map(fn ($id) => (int) $id)->unique()->values();
+
+        foreach ($selected->all() as $menuId) {
+            $parentId = $parentById->get($menuId);
+            $visited = [];
+            while ($parentId !== null && ! isset($visited[$parentId])) {
+                $visited[$parentId] = true;
+                $selected->push((int) $parentId);
+                $parentId = $parentById->get($parentId);
+            }
+        }
+
+        return $selected->unique()->values()->all();
     }
 }

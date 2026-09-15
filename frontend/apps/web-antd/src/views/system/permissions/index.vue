@@ -8,9 +8,10 @@ import { Page } from '@vben/common-ui';
 import { IconifyIcon } from '@vben/icons';
 
 import { Draggable } from '@he-tree/vue';
-import { Card, Checkbox, Empty, Form, FormItem, Input, message, Popconfirm, Select, Tree } from 'ant-design-vue';
+import { Card, Empty, Form, FormItem, Input, message, Popconfirm, Select } from 'ant-design-vue';
 
 import { createResource, deleteResource, getCollection, getResource, reorderPermissions, updateResource } from '#/api/system';
+import AccessTreeSelector from '#/components/system/access-tree-selector.vue';
 import ListRefreshButton from '#/components/system/list-refresh-button.vue';
 import ListToolbar from '#/components/system/list-toolbar.vue';
 import PermissionButton from '#/components/system/permission-button.vue';
@@ -94,27 +95,6 @@ const menuTree = computed<MenuTreeNode[]>(() => {
     else roots.push(node);
   });
   return roots;
-});
-
-const allMenuKeys = computed<Key[]>(() => menus.value.map((menu) => menu.id));
-const allMenuGroupKeys = computed<Key[]>(() => menus.value
-  .filter((menu) => menus.value.some((item) => item.parent_id === menu.id))
-  .map((menu) => menu.id));
-const allMenusChecked = computed({
-  get: () => allMenuKeys.value.length > 0 && allMenuKeys.value.every((key) => form.menu_ids.includes(key)),
-  set: (checked: boolean) => {
-    form.menu_ids = checked ? [...allMenuKeys.value] : [];
-  },
-});
-const menuIndeterminate = computed(() => {
-  const checkedCount = allMenuKeys.value.filter((key) => form.menu_ids.includes(key)).length;
-  return checkedCount > 0 && checkedCount < allMenuKeys.value.length;
-});
-const menusExpanded = computed({
-  get: () => allMenuGroupKeys.value.length > 0 && allMenuGroupKeys.value.every((key) => expandedMenuKeys.value.includes(key)),
-  set: (expanded: boolean) => {
-    expandedMenuKeys.value = expanded ? [...allMenuGroupKeys.value] : [];
-  },
 });
 
 function expandAllMenus() {
@@ -261,13 +241,7 @@ onMounted(() => load());
           <FormItem label="权限编码" required><Input v-model:value="form.code" :disabled="Boolean(editing?.is_system)" placeholder="例如 match.publish" /></FormItem>
           <FormItem label="权限名称" required><Input v-model:value="form.name" placeholder="请输入权限名称或语言键" /></FormItem>
           <FormItem label="关联菜单">
-            <div class="admin-menu-permissions">
-              <div class="admin-menu-permissions__actions">
-                <Checkbox v-model:checked="allMenusChecked" :indeterminate="menuIndeterminate">全选</Checkbox>
-                <Checkbox v-model:checked="menusExpanded">展开</Checkbox>
-              </div>
-              <Tree v-model:checked-keys="form.menu_ids" v-model:expanded-keys="expandedMenuKeys" checkable :show-line="{ showLeafIcon: false }" :tree-data="menuTree"><template #switcherIcon="{ expanded }"><span class="admin-menu-permissions__switcher" aria-hidden="true">{{ expanded ? '−' : '+' }}</span></template></Tree>
-            </div>
+            <AccessTreeSelector v-model:checked-keys="form.menu_ids" v-model:expanded-keys="expandedMenuKeys" :tree-data="menuTree" />
           </FormItem>
           <div class="admin-menu-editor__footer"><PermissionButton icon="lucide:rotate-ccw" @click="resetEditor">重置</PermissionButton><PermissionButton icon="lucide:save" :loading="saving" :permission="editing ? 'system.permission.update' : 'system.permission.create'" type="primary" @click="save">{{ $t('common.submit') }}</PermissionButton></div>
         </Form>

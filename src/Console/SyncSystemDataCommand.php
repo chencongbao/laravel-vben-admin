@@ -11,6 +11,8 @@ use Illuminate\Support\Facades\DB;
 
 final class SyncSystemDataCommand extends Command
 {
+    private const DEFAULT_MENU_CODE = 'dashboard.workspace';
+
     protected $signature = 'vben-admin:sync {--dry-run : Preview changes without writing them}';
 
     protected $description = 'Idempotently synchronize package-owned roles, permissions and menus';
@@ -75,6 +77,22 @@ final class SyncSystemDataCommand extends Command
                         $menu->permissions()->syncWithoutDetaching([$permission->getKey()]);
                     }
                 }
+            }
+
+            $manager = AdminRole::query()->where('code', 'manager')->firstOrFail();
+            if (! $manager->permissions()->exists()) {
+                $manager->permissions()->sync(
+                    AdminPermission::query()->where('is_system', true)->pluck('id')->all(),
+                );
+            }
+            if (! $manager->menus()->exists()) {
+                $manager->menus()->sync(
+                    AdminMenu::query()
+                        ->where('is_system', true)
+                        ->where('code', '!=', self::DEFAULT_MENU_CODE)
+                        ->pluck('id')
+                        ->all(),
+                );
             }
 
             foreach ([

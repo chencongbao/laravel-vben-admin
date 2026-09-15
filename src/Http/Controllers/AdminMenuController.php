@@ -4,6 +4,8 @@ namespace Chencongbao\LaravelVbenAdmin\Http\Controllers;
 
 use Chencongbao\LaravelVbenAdmin\Contracts\AuditRecorder;
 use Chencongbao\LaravelVbenAdmin\Models\AdminMenu;
+use Chencongbao\LaravelVbenAdmin\Models\AdminPermission;
+use Chencongbao\LaravelVbenAdmin\Services\PrivilegeAssignmentGuard;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -16,14 +18,24 @@ final class AdminMenuController extends Controller
 
     private const DEFAULT_MENU_ICON = 'lucide:list';
 
-    public function __construct(private readonly AuditRecorder $audit) {}
+    public function __construct(
+        private readonly AuditRecorder $audit,
+        private readonly PrivilegeAssignmentGuard $privilegeGuard,
+    ) {}
 
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
+        $menuIds = $this->privilegeGuard->accessibleMenuIds($request->user());
+        $permissionIds = $this->privilegeGuard->accessiblePermissionIds($request->user());
+        $permissionTable = (new AdminPermission)->getTable();
+
         return response()->json([
             'menus' => AdminMenu::query()
-                ->with('permissions:id,parent_id,code,name')
+                ->with(['permissions' => fn ($query) => $query
+                    ->select($permissionTable.'.id', 'parent_id', 'code', 'name')
+                    ->when($permissionIds !== null, fn ($query) => $query->whereKey($permissionIds))])
                 ->where('code', '!=', self::DEFAULT_MENU_CODE)
+                ->when($menuIds !== null, fn ($query) => $query->whereKey($menuIds))
                 ->orderBy('sort')
                 ->orderBy('id')
                 ->get(),
@@ -50,11 +62,17 @@ final class AdminMenuController extends Controller
         return response()->json(['menu' => $menu->load('permissions:id,parent_id,code,name')], 201);
     }
 
-    public function show(AdminMenu $adminMenu): JsonResponse
+    public function show(Request $request, AdminMenu $adminMenu): JsonResponse
     {
         abort_if($adminMenu->code === self::DEFAULT_MENU_CODE, 404);
+        abort_unless($this->privilegeGuard->canAccessMenu($request->user(), $adminMenu), 404);
 
-        return response()->json(['menu' => $adminMenu->load('permissions:id,parent_id,code,name')]);
+        $permissionIds = $this->privilegeGuard->accessiblePermissionIds($request->user());
+        $permissionTable = (new AdminPermission)->getTable();
+
+        return response()->json(['menu' => $adminMenu->load(['permissions' => fn ($query) => $query
+            ->select($permissionTable.'.id', 'parent_id', 'code', 'name')
+            ->when($permissionIds !== null, fn ($query) => $query->whereKey($permissionIds))])]);
     }
 
     public function reorder(Request $request): JsonResponse
@@ -68,7 +86,12 @@ final class AdminMenuController extends Controller
             'items.*.sort' => ['required', 'integer', 'min:-100000', 'max:100000'],
         ]);
 
-        $menus = AdminMenu::query()->where('code', '!=', self::DEFAULT_MENU_CODE)->get()->keyBy('id');
+        $menuIds = $this->privilegeGuard->accessibleMenuIds($request->user());
+        $menus = AdminMenu::query()
+            ->where('code', '!=', self::DEFAULT_MENU_CODE)
+            ->when($menuIds !== null, fn ($query) => $query->whereKey($menuIds))
+            ->get()
+            ->keyBy('id');
         $submittedIds = collect($data['items'])->pluck('id')->sort()->values();
         if ($submittedIds->all() !== $menus->keys()->sort()->values()->all()) {
             return response()->json(['message' => 'The complete menu tree is required.', 'code' => 'MENU_REORDER_INCOMPLETE'], 422);
@@ -100,11 +123,13 @@ final class AdminMenuController extends Controller
             ]);
         });
 
-        return $this->index();
+        return $this->index($request);
     }
 
     public function update(Request $request, AdminMenu $adminMenu): JsonResponse
     {
+        abort_unless($this->privilegeGuard->canAccessMenu($request->user(), $adminMenu), 404);
+
         if ($adminMenu->code === self::DEFAULT_MENU_CODE) {
             return response()->json(['message' => 'The default workspace menu cannot be modified.', 'code' => 'DEFAULT_MENU_PROTECTED'], 422);
         }
@@ -136,6 +161,8 @@ final class AdminMenuController extends Controller
 
     public function destroy(Request $request, AdminMenu $adminMenu): JsonResponse
     {
+        abort_unless($this->privilegeGuard->canAccessMenu($request->user(), $adminMenu), 404);
+
         if ($adminMenu->is_system) {
             return response()->json(['message' => 'System menus cannot be deleted.', 'code' => 'SYSTEM_MENU_PROTECTED'], 422);
         }
