@@ -146,7 +146,7 @@ onMounted(load);
         <template #bodyCell="{ column, record, text }">
           <Tag v-if="column.dataIndex === 'code'" color="blue">{{ text }}</Tag>
           <span v-else-if="column.dataIndex === 'created_at' || column.dataIndex === 'updated_at'">{{ formatBeijingDateTime(text) }}</span>
-          <Space v-else-if="column.dataIndex === 'action' && !record.is_system">
+          <Space v-else-if="column.dataIndex === 'action' && !record.is_super_admin">
             <PermissionButton icon="lucide:pencil" icon-only permission="system.role.update" tooltip="编辑与授权" type="text" @click="openEdit(record)" />
             <Popconfirm v-if="!record.is_system" v-access:code="'system.role.delete'" title="确定删除该角色？" @confirm="remove(record)"><PermissionButton danger icon="lucide:trash-2" icon-only permission="system.role.delete" tooltip="删除角色" type="text" /></Popconfirm>
           </Space>

@@ -132,7 +132,7 @@ final class SecurityBoundaryTest extends TestCase
         self::assertSame('admin', $administrator->fresh()->username);
     }
 
-    public function test_builtin_administrator_roles_cannot_be_edited(): void
+    public function test_super_administrator_role_is_immutable_and_manager_access_is_editable(): void
     {
         $this->artisan('vben-admin:install')->assertSuccessful();
         $superAdministrator = AdminUser::query()->where('username', 'cmsadmin')->firstOrFail();
@@ -142,21 +142,67 @@ final class SecurityBoundaryTest extends TestCase
         $menu = AdminMenu::query()->where('code', 'system.roles')->firstOrFail();
         Sanctum::actingAs($superAdministrator, ['admin']);
 
-        foreach ([$superRole, $managerRole] as $role) {
-            $this->patchJson('/api/admin/system/roles/'.$role->getKey(), [
-                'name' => 'Changed built-in role',
-                'permission_ids' => [$permission->getKey()],
-                'menu_ids' => [$menu->getKey()],
-            ])->assertUnprocessable()->assertJsonPath('code', 'SYSTEM_ROLE_PROTECTED');
+        $this->patchJson('/api/admin/system/roles/'.$superRole->getKey(), [
+            'name' => 'Changed built-in role',
+            'permission_ids' => [$permission->getKey()],
+            'menu_ids' => [$menu->getKey()],
+        ])->assertUnprocessable()->assertJsonPath('code', 'SYSTEM_ROLE_PROTECTED');
 
-            $this->putJson('/api/admin/system/roles/'.$role->getKey().'/access', [
-                'permission_ids' => [$permission->getKey()],
-                'menu_ids' => [$menu->getKey()],
-            ])->assertUnprocessable()->assertJsonPath('code', 'SYSTEM_ROLE_PROTECTED');
-        }
+        $this->putJson('/api/admin/system/roles/'.$superRole->getKey().'/access', [
+            'permission_ids' => [$permission->getKey()],
+            'menu_ids' => [$menu->getKey()],
+        ])->assertUnprocessable()->assertJsonPath('code', 'SYSTEM_ROLE_PROTECTED');
+
+        $this->patchJson('/api/admin/system/roles/'.$managerRole->getKey(), [
+            'code' => $managerRole->code,
+            'name' => $managerRole->name,
+            'permission_ids' => [$permission->getKey()],
+            'menu_ids' => [$menu->getKey()],
+        ])->assertOk();
 
         self::assertNotSame('Changed built-in role', $superRole->fresh()->name);
-        self::assertNotSame('Changed built-in role', $managerRole->fresh()->name);
+        self::assertTrue($managerRole->permissions()->whereKey($permission->getKey())->exists());
+        self::assertTrue($managerRole->menus()->whereKey($menu->getKey())->exists());
+    }
+
+    public function test_super_administrator_can_assign_menu_and_permission_management_to_manager(): void
+    {
+        $this->artisan('vben-admin:install')->assertSuccessful();
+        $superAdministrator = AdminUser::query()->where('username', 'cmsadmin')->firstOrFail();
+        $managerRole = AdminRole::query()->where('code', 'manager')->firstOrFail();
+        $protectedPermission = AdminPermission::query()->where('code', 'system.menu.view')->firstOrFail();
+        $protectedMenu = AdminMenu::query()->where('code', 'system.menus')->firstOrFail();
+        Sanctum::actingAs($superAdministrator, ['admin']);
+
+        $this->putJson('/api/admin/system/roles/'.$managerRole->getKey().'/access', [
+            'permission_ids' => [$protectedPermission->getKey()],
+            'menu_ids' => [$protectedMenu->getKey()],
+        ])->assertOk();
+
+        self::assertTrue($managerRole->permissions()->whereKey($protectedPermission->getKey())->exists());
+        self::assertTrue($managerRole->menus()->whereKey($protectedMenu->getKey())->exists());
+    }
+
+    public function test_only_super_administrator_can_modify_manager_role(): void
+    {
+        $this->artisan('vben-admin:install')->assertSuccessful();
+        $administrator = AdminUser::query()->where('username', 'admin')->firstOrFail();
+        $managerRole = AdminRole::query()->where('code', 'manager')->firstOrFail();
+        $permission = AdminPermission::query()->where('code', 'system.role.view')->firstOrFail();
+        $menu = AdminMenu::query()->where('code', 'system.roles')->firstOrFail();
+        Sanctum::actingAs($administrator, ['admin']);
+
+        $this->patchJson('/api/admin/system/roles/'.$managerRole->getKey(), [
+            'code' => $managerRole->code,
+            'name' => $managerRole->name,
+            'permission_ids' => [$permission->getKey()],
+            'menu_ids' => [$menu->getKey()],
+        ])->assertForbidden()->assertJsonPath('code', 'ADMIN_SUPER_ADMIN_REQUIRED');
+
+        $this->putJson('/api/admin/system/roles/'.$managerRole->getKey().'/access', [
+            'permission_ids' => [$permission->getKey()],
+            'menu_ids' => [$menu->getKey()],
+        ])->assertForbidden()->assertJsonPath('code', 'ADMIN_SUPER_ADMIN_REQUIRED');
     }
 
     public function test_administrator_username_is_immutable_after_creation(): void

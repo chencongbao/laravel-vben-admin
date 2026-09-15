@@ -69,11 +69,17 @@ final class AdminRoleController extends Controller
 
     public function update(Request $request, AdminRole $adminRole): JsonResponse
     {
-        if ($adminRole->is_system) {
+        if ($adminRole->code === 'administrator') {
             return response()->json(['message' => 'System roles cannot be modified.', 'code' => 'SYSTEM_ROLE_PROTECTED'], 422);
+        }
+        if ($adminRole->code === 'manager' && ! $this->privilegeGuard->isSuperAdmin($request->user())) {
+            return response()->json(['message' => 'Only a super administrator can modify the manager role.', 'code' => 'ADMIN_SUPER_ADMIN_REQUIRED'], 403);
         }
 
         $data = $this->validateRole($request, $adminRole);
+        if ($adminRole->code === 'manager' && $this->changesManagerIdentity($adminRole, $data)) {
+            return response()->json(['message' => 'The built-in manager role identity cannot be modified.', 'code' => 'SYSTEM_ROLE_IDENTITY_PROTECTED'], 422);
+        }
         $access = $this->validateAccess($request);
         $access['permission_ids'] = $this->includePermissionAncestors($access['permission_ids']);
         $access['menu_ids'] = $this->includeMenuAncestors($access['menu_ids']);
@@ -114,8 +120,11 @@ final class AdminRoleController extends Controller
 
     public function access(Request $request, AdminRole $adminRole): JsonResponse
     {
-        if ($adminRole->is_system) {
+        if ($adminRole->code === 'administrator') {
             return response()->json(['message' => 'System role access cannot be modified.', 'code' => 'SYSTEM_ROLE_PROTECTED'], 422);
+        }
+        if ($adminRole->code === 'manager' && ! $this->privilegeGuard->isSuperAdmin($request->user())) {
+            return response()->json(['message' => 'Only a super administrator can modify the manager role.', 'code' => 'ADMIN_SUPER_ADMIN_REQUIRED'], 403);
         }
 
         $data = $request->validate([
@@ -161,6 +170,13 @@ final class AdminRoleController extends Controller
     {
         return $this->privilegeGuard->isSuperAdmin($request->user())
             || ! in_array($role->code, self::HIDDEN_FROM_NON_SUPER_ADMINS, true);
+    }
+
+    private function changesManagerIdentity(AdminRole $role, array $data): bool
+    {
+        return (array_key_exists('code', $data) && $data['code'] !== $role->code)
+            || (array_key_exists('name', $data) && $data['name'] !== $role->name)
+            || (array_key_exists('is_active', $data) && (bool) $data['is_active'] !== (bool) $role->is_active);
     }
 
     private function includeMenuAncestors(array $menuIds): array

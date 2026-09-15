@@ -194,7 +194,7 @@ final class InstallCommandTest extends TestCase
         self::assertTrue($manager->menus()->whereKey($systemLogs->getKey())->exists());
     }
 
-    public function test_sync_revokes_menu_and_permission_management_from_manager(): void
+    public function test_sync_preserves_explicit_menu_and_permission_management_assignments_for_manager(): void
     {
         $this->artisan('vben-admin:install')->assertSuccessful();
 
@@ -216,7 +216,7 @@ final class InstallCommandTest extends TestCase
 
         $this->artisan('vben-admin:sync')->assertSuccessful();
 
-        self::assertFalse($manager->permissions()->whereKey($excludedPermissions)->exists());
-        self::assertFalse($manager->menus()->whereKey($excludedMenus)->exists());
+        self::assertTrue($manager->permissions()->whereKey($excludedPermissions)->exists());
+        self::assertTrue($manager->menus()->whereKey($excludedMenus)->exists());
     }
 }
