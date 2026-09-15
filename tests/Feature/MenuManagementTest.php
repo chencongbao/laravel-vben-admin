@@ -95,11 +95,9 @@ final class MenuManagementTest extends TestCase
             'route_name' => 'ContentArticles',
             'route_path' => '/content/articles',
             'view_key' => 'content.articles',
-            'permission_code' => $view->code,
             'permission_ids' => [$view->getKey(), $update->getKey()],
         ])->assertCreated()
             ->assertJsonPath('menu.icon', 'lucide:list')
-            ->assertJsonPath('menu.permission_code', $view->code)
             ->assertJsonCount(2, 'menu.permissions');
 
         $menuId = $response->json('menu.id');
@@ -138,21 +136,9 @@ final class MenuManagementTest extends TestCase
         self::assertFalse(Schema::hasColumn($menus, 'is_hidden'));
     }
 
-    public function test_primary_permission_must_be_selected_in_permission_tree(): void
+    public function test_menu_table_uses_only_the_permission_pivot(): void
     {
-        $view = AdminPermission::query()->where('code', 'system.menu.view')->firstOrFail();
-        $update = AdminPermission::query()->where('code', 'system.menu.update')->firstOrFail();
-
-        $this->postJson('/api/admin/system/menus', [
-            'code' => 'content.invalid',
-            'title' => 'Invalid menu',
-            'type' => 'page',
-            'permission_code' => $view->code,
-            'permission_ids' => [$update->getKey()],
-        ])->assertUnprocessable()
-            ->assertJsonValidationErrors('permission_code');
-
-        self::assertFalse(AdminMenu::query()->where('code', 'content.invalid')->exists());
+        self::assertFalse(Schema::hasColumn(config('laravel-vben-admin.tables.menus', 'admin_menus'), 'permission_code'));
     }
 
     public function test_updating_custom_menu_code_does_not_break_child_hierarchy(): void

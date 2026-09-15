@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class AdminMenu extends Model
 {
-    protected $fillable = ['code', 'parent_id', 'title', 'type', 'route_name', 'route_path', 'view_key', 'permission_code', 'icon', 'sort', 'is_system'];
+    protected $fillable = ['code', 'parent_id', 'title', 'type', 'route_name', 'route_path', 'view_key', 'icon', 'sort', 'is_system'];
 
     protected function casts(): array
     {

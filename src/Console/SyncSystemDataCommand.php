@@ -56,7 +56,7 @@ final class SyncSystemDataCommand extends Command
             foreach ($menus as $menu) {
                 AdminMenu::query()->updateOrCreate(
                     ['code' => $menu['code']],
-                    collect($menu)->except('parent_menu_code')->all(),
+                    collect($menu)->except(['parent_menu_code', 'permission_code'])->all(),
                 );
             }
 
@@ -67,12 +67,15 @@ final class SyncSystemDataCommand extends Command
                 AdminMenu::query()->where('code', $menu['code'])->update(['parent_id' => $parentId]);
             }
 
-            AdminMenu::query()->whereNotNull('permission_code')->each(function (AdminMenu $menu): void {
-                $permission = AdminPermission::query()->where('code', $menu->permission_code)->first();
-                if ($permission !== null) {
-                    $permission->menus()->syncWithoutDetaching([$menu->getKey()]);
+            foreach ($menus as $menuData) {
+                if ($menuData['permission_code'] !== null) {
+                    $menu = AdminMenu::query()->where('code', $menuData['code'])->firstOrFail();
+                    $permission = AdminPermission::query()->where('code', $menuData['permission_code'])->first();
+                    if ($permission !== null) {
+                        $menu->permissions()->syncWithoutDetaching([$permission->getKey()]);
+                    }
                 }
-            });
+            }
 
             foreach ([
                 'configuration' => ['system.settings', 'system.theme-settings'],

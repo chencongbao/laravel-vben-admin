@@ -4,13 +4,11 @@ namespace Chencongbao\LaravelVbenAdmin\Http\Controllers;
 
 use Chencongbao\LaravelVbenAdmin\Contracts\AuditRecorder;
 use Chencongbao\LaravelVbenAdmin\Models\AdminMenu;
-use Chencongbao\LaravelVbenAdmin\Models\AdminPermission;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\ValidationException;
 
 final class AdminMenuController extends Controller
 {
@@ -165,7 +163,6 @@ final class AdminMenuController extends Controller
             'route_name' => ['nullable', 'string', 'max:160', Rule::unique($menuTable, 'route_name')->ignore($menu?->getKey())],
             'route_path' => ['nullable', 'string', 'max:255'],
             'view_key' => ['nullable', 'string', 'max:160', 'regex:/^[a-zA-Z0-9._-]+$/'],
-            'permission_code' => ['nullable', 'string', Rule::exists($permissionTable, 'code')->where('is_active', true)],
             'permission_ids' => ['sometimes', 'array', 'max:500'],
             'permission_ids.*' => ['required', 'integer', 'distinct', Rule::exists($permissionTable, 'id')->where('is_active', true)],
             'icon' => ['nullable', 'string', 'max:160'],
@@ -174,15 +171,6 @@ final class AdminMenuController extends Controller
 
         if ((! $menu || array_key_exists('icon', $data)) && blank($data['icon'] ?? null)) {
             $data['icon'] = self::DEFAULT_MENU_ICON;
-        }
-
-        if (array_key_exists('permission_ids', $data) && ($data['permission_code'] ?? null) !== null) {
-            $selectedCodes = AdminPermission::query()->whereKey($data['permission_ids'])->pluck('code');
-            if (! $selectedCodes->contains($data['permission_code'])) {
-                throw ValidationException::withMessages([
-                    'permission_code' => ['The primary permission must be included in permission_ids.'],
-                ]);
-            }
         }
 
         return $data;

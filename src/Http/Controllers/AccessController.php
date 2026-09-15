@@ -35,6 +35,7 @@ final class AccessController extends Controller
         $user = $request->user();
         $roles = $user->roles()->where('is_active', true)->get();
         $query = AdminMenu::query()
+            ->with('permissions:id,code')
             ->orderByRaw('CASE WHEN code = ? THEN 0 ELSE 1 END', [self::DEFAULT_MENU_CODE])
             ->orderBy('sort')
             ->orderBy('id');
@@ -45,7 +46,7 @@ final class AccessController extends Controller
                 $menuQuery->where('code', self::DEFAULT_MENU_CODE)
                     ->orWhere(function ($roleMenuQuery) use ($roles, $permissionCodes): void {
                         $roleMenuQuery->whereHas('roles', fn ($roleQuery) => $roleQuery->whereKey($roles->modelKeys()))
-                            ->where(fn ($permissionQuery) => $permissionQuery->whereNull('permission_code')->orWhereIn('permission_code', $permissionCodes));
+                            ->where(fn ($permissionQuery) => $permissionQuery->whereDoesntHave('permissions')->orWhereHas('permissions', fn ($query) => $query->whereIn('code', $permissionCodes)));
                     });
             });
         }
@@ -64,7 +65,7 @@ final class AccessController extends Controller
                 'order' => $menu->code === self::DEFAULT_MENU_CODE ? self::DEFAULT_MENU_ORDER : $menu->sort,
                 'affixTab' => $menu->code === self::DEFAULT_MENU_CODE,
                 'tabClosable' => $menu->code !== self::DEFAULT_MENU_CODE,
-                'authority' => array_values(array_filter([$menu->permission_code])),
+                'authority' => $menu->permissions->pluck('code')->values()->all(),
             ],
             'children' => [],
         ])->keyBy('id')->all();

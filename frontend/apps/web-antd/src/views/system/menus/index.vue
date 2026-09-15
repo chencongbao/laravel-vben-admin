@@ -43,7 +43,6 @@ interface MenuItem {
   id: number;
   is_system: boolean;
   parent_id?: null | number;
-  permission_code?: null | string;
   permissions?: Permission[];
   route_name?: null | string;
   route_path?: null | string;
@@ -115,7 +114,6 @@ const form = reactive({
   code: '',
   icon: DEFAULT_MENU_ICON,
   parent_id: 0,
-  permission_code: undefined as string | undefined,
   route_name: '',
   route_path: '',
   sort: 0,
@@ -189,31 +187,34 @@ function permissionName(permission: Pick<Permission, 'code' | 'name'>) {
 }
 
 const permissionTree = computed<PermissionTreeNode[]>(() => {
-  const groups = new Map<string, Permission[]>();
+  const nodes = new Map<number, PermissionTreeNode>();
+  permissions.value.forEach((permission) => nodes.set(permission.id, {
+    children: [], key: permission.id, title: `${permissionName(permission)}（${permission.code}）`,
+  }));
+  const roots: PermissionTreeNode[] = [];
   permissions.value.forEach((permission) => {
-    const segments = permission.code.split('.');
-    const groupCode = segments.length > 2 ? segments.slice(0, -1).join('.') : permission.code;
-    groups.set(groupCode, [...(groups.get(groupCode) ?? []), permission]);
+    const node = nodes.get(permission.id);
+    if (!node) return;
+    const parent = permission.parent_id ? nodes.get(permission.parent_id) : undefined;
+    if (parent) parent.children?.push(node);
+    else roots.push(node);
   });
-  return [...groups.entries()].map(([groupCode, items]) => {
-    const owner = menus.value.find((menu) => {
-      if (!menu.permission_code) return false;
-      const segments = menu.permission_code.split('.');
-      return segments.slice(0, -1).join('.') === groupCode;
-    });
-    return {
-      children: items.map((permission) => ({
-        key: permission.id,
-        title: `${permissionName(permission)}（${permission.code}）`,
-      })),
-      key: `permission-group:${groupCode}`,
-      title: owner ? $t(owner.title) : groupCode,
-    };
-  });
+  return roots;
 });
 
 const allPermissionKeys = computed<Key[]>(() => permissions.value.map((permission) => permission.id));
-const allPermissionGroupKeys = computed<Key[]>(() => permissionTree.value.map((group) => group.key));
+const allPermissionGroupKeys = computed<Key[]>(() => {
+  const keys: Key[] = [];
+  const collectExpandableKeys = (nodes: PermissionTreeNode[]) => {
+    nodes.forEach((node) => {
+      if (!node.children?.length) return;
+      keys.push(node.key);
+      collectExpandableKeys(node.children);
+    });
+  };
+  collectExpandableKeys(permissionTree.value);
+  return keys;
+});
 const permissionsExpanded = computed({
   get: () => allPermissionGroupKeys.value.length > 0 && allPermissionGroupKeys.value.every((key) => expandedPermissionKeys.value.includes(key)),
   set: (expanded: boolean) => {
@@ -253,7 +254,7 @@ async function load(selectCode?: string) {
 function createEmptyForm(parentId = 0) {
   return {
     code: '', icon: DEFAULT_MENU_ICON,
-    parent_id: parentId, permission_code: undefined, route_name: '',
+    parent_id: parentId, route_name: '',
     route_path: '', sort: 0, title: '', type: 'page', view_key: '',
   };
 }
@@ -271,7 +272,6 @@ function selectMenu(item: MenuItem) {
   selectedCode.value = item.code;
   Object.assign(form, {
     code: item.code, icon: item.icon || DEFAULT_MENU_ICON, parent_id: item.parent_id ?? 0,
-    permission_code: item.permission_code ?? undefined,
     route_name: item.route_name ?? '', route_path: item.route_path ?? '',
     sort: item.sort, title: item.title, type: item.type, view_key: item.view_key ?? '',
   });
@@ -332,16 +332,10 @@ async function save() {
   try {
     const permissionIds = checkedPermissionKeys.value
       .filter((key): key is number => typeof key === 'number');
-    const selectedPermissions = permissions.value.filter((permission) => permissionIds.includes(permission.id));
-    let permissionCode = form.permission_code;
-    if (!selectedPermissions.some((permission) => permission.code === permissionCode)) {
-      permissionCode = selectedPermissions.find((permission) => permission.code.endsWith('.view'))?.code ?? selectedPermissions[0]?.code;
-    }
     const payload = {
       ...form,
       icon: form.icon || DEFAULT_MENU_ICON,
       parent_id: form.parent_id || null,
-      permission_code: permissionCode || null,
       permission_ids: permissionIds,
       route_name: form.route_name || null,
       route_path: form.route_path || null,
@@ -512,7 +506,7 @@ onMounted(() => load());
               @change="form.icon = $event"
             />
           </FormItem>
-          <FormItem label="路由路径" required>
+          <FormItem label="路由路径">
             <Input :value="form.route_path" placeholder="例如：/content/articles" @update:value="handleRoutePathInput">
               <template #prefix><IconifyIcon icon="lucide:link" /></template>
             </Input>
