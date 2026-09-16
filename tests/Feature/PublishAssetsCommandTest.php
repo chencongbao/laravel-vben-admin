@@ -32,6 +32,8 @@ final class PublishAssetsCommandTest extends TestCase
 
         self::assertSame('<html>custom build</html>', File::get(public_path('admin/index.html')));
         self::assertFileExists(public_path('admin/assets/app.js'));
+        self::assertSame([], glob(public_path('.admin-staging-*')) ?: []);
+        self::assertSame([], glob(public_path('.admin-backup-*')) ?: []);
     }
 
     protected function tearDown(): void

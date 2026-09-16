@@ -47,6 +47,10 @@ Public, read-only bootstrap data used before the login page initializes. It retu
 | GET | `/access/permissions` | Authenticated administrator |
 | GET | `/access/menus` | Authenticated administrator |
 
+Login risk is tracked for 24 hours by IP, username, and the IP/username pair. The pair is locked for 10 minutes at five failures, 30 minutes at ten failures, and two hours at twenty failures. A blocked attempt returns HTTP 429 with `LOGIN_TEMPORARILY_LOCKED` or `LOGIN_IP_BLOCKED` and an optional `retry_after`. Trying ten distinct usernames from one IP creates an automatic two-hour IP block and a critical security event. Successful login clears the pair and username counters, but never silently releases a database IP block.
+
+Two-factor challenges are bound to the originating IP and User-Agent, allow at most five failed codes, expire after five minutes, and are atomically consumed before a Token is issued. Outside `local`, active super administrators are forced into 2FA setup or verification even when their stored flag was previously disabled. Access Tokens expire after `VBEN_ADMIN_TOKEN_TTL` minutes (720 by default).
+
 Login, profile updates, and `GET /auth/me` return the administrator's effective role summaries as `roles`, with each item containing `code` and `name`. The administration header uses the login username and localized built-in role name instead of demo account or subscription data.
 
 Profile updates accept a required `name` of at most 120 characters and an optional absolute avatar URL or one of 30 built-in avatar identifiers such as `default:avatar-1`. The administration client validates the name before submission and maps server-side field validation to its active locale. Avatar uploads use multipart field `avatar`; accepted formats are JPEG, PNG and WebP, with a 2 MB limit and dimensions from 64x64 through 4096x4096. Uploaded files are stored on Laravel's `public` disk under an administrator-specific directory. Replacing an uploaded avatar removes that administrator's previous package-owned avatar file. Password updates require `current_password`, `password` and `password_confirmation` and follow `system.password_strength`. `weak` requires at least 6 characters; `strong` requires at least 12 characters with upper- and lowercase letters and numbers. A successful password change revokes the administrator's other tokens while preserving the current session. Authenticated clients may read the active non-secret policy from `GET /auth/password-policy`.
@@ -145,6 +149,18 @@ Login-log items expose the existing `username`, `succeeded`, `failure_code`, `ip
 Audit changes, context, and captured request input recursively redact keys containing password, token, secret, credential, authorization, cookie, private key, captcha, TOTP, or two-factor data. Uploaded files are represented only by safe metadata. Login and operation records are read-only through these APIs.
 
 Updating several system or theme settings in one request creates one `system.settings.updated` operation record containing all changed keys and their before/after values. A request that produces no value changes does not create an audit record.
+
+## Security center
+
+| Method | Path | Permission |
+| --- | --- | --- |
+| GET | `/system/security/events` | `system.security.view` |
+| POST | `/system/security/events/{securityEvent}/resolve` | `system.security.update` |
+| GET | `/system/security/ip-blocks` | `system.security.view` |
+| POST | `/system/security/ip-blocks` | `system.security.update` |
+| POST | `/system/security/ip-blocks/{ipBlock}/release` | `system.security.update` |
+
+Both lists use `id DESC` pagination. Manual blocks accept one exact IPv4/IPv6 address, an uppercase stable reason code, and an optional duration of 1 through 8760 hours. CIDR input and duplicate active blocks return HTTP 422. Resolve, block, and release are idempotent where applicable and write `system.security.event.resolved`, `system.security.ip-block.created`, or `system.security.ip-block.released` audit records. The built-in manager role receives neither security-center permission nor menu by default.
 
 ## Settings
 

@@ -29,7 +29,7 @@ final class MenuManagementTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->artisan('vben-admin:install')->assertSuccessful();
+        $this->artisan('vben-admin:install', ['--skip-frontend' => true])->assertSuccessful();
         Sanctum::actingAs(AdminUser::query()->where('username', 'cmsadmin')->firstOrFail(), ['admin']);
     }
 

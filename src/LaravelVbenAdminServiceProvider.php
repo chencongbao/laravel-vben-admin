@@ -9,6 +9,7 @@ use Chencongbao\LaravelVbenAdmin\Console\PublishAssetsCommand;
 use Chencongbao\LaravelVbenAdmin\Console\PublishProjectCommand;
 use Chencongbao\LaravelVbenAdmin\Console\PublishWorkspaceCommand;
 use Chencongbao\LaravelVbenAdmin\Console\SyncSystemDataCommand;
+use Chencongbao\LaravelVbenAdmin\Console\UpdateCommand;
 use Chencongbao\LaravelVbenAdmin\Contracts\AuditRecorder;
 use Chencongbao\LaravelVbenAdmin\Contracts\Authorizer;
 use Chencongbao\LaravelVbenAdmin\Contracts\LoginRecorder;
@@ -85,6 +86,7 @@ final class LaravelVbenAdminServiceProvider extends ServiceProvider
                 PublishWorkspaceCommand::class,
                 CreateAdminCommand::class,
                 SyncSystemDataCommand::class,
+                UpdateCommand::class,
             ]);
         }
     }

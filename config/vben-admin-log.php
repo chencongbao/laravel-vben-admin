@@ -31,6 +31,9 @@ return [
         'system.role.created' => ['type' => 'created', 'module' => 'system.roles', 'label_key' => 'system.auditLog.actionNames.roleCreated'],
         'system.role.deleted' => ['type' => 'deleted', 'module' => 'system.roles', 'label_key' => 'system.auditLog.actionNames.roleDeleted'],
         'system.role.updated' => ['type' => 'updated', 'module' => 'system.roles', 'label_key' => 'system.auditLog.actionNames.roleUpdated'],
+        'system.security.event.resolved' => ['type' => 'updated', 'module' => 'system.security', 'label_key' => 'system.auditLog.actionNames.securityEventResolved'],
+        'system.security.ip-block.created' => ['type' => 'created', 'module' => 'system.security', 'label_key' => 'system.auditLog.actionNames.securityIpBlockCreated'],
+        'system.security.ip-block.released' => ['type' => 'updated', 'module' => 'system.security', 'label_key' => 'system.auditLog.actionNames.securityIpBlockReleased'],
         'system.setting.updated' => ['type' => 'updated', 'module' => 'system.settings', 'label_key' => 'system.auditLog.actionNames.settingsUpdated'],
         'system.settings.updated' => ['type' => 'updated', 'module' => 'system.settings', 'label_key' => 'system.auditLog.actionNames.settingsUpdated'],
         'system.theme-settings.updated' => ['type' => 'updated', 'module' => 'system.theme-settings', 'label_key' => 'system.auditLog.actionNames.themeSettingsUpdated'],
@@ -44,6 +47,8 @@ return [
         'AdminPermission' => 'system.auditLog.subjectTypes.permission',
         'AdminRole' => 'system.auditLog.subjectTypes.role',
         'AdminSetting' => 'system.auditLog.subjectTypes.setting',
+        'AdminSecurityEvent' => 'system.auditLog.subjectTypes.securityEvent',
+        'AdminLoginIpBlock' => 'system.auditLog.subjectTypes.securityIpBlock',
         'AdminUser' => 'system.auditLog.subjectTypes.user',
     ],
 

@@ -37,7 +37,7 @@ final class InstallCommandTest extends TestCase
 
     public function test_install_creates_default_accounts_without_resetting_them(): void
     {
-        $this->artisan('vben-admin:install')->assertSuccessful();
+        $this->artisan('vben-admin:install', ['--skip-frontend' => true])->assertSuccessful();
 
         $superAdministrator = AdminUser::query()->where('username', 'cmsadmin')->firstOrFail();
         $administrator = AdminUser::query()->where('username', 'admin')->firstOrFail();
@@ -65,6 +65,8 @@ final class InstallCommandTest extends TestCase
                     'system.permission.delete',
                     'system.permission.update',
                     'system.permission.view',
+                    'system.security.update',
+                    'system.security.view',
                 ])
                 ->pluck('id')
                 ->all(),
@@ -73,13 +75,13 @@ final class InstallCommandTest extends TestCase
         self::assertEqualsCanonicalizing(
             AdminMenu::query()
                 ->where('is_system', true)
-                ->whereNotIn('code', ['dashboard.workspace', 'system.menus', 'system.permissions'])
+                ->whereNotIn('code', ['dashboard.workspace', 'system.menus', 'system.permissions', 'system.security'])
                 ->pluck('id')
                 ->all(),
             $manager->menus()->pluck('id')->all(),
         );
         self::assertFalse($manager->menus()->where('code', 'dashboard.workspace')->exists());
-        self::assertFalse($manager->menus()->whereIn('code', ['system.menus', 'system.permissions'])->exists());
+        self::assertFalse($manager->menus()->whereIn('code', ['system.menus', 'system.permissions', 'system.security'])->exists());
         self::assertFalse($manager->permissions()->whereIn('code', [
             'system.menu.create',
             'system.menu.delete',
@@ -89,6 +91,8 @@ final class InstallCommandTest extends TestCase
             'system.permission.delete',
             'system.permission.update',
             'system.permission.view',
+            'system.security.update',
+            'system.security.view',
         ])->exists());
         self::assertTrue(Schema::hasColumns('personal_access_tokens', ['ip_address', 'user_agent']));
         self::assertTrue(Schema::hasColumns('activity_log', ['log_name', 'log_type', 'event', 'attribute_changes', 'properties']));
@@ -155,7 +159,7 @@ final class InstallCommandTest extends TestCase
         $superAdministrator->roles()->sync([$manager->getKey()]);
         $administrator->roles()->sync([$superRole->getKey()]);
 
-        $this->artisan('vben-admin:install')->assertSuccessful();
+        $this->artisan('vben-admin:install', ['--skip-frontend' => true])->assertSuccessful();
 
         self::assertTrue(Hash::check('changed-super-password', $superAdministrator->fresh()->password));
         self::assertTrue(Hash::check('changed-manager-password', $administrator->fresh()->password));
@@ -165,7 +169,7 @@ final class InstallCommandTest extends TestCase
 
     public function test_sync_preserves_settings_access_after_adding_the_configuration_parent(): void
     {
-        $this->artisan('vben-admin:install')->assertSuccessful();
+        $this->artisan('vben-admin:install', ['--skip-frontend' => true])->assertSuccessful();
 
         $manager = AdminRole::query()->where('code', 'manager')->firstOrFail();
         $settings = AdminMenu::query()->where('code', 'system.settings')->firstOrFail();
@@ -181,7 +185,7 @@ final class InstallCommandTest extends TestCase
 
     public function test_sync_preserves_log_access_after_adding_the_system_logs_parent(): void
     {
-        $this->artisan('vben-admin:install')->assertSuccessful();
+        $this->artisan('vben-admin:install', ['--skip-frontend' => true])->assertSuccessful();
 
         $manager = AdminRole::query()->where('code', 'manager')->firstOrFail();
         $loginLogs = AdminMenu::query()->where('code', 'system.login-logs')->firstOrFail();
@@ -197,7 +201,7 @@ final class InstallCommandTest extends TestCase
 
     public function test_sync_preserves_explicit_menu_and_permission_management_assignments_for_manager(): void
     {
-        $this->artisan('vben-admin:install')->assertSuccessful();
+        $this->artisan('vben-admin:install', ['--skip-frontend' => true])->assertSuccessful();
 
         $manager = AdminRole::query()->where('code', 'manager')->firstOrFail();
         $excludedPermissions = AdminPermission::query()

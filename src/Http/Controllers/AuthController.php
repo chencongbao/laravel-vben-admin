@@ -5,9 +5,11 @@ namespace Chencongbao\LaravelVbenAdmin\Http\Controllers;
 use Chencongbao\LaravelVbenAdmin\Contracts\AuditRecorder;
 use Chencongbao\LaravelVbenAdmin\Contracts\LoginRecorder;
 use Chencongbao\LaravelVbenAdmin\Models\AdminUser;
+use Chencongbao\LaravelVbenAdmin\Services\AdminLoginRiskService;
 use Chencongbao\LaravelVbenAdmin\Services\LoginCaptcha;
 use Chencongbao\LaravelVbenAdmin\Services\LoginClientClassifier;
 use Chencongbao\LaravelVbenAdmin\Services\LoginIpWhitelist;
+use Chencongbao\LaravelVbenAdmin\Services\PrivilegeAssignmentGuard;
 use Chencongbao\LaravelVbenAdmin\Services\TwoFactorAuthentication;
 use Chencongbao\LaravelVbenAdmin\Support\AdminPasswordPolicy;
 use Illuminate\Http\JsonResponse;
@@ -24,9 +26,11 @@ final class AuthController extends Controller
         private readonly AuditRecorder $audit,
         private readonly LoginRecorder $loginRecorder,
         private readonly LoginCaptcha $captcha,
+        private readonly AdminLoginRiskService $loginRisk,
         private readonly LoginClientClassifier $loginClientClassifier,
         private readonly LoginIpWhitelist $loginIpWhitelist,
         private readonly TwoFactorAuthentication $twoFactor,
+        private readonly PrivilegeAssignmentGuard $privilegeGuard,
     ) {}
 
     public function login(Request $request): JsonResponse
@@ -42,15 +46,26 @@ final class AuthController extends Controller
             'captcha.*.t' => ['required_with:captcha', 'integer'],
         ]);
 
+        if ($blocked = $this->loginRisk->blocked($request, $credentials['username'])) {
+            $this->loginRecorder->record($request, $credentials['username'], null, false, $blocked['code']);
+
+            return response()->json([
+                'message' => 'Login is temporarily unavailable.',
+                ...$blocked,
+            ], 429);
+        }
+
         if ($this->captcha->isRequired($request, $credentials['username'])
             && ! $this->captcha->verify($request, $credentials['username'], $credentials['captcha_key'] ?? null, $credentials['captcha'] ?? null)) {
             $this->loginRecorder->record($request, $credentials['username'], null, false, 'CAPTCHA_INVALID');
+            $blocked = $this->loginRisk->recordFailure($request, $credentials['username'], null, 'CAPTCHA_INVALID');
 
             return response()->json([
-                'message' => 'The verification code is invalid or has expired.',
-                'code' => 'CAPTCHA_INVALID',
+                'message' => $blocked ? 'Login is temporarily unavailable.' : 'The verification code is invalid or has expired.',
+                'code' => $blocked['code'] ?? 'CAPTCHA_INVALID',
+                'retry_after' => $blocked['retry_after'] ?? null,
                 'captcha_required' => true,
-            ], 422);
+            ], $blocked ? 429 : 422);
         }
 
         /** @var class-string<AdminUser> $model */
@@ -60,12 +75,14 @@ final class AuthController extends Controller
         if (! $user || ! $user->is_active || ! Hash::check($credentials['password'], $user->password)) {
             $this->captcha->require($request, $credentials['username']);
             $this->loginRecorder->record($request, $credentials['username'], $user, false, $user && ! $user->is_active ? 'ACCOUNT_DISABLED' : 'INVALID_CREDENTIALS');
+            $blocked = $this->loginRisk->recordFailure($request, $credentials['username'], $user, $user && ! $user->is_active ? 'ACCOUNT_DISABLED' : 'INVALID_CREDENTIALS');
 
             return response()->json([
                 'message' => 'The provided credentials are invalid.',
-                'code' => 'INVALID_CREDENTIALS',
+                'code' => $blocked['code'] ?? 'INVALID_CREDENTIALS',
+                'retry_after' => $blocked['retry_after'] ?? null,
                 'captcha_required' => true,
-            ], 422);
+            ], $blocked ? 429 : 422);
         }
 
         $this->captcha->clear($request, $credentials['username']);
@@ -79,10 +96,18 @@ final class AuthController extends Controller
             ], 403);
         }
 
+        $forceTwoFactor = ! app()->environment('local')
+            && (bool) config('laravel-vben-admin.auth.force_super_admin_two_factor', true)
+            && $this->privilegeGuard->isSuperAdmin($user);
+        if ($forceTwoFactor && ! $user->two_factor_enabled) {
+            $this->twoFactor->enable($user);
+            $user->refresh();
+        }
+
         if ($user->two_factor_enabled && ! app()->environment('local')) {
             return response()->json([
                 'two_factor_required' => true,
-                ...$this->twoFactor->issueChallenge($user),
+                ...$this->twoFactor->issueChallenge($user, $request),
             ], 202);
         }
 
@@ -95,7 +120,7 @@ final class AuthController extends Controller
             'challenge_token' => ['required', 'string', 'size:64'],
             'code' => ['required', 'string', 'regex:/^\d{6}$/'],
         ]);
-        $user = $this->twoFactor->resolveChallenge($data['challenge_token']);
+        $user = $this->twoFactor->resolveChallenge($data['challenge_token'], $request);
 
         if (! $user || ! $user->is_active || ! $user->two_factor_enabled) {
             $this->loginRecorder->record($request, '', null, false, 'TWO_FACTOR_CHALLENGE_INVALID');
@@ -110,9 +135,19 @@ final class AuthController extends Controller
         }
 
         if (! $this->twoFactor->verify($user, $data['code'])) {
+            $this->twoFactor->recordFailedAttempt($data['challenge_token']);
+            $blocked = $this->loginRisk->recordFailure($request, $user->username, $user, 'TWO_FACTOR_INVALID');
             $this->loginRecorder->record($request, $user->username, $user, false, 'TWO_FACTOR_INVALID');
 
-            return response()->json(['message' => 'The authentication code is invalid.', 'code' => 'TWO_FACTOR_CODE_INVALID'], 422);
+            return response()->json([
+                'message' => $blocked ? 'Login is temporarily unavailable.' : 'The authentication code is invalid.',
+                'code' => $blocked['code'] ?? 'TWO_FACTOR_CODE_INVALID',
+                'retry_after' => $blocked['retry_after'] ?? null,
+            ], $blocked ? 429 : 422);
+        }
+
+        if (! $this->twoFactor->consumeChallenge($data['challenge_token'], $user)) {
+            return response()->json(['message' => 'The two-factor challenge is invalid or has expired.', 'code' => 'TWO_FACTOR_CHALLENGE_INVALID'], 422);
         }
 
         $setupCompleted = $user->two_factor_confirmed_at === null;
@@ -120,7 +155,6 @@ final class AuthController extends Controller
             $user->forceFill(['two_factor_confirmed_at' => now()])->save();
             $this->audit->record($user, 'auth.two-factor.confirmed', $user);
         }
-        $this->twoFactor->consumeChallenge($data['challenge_token']);
 
         return $this->completeLogin($request, $user, $user->username);
     }
@@ -169,8 +203,10 @@ final class AuthController extends Controller
     {
         $user->forceFill(['last_login_at' => now(), 'last_login_ip' => $request->ip()])->save();
         $this->loginRecorder->record($request, $username, $user, true);
+        $this->loginRisk->recordSuccess($request, $username);
 
-        $accessToken = $user->createToken(config('laravel-vben-admin.auth.token_name', 'vben-admin'), ['admin']);
+        $ttl = max(5, (int) config('laravel-vben-admin.auth.token_ttl_minutes', 720));
+        $accessToken = $user->createToken(config('laravel-vben-admin.auth.token_name', 'vben-admin'), ['admin'], now()->addMinutes($ttl));
         $accessToken->accessToken->forceFill([
             'ip_address' => $request->ip(),
             'user_agent' => mb_substr((string) $request->userAgent(), 0, 2000),

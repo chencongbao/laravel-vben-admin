@@ -7,6 +7,7 @@ use BaconQrCode\Renderer\ImageRenderer;
 use BaconQrCode\Renderer\RendererStyle\RendererStyle;
 use BaconQrCode\Writer;
 use Chencongbao\LaravelVbenAdmin\Models\AdminUser;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use PragmaRX\Google2FA\Google2FA;
@@ -39,7 +40,7 @@ final class TwoFactorAuthentication
         ])->save();
     }
 
-    public function issueChallenge(AdminUser $user): array
+    public function issueChallenge(AdminUser $user, Request $request): array
     {
         if (! is_string($user->two_factor_secret) || $user->two_factor_secret === '') {
             $this->enable($user);
@@ -47,7 +48,13 @@ final class TwoFactorAuthentication
         }
 
         $token = Str::random(64);
-        Cache::put($this->challengeKey($token), ['user_id' => $user->getKey()], now()->addSeconds(self::CHALLENGE_TTL_SECONDS));
+        Cache::put($this->challengeKey($token), [
+            'user_id' => $user->getKey(),
+            'ip_hash' => hash('sha256', (string) ($request->ip() ?? '')),
+            'user_agent_hash' => hash('sha256', (string) $request->userAgent()),
+            'attempts' => 0,
+            'expires_at' => now()->addSeconds(self::CHALLENGE_TTL_SECONDS)->getTimestamp(),
+        ], now()->addSeconds(self::CHALLENGE_TTL_SECONDS));
 
         $result = [
             'challenge_token' => $token,
@@ -63,11 +70,16 @@ final class TwoFactorAuthentication
         return $result;
     }
 
-    public function resolveChallenge(string $token): ?AdminUser
+    public function resolveChallenge(string $token, Request $request): ?AdminUser
     {
         $challenge = Cache::get($this->challengeKey($token));
 
-        if (! is_array($challenge) || ! isset($challenge['user_id'])) {
+        if (! is_array($challenge)
+            || ! isset($challenge['user_id'])
+            || ! hash_equals((string) ($challenge['ip_hash'] ?? ''), hash('sha256', (string) ($request->ip() ?? '')))
+            || ! hash_equals((string) ($challenge['user_agent_hash'] ?? ''), hash('sha256', (string) $request->userAgent()))
+            || (int) ($challenge['expires_at'] ?? 0) <= now()->getTimestamp()
+            || (int) ($challenge['attempts'] ?? 0) >= 5) {
             return null;
         }
 
@@ -83,9 +95,36 @@ final class TwoFactorAuthentication
             && $this->google2fa->verifyKey($user->two_factor_secret, $code, 1);
     }
 
-    public function consumeChallenge(string $token): void
+    public function recordFailedAttempt(string $token): void
     {
-        Cache::forget($this->challengeKey($token));
+        $key = $this->challengeKey($token);
+        $challenge = Cache::get($key);
+        if (! is_array($challenge)) {
+            return;
+        }
+        $remainingSeconds = (int) ($challenge['expires_at'] ?? 0) - now()->getTimestamp();
+        if ($remainingSeconds <= 0) {
+            Cache::forget($key);
+
+            return;
+        }
+        $challenge['attempts'] = (int) ($challenge['attempts'] ?? 0) + 1;
+        if ($challenge['attempts'] >= 5) {
+            Cache::forget($key);
+
+            return;
+        }
+        Cache::put($key, $challenge, now()->addSeconds($remainingSeconds));
+    }
+
+    public function consumeChallenge(string $token, AdminUser $user): bool
+    {
+        $challenge = Cache::pull($this->challengeKey($token));
+
+        return is_array($challenge)
+            && (int) ($challenge['user_id'] ?? 0) === (int) $user->getKey()
+            && (int) ($challenge['expires_at'] ?? 0) > now()->getTimestamp()
+            && (int) ($challenge['attempts'] ?? 0) < 5;
     }
 
     private function challengeKey(string $token): string

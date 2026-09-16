@@ -17,6 +17,7 @@
     "validationFailed": "The form is invalid. Check the fields and try again."
   },
   "fields": {
+    "actions": "Actions",
     "createdAt": "Created At",
     "id": "ID"
   },

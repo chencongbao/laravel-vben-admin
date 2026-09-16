@@ -20,6 +20,9 @@ The Composer package ships the default compiled application and its frontend sou
 - Database menu records contain a `view_key`; the Vben application maps it through a local component allowlist.
 - The business platform and supplier platform share package code only, never runtime identity or authorization data.
 - The fixed workspace route resolves a project-owned `resources/admin/workspace/index.vue` only when `VBEN_ADMIN_WORKSPACE` is supplied at build time; otherwise it uses the package default.
+- Authentication risk state is package-owned: short-lived counters live in Laravel Cache while durable security events and IP blocks live in package tables. Host applications may listen to `AdminSecurityRiskDetected` without changing the login controller.
+- `vben-admin:install` and `vben-admin:update` are the normal deployment entry points. Both are repeatable, preserve project-owned configuration and extensions, and delegate to the lower-level migration, synchronization, build and publication commands.
+- Frontend asset publication is staged and validated before directory activation so a failed copy does not first remove the currently published administration UI.
 
 ## Delivery stages
 

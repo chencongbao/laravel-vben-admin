@@ -173,6 +173,8 @@ frontend/apps/web-antd/src/api/core/menu.ts
 
 前端构建环境必须使用 Node.js `^22.18.0 || ^24.0.0` 和 pnpm `>=10.0.0`。`vben-admin:build` 会在执行依赖安装前检查版本；不得为兼容 Node.js 18 而跳过 workspace 的 `postinstall`，否则生成的内部包可能不完整。
 
+面向部署只使用两个幂等入口：首次安装执行 `php artisan vben-admin:install`，Composer 包升级后执行 `php artisan vben-admin:update`。两者默认完成 migration、系统数据同步、前端依赖安装、构建、原子发布和缓存清理；底层 `sync`、`build`、`publish-assets` 只用于开发与排错。已有配置、`app/Admin`、`routes/admin.php`、`resources/admin`、账号密码和非空角色授权均不得因重复安装或升级被覆盖。
+
 页面中的操作按钮继续使用与服务端相同的权限代码。按钮隐藏只改善体验，不能作为安全控制。
 
 ## 5. 数据库开发规则

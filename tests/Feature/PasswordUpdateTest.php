@@ -35,7 +35,7 @@ final class PasswordUpdateTest extends TestCase
 
     public function test_password_update_returns_field_errors_for_invalid_input(): void
     {
-        $this->artisan('vben-admin:install')->assertSuccessful();
+        $this->artisan('vben-admin:install', ['--skip-frontend' => true])->assertSuccessful();
         $user = AdminUser::query()->where('username', 'cmsadmin')->firstOrFail();
         Sanctum::actingAs($user, ['admin']);
 
@@ -49,7 +49,7 @@ final class PasswordUpdateTest extends TestCase
 
     public function test_password_update_returns_stable_code_for_incorrect_current_password(): void
     {
-        $this->artisan('vben-admin:install')->assertSuccessful();
+        $this->artisan('vben-admin:install', ['--skip-frontend' => true])->assertSuccessful();
         $user = AdminUser::query()->where('username', 'cmsadmin')->firstOrFail();
         Sanctum::actingAs($user, ['admin']);
 
@@ -64,7 +64,7 @@ final class PasswordUpdateTest extends TestCase
 
     public function test_weak_password_policy_accepts_six_characters_and_is_exposed_to_authenticated_users(): void
     {
-        $this->artisan('vben-admin:install')->assertSuccessful();
+        $this->artisan('vben-admin:install', ['--skip-frontend' => true])->assertSuccessful();
         AdminSetting::query()->create([
             'key' => 'system.password_strength',
             'type' => 'enum',

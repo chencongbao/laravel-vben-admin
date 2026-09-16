@@ -38,7 +38,7 @@ final class ActivityLogTest extends TestCase
 
     public function test_install_creates_the_unified_activity_log_table(): void
     {
-        $this->artisan('vben-admin:install', ['--force' => true])->assertSuccessful();
+        $this->artisan('vben-admin:install', ['--skip-frontend' => true])->assertSuccessful();
 
         self::assertTrue(Schema::hasColumns('activity_log', [
             'log_name',
@@ -62,7 +62,7 @@ final class ActivityLogTest extends TestCase
 
     public function test_failed_and_successful_logins_are_written_to_the_activity_log(): void
     {
-        $this->artisan('vben-admin:install', ['--force' => true])->assertSuccessful();
+        $this->artisan('vben-admin:install', ['--skip-frontend' => true])->assertSuccessful();
         $this->app->detectEnvironment(fn (): string => 'local');
 
         $this->withHeader('User-Agent', 'Mozilla/5.0 (Macintosh; Intel Mac OS X)')
@@ -103,7 +103,7 @@ final class ActivityLogTest extends TestCase
 
     public function test_only_super_administrators_can_view_super_administrator_login_logs(): void
     {
-        $this->artisan('vben-admin:install', ['--force' => true])->assertSuccessful();
+        $this->artisan('vben-admin:install', ['--skip-frontend' => true])->assertSuccessful();
         $this->app->detectEnvironment(fn (): string => 'local');
 
         $this->postJson('/api/admin/auth/login', [
@@ -155,7 +155,7 @@ final class ActivityLogTest extends TestCase
 
     public function test_only_super_administrators_can_query_super_administrator_operation_logs_and_operator_options(): void
     {
-        $this->artisan('vben-admin:install', ['--force' => true])->assertSuccessful();
+        $this->artisan('vben-admin:install', ['--skip-frontend' => true])->assertSuccessful();
         $superAdministrator = AdminUser::query()->where('username', 'cmsadmin')->firstOrFail();
         $administrator = AdminUser::query()->where('username', 'admin')->firstOrFail();
         $administrator->roles()->firstOrFail()->permissions()->syncWithoutDetaching([
@@ -217,7 +217,7 @@ final class ActivityLogTest extends TestCase
 
     public function test_operation_audit_uses_spatie_and_redacts_sensitive_values(): void
     {
-        $this->artisan('vben-admin:install', ['--force' => true])->assertSuccessful();
+        $this->artisan('vben-admin:install', ['--skip-frontend' => true])->assertSuccessful();
         $actor = AdminUser::query()->where('username', 'cmsadmin')->firstOrFail();
         config()->set('vben-admin-log.fields.AdminUser.name', 'system.userForm.fields.name');
         $request = Request::create('/api/admin/system/settings', 'PUT', [
@@ -287,7 +287,7 @@ final class ActivityLogTest extends TestCase
 
     public function test_unregistered_operation_action_remains_queryable_with_safe_fallback_metadata(): void
     {
-        $this->artisan('vben-admin:install', ['--force' => true])->assertSuccessful();
+        $this->artisan('vben-admin:install', ['--skip-frontend' => true])->assertSuccessful();
         $actor = AdminUser::query()->where('username', 'cmsadmin')->firstOrFail();
         $this->app->make(AuditRecorder::class)->record($actor, 'project.custom.completed', $actor);
 
@@ -305,7 +305,7 @@ final class ActivityLogTest extends TestCase
 
     public function test_setting_batch_creates_one_audit_record_and_unchanged_values_create_none(): void
     {
-        $this->artisan('vben-admin:install', ['--force' => true])->assertSuccessful();
+        $this->artisan('vben-admin:install', ['--skip-frontend' => true])->assertSuccessful();
         $actor = AdminUser::query()->where('username', 'cmsadmin')->firstOrFail();
         Sanctum::actingAs($actor, ['admin']);
         $payload = [

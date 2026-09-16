@@ -16,6 +16,7 @@ final class SyncSystemDataCommand extends Command
     private const MANAGER_EXCLUDED_MENU_CODES = [
         'system.menus',
         'system.permissions',
+        'system.security',
     ];
 
     private const MANAGER_EXCLUDED_PERMISSION_CODES = [
@@ -27,6 +28,8 @@ final class SyncSystemDataCommand extends Command
         'system.permission.delete',
         'system.permission.update',
         'system.permission.view',
+        'system.security.view',
+        'system.security.update',
     ];
 
     protected $signature = 'vben-admin:sync {--dry-run : Preview changes without writing them}';
@@ -159,6 +162,8 @@ final class SyncSystemDataCommand extends Command
             'system.menu.delete' => 'Delete menus',
             'system.audit.view' => 'View audit logs',
             'system.login-log.view' => 'View login logs',
+            'system.security.view' => 'View security center',
+            'system.security.update' => 'Manage security risks and IP blocks',
             'system.setting.view' => 'View system settings',
             'system.theme-setting.view' => 'View theme settings',
         ] as $code => $name) {
@@ -196,6 +201,8 @@ final class SyncSystemDataCommand extends Command
             'system.menu.delete' => 'system.menu.view',
             'system.audit.view' => 'system.logs.access',
             'system.login-log.view' => 'system.logs.access',
+            'system.security.view' => 'system.logs.access',
+            'system.security.update' => 'system.security.view',
             'system.setting.view' => 'system.configuration.access',
             'system.theme-setting.view' => 'system.configuration.access',
         ];
@@ -254,6 +261,7 @@ final class SyncSystemDataCommand extends Command
         foreach ([
             ['system.login-logs', 'system.loginLogs', 'SystemLoginLogs', '/system/login-logs', 'system.login-logs', 'system.login-log.view', 'lucide:log-in', 10],
             ['system.audit-logs', 'system.auditLogs', 'SystemAuditLogs', '/system/audit-logs', 'system.audit-logs', 'system.audit.view', 'lucide:clipboard-list', 20],
+            ['system.security', 'system.securityCenter', 'SystemSecurity', '/system/security', 'system.security', 'system.security.view', 'lucide:shield-alert', 30],
         ] as [$code, $title, $routeName, $routePath, $viewKey, $permissionCode, $icon, $sort]) {
             $items[] = [
                 'code' => $code, 'parent_menu_code' => 'system.logs', 'title' => $title, 'type' => 'page', 'route_name' => $routeName,

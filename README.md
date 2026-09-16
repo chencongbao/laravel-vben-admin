@@ -80,14 +80,22 @@ Edit `resources/admin/workspace/index.vue`, then build the package frontend with
 composer require chencongbao/laravel-vben-admin
 
 php artisan vben-admin:install
-php artisan vben-admin:publish-assets
 ```
 
-The installer publishes the package configuration and Sanctum migration, runs all pending migrations, synchronizes the package-owned roles, permissions and menus, and creates the initial super administrator when it does not already exist:
+The repeatable installer preserves existing configuration and project extensions, publishes missing scaffolding, runs migrations, synchronizes package-owned system data, creates the fixed administrators when missing, installs locked frontend dependencies, builds and atomically publishes the administration UI, and clears Laravel caches. After a Composer package upgrade, run:
+
+```bash
+composer update chencongbao/laravel-vben-admin
+php artisan vben-admin:update
+```
+
+Use `vben-admin:update --dry-run` to preview an update. CI deployments may use `--skip-frontend` or `--skip-migrate` only when those stages are handled separately.
+
+The initial accounts are:
 
 ```text
-Username: admin
-Password: admin
+cmsadmin / admin (super administrator)
+admin / admin (manager)
 ```
 
 Running the installer again never resets an existing administrator's password. Change the default password immediately after the first login. Use `vben-admin:create-admin` when an additional super administrator is required.

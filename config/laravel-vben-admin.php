@@ -13,6 +13,8 @@ return [
     'auth' => [
         'model' => AdminUser::class,
         'token_name' => 'vben-admin',
+        'token_ttl_minutes' => (int) env('VBEN_ADMIN_TOKEN_TTL', 720),
+        'force_super_admin_two_factor' => (bool) env('VBEN_ADMIN_FORCE_SUPER_ADMIN_2FA', true),
     ],
 
     'activity_log' => [
@@ -30,5 +32,7 @@ return [
         'role_menus' => 'admin_role_menus',
         'permission_menus' => 'admin_permission_menus',
         'settings' => 'admin_settings',
+        'security_events' => 'admin_security_events',
+        'login_ip_blocks' => 'admin_login_ip_blocks',
     ],
 ];

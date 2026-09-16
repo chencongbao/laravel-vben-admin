@@ -38,7 +38,7 @@ final class SecurityBoundaryTest extends TestCase
 
     public function test_non_super_admin_cannot_assign_super_role_or_permissions_they_do_not_hold(): void
     {
-        $this->artisan('vben-admin:install')->assertSuccessful();
+        $this->artisan('vben-admin:install', ['--skip-frontend' => true])->assertSuccessful();
         $actor = AdminUser::query()->where('username', 'admin')->firstOrFail();
         $superRole = AdminRole::query()->where('is_super_admin', true)->firstOrFail();
         $unheldPermission = AdminPermission::query()->create(['code' => 'external.unheld', 'name' => 'Unheld permission']);
@@ -50,7 +50,7 @@ final class SecurityBoundaryTest extends TestCase
 
     public function test_non_super_admin_cannot_modify_a_super_admin_even_with_update_permission(): void
     {
-        $this->artisan('vben-admin:install')->assertSuccessful();
+        $this->artisan('vben-admin:install', ['--skip-frontend' => true])->assertSuccessful();
         $actor = AdminUser::query()->where('username', 'admin')->firstOrFail();
         $target = AdminUser::query()->where('username', 'cmsadmin')->firstOrFail();
         $role = $actor->roles()->firstOrFail();
@@ -66,7 +66,7 @@ final class SecurityBoundaryTest extends TestCase
 
     public function test_only_super_administrators_can_view_super_administrator_users(): void
     {
-        $this->artisan('vben-admin:install')->assertSuccessful();
+        $this->artisan('vben-admin:install', ['--skip-frontend' => true])->assertSuccessful();
         $superAdministrator = AdminUser::query()->where('username', 'cmsadmin')->firstOrFail();
         $administrator = AdminUser::query()->where('username', 'admin')->firstOrFail();
         $userViewPermission = AdminPermission::query()->where('code', 'system.user.view')->firstOrFail();
@@ -94,7 +94,7 @@ final class SecurityBoundaryTest extends TestCase
 
     public function test_administrator_create_accepts_at_most_one_role(): void
     {
-        $this->artisan('vben-admin:install')->assertSuccessful();
+        $this->artisan('vben-admin:install', ['--skip-frontend' => true])->assertSuccessful();
         $superAdministrator = AdminUser::query()->where('username', 'cmsadmin')->firstOrFail();
         $roleIds = AdminRole::query()->limit(2)->pluck('id')->all();
         Sanctum::actingAs($superAdministrator, ['admin']);
@@ -111,7 +111,7 @@ final class SecurityBoundaryTest extends TestCase
 
     public function test_administrator_can_update_own_profile_but_cannot_change_own_status_or_role(): void
     {
-        $this->artisan('vben-admin:install')->assertSuccessful();
+        $this->artisan('vben-admin:install', ['--skip-frontend' => true])->assertSuccessful();
         $administrator = AdminUser::query()->where('username', 'admin')->firstOrFail();
         Sanctum::actingAs($administrator, ['admin']);
 
@@ -156,7 +156,7 @@ final class SecurityBoundaryTest extends TestCase
 
     public function test_super_administrator_can_change_the_builtin_manager_status_without_changing_its_fixed_role(): void
     {
-        $this->artisan('vben-admin:install')->assertSuccessful();
+        $this->artisan('vben-admin:install', ['--skip-frontend' => true])->assertSuccessful();
         $superAdministrator = AdminUser::query()->where('username', 'cmsadmin')->firstOrFail();
         $administrator = AdminUser::query()->where('username', 'admin')->firstOrFail();
         $managerRole = AdminRole::query()->where('code', 'manager')->firstOrFail();
@@ -178,7 +178,7 @@ final class SecurityBoundaryTest extends TestCase
 
     public function test_user_role_options_include_every_active_non_super_role_and_creation_rejects_super_role(): void
     {
-        $this->artisan('vben-admin:install')->assertSuccessful();
+        $this->artisan('vben-admin:install', ['--skip-frontend' => true])->assertSuccessful();
         $superAdministrator = AdminUser::query()->where('username', 'cmsadmin')->firstOrFail();
         $administrator = AdminUser::query()->where('username', 'admin')->firstOrFail();
         $superRole = AdminRole::query()->where('code', 'administrator')->firstOrFail();
@@ -215,7 +215,7 @@ final class SecurityBoundaryTest extends TestCase
 
     public function test_only_fixed_accounts_are_delete_protected(): void
     {
-        $this->artisan('vben-admin:install')->assertSuccessful();
+        $this->artisan('vben-admin:install', ['--skip-frontend' => true])->assertSuccessful();
         $superAdministrator = AdminUser::query()->where('username', 'cmsadmin')->firstOrFail();
         $administrator = AdminUser::query()->where('username', 'admin')->firstOrFail();
         $ordinaryRole = AdminRole::query()->create([
@@ -278,7 +278,7 @@ final class SecurityBoundaryTest extends TestCase
 
     public function test_default_administrator_accounts_keep_their_fixed_roles_and_usernames(): void
     {
-        $this->artisan('vben-admin:install')->assertSuccessful();
+        $this->artisan('vben-admin:install', ['--skip-frontend' => true])->assertSuccessful();
         $superAdministrator = AdminUser::query()->where('username', 'cmsadmin')->firstOrFail();
         $administrator = AdminUser::query()->where('username', 'admin')->firstOrFail();
         $superRole = AdminRole::query()->where('code', 'administrator')->firstOrFail();
@@ -302,7 +302,7 @@ final class SecurityBoundaryTest extends TestCase
 
     public function test_super_administrator_role_is_immutable_and_manager_access_is_editable(): void
     {
-        $this->artisan('vben-admin:install')->assertSuccessful();
+        $this->artisan('vben-admin:install', ['--skip-frontend' => true])->assertSuccessful();
         $superAdministrator = AdminUser::query()->where('username', 'cmsadmin')->firstOrFail();
         $superRole = AdminRole::query()->where('code', 'administrator')->firstOrFail();
         $managerRole = AdminRole::query()->where('code', 'manager')->firstOrFail();
@@ -335,7 +335,7 @@ final class SecurityBoundaryTest extends TestCase
 
     public function test_super_administrator_can_assign_menu_and_permission_management_to_manager(): void
     {
-        $this->artisan('vben-admin:install')->assertSuccessful();
+        $this->artisan('vben-admin:install', ['--skip-frontend' => true])->assertSuccessful();
         $superAdministrator = AdminUser::query()->where('username', 'cmsadmin')->firstOrFail();
         $managerRole = AdminRole::query()->where('code', 'manager')->firstOrFail();
         $protectedPermission = AdminPermission::query()->where('code', 'system.menu.view')->firstOrFail();
@@ -353,7 +353,7 @@ final class SecurityBoundaryTest extends TestCase
 
     public function test_only_super_administrator_can_modify_manager_role(): void
     {
-        $this->artisan('vben-admin:install')->assertSuccessful();
+        $this->artisan('vben-admin:install', ['--skip-frontend' => true])->assertSuccessful();
         $administrator = AdminUser::query()->where('username', 'admin')->firstOrFail();
         $managerRole = AdminRole::query()->where('code', 'manager')->firstOrFail();
         $permission = AdminPermission::query()->where('code', 'system.role.view')->firstOrFail();
@@ -375,7 +375,7 @@ final class SecurityBoundaryTest extends TestCase
 
     public function test_manager_can_create_and_update_custom_roles_within_their_own_access_scope(): void
     {
-        $this->artisan('vben-admin:install')->assertSuccessful();
+        $this->artisan('vben-admin:install', ['--skip-frontend' => true])->assertSuccessful();
         $administrator = AdminUser::query()->where('username', 'admin')->firstOrFail();
         $rolePermission = AdminPermission::query()->where('code', 'system.role.view')->firstOrFail();
         $roleMenu = AdminMenu::query()->where('code', 'system.roles')->firstOrFail();
@@ -406,7 +406,7 @@ final class SecurityBoundaryTest extends TestCase
 
     public function test_administrator_username_is_immutable_after_creation(): void
     {
-        $this->artisan('vben-admin:install')->assertSuccessful();
+        $this->artisan('vben-admin:install', ['--skip-frontend' => true])->assertSuccessful();
         $superAdministrator = AdminUser::query()->where('username', 'cmsadmin')->firstOrFail();
         $administrator = AdminUser::query()->create([
             'username' => 'content-operator',
@@ -426,7 +426,7 @@ final class SecurityBoundaryTest extends TestCase
 
     public function test_non_super_administrator_only_sees_assigned_permissions_and_menus(): void
     {
-        $this->artisan('vben-admin:install')->assertSuccessful();
+        $this->artisan('vben-admin:install', ['--skip-frontend' => true])->assertSuccessful();
         $actor = AdminUser::query()->create([
             'username' => 'limited-manager',
             'name' => 'Limited manager',
@@ -464,7 +464,7 @@ final class SecurityBoundaryTest extends TestCase
 
     public function test_role_menu_assignment_includes_all_ancestors(): void
     {
-        $this->artisan('vben-admin:install')->assertSuccessful();
+        $this->artisan('vben-admin:install', ['--skip-frontend' => true])->assertSuccessful();
         $superAdministrator = AdminUser::query()->where('username', 'cmsadmin')->firstOrFail();
         $permission = AdminPermission::query()->where('code', 'system.user.view')->firstOrFail();
         $parentMenu = AdminMenu::query()->where('code', 'system')->firstOrFail();
@@ -487,7 +487,7 @@ final class SecurityBoundaryTest extends TestCase
 
     public function test_role_permission_assignment_includes_all_ancestors(): void
     {
-        $this->artisan('vben-admin:install')->assertSuccessful();
+        $this->artisan('vben-admin:install', ['--skip-frontend' => true])->assertSuccessful();
         $superAdministrator = AdminUser::query()->where('username', 'cmsadmin')->firstOrFail();
         $parentPermission = AdminPermission::query()->where('code', 'system.configuration.access')->firstOrFail();
         $childPermission = AdminPermission::query()->where('code', 'system.setting.view')->firstOrFail();
@@ -510,7 +510,7 @@ final class SecurityBoundaryTest extends TestCase
 
     public function test_only_super_administrators_can_view_built_in_administrator_roles(): void
     {
-        $this->artisan('vben-admin:install')->assertSuccessful();
+        $this->artisan('vben-admin:install', ['--skip-frontend' => true])->assertSuccessful();
         $superAdministrator = AdminUser::query()->where('username', 'cmsadmin')->firstOrFail();
         $administrator = AdminUser::query()->where('username', 'admin')->firstOrFail();
         $roleViewPermission = AdminPermission::query()->where('code', 'system.role.view')->firstOrFail();
@@ -541,7 +541,7 @@ final class SecurityBoundaryTest extends TestCase
 
     public function test_manager_can_load_role_access_options_without_menu_or_permission_management_access(): void
     {
-        $this->artisan('vben-admin:install')->assertSuccessful();
+        $this->artisan('vben-admin:install', ['--skip-frontend' => true])->assertSuccessful();
         $administrator = AdminUser::query()->where('username', 'admin')->firstOrFail();
         $managerRole = $administrator->roles()->firstOrFail();
         $roleViewPermission = AdminPermission::query()->where('code', 'system.role.view')->firstOrFail();

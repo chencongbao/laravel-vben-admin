@@ -31,7 +31,7 @@ final class LoginCaptchaTest extends TestCase
 
     public function test_first_invalid_login_requires_captcha_for_the_next_attempt(): void
     {
-        $this->artisan('vben-admin:install')->assertSuccessful();
+        $this->artisan('vben-admin:install', ['--skip-frontend' => true])->assertSuccessful();
 
         $this->postJson('/api/admin/auth/login', [
             'username' => 'admin',

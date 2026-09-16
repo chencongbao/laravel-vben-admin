@@ -17,6 +17,7 @@
     "validationFailed": "表单内容不正确，请检查后重试"
   },
   "fields": {
+    "actions": "操作",
     "createdAt": "创建时间",
     "id": "编号"
   },

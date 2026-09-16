@@ -10,7 +10,10 @@ use Illuminate\Support\Facades\Hash;
 
 final class InstallCommand extends Command
 {
-    protected $signature = 'vben-admin:install {--force : Overwrite the published configuration}';
+    protected $signature = 'vben-admin:install
+                            {--overwrite-config : Replace the published package configuration}
+                            {--skip-migrate : Skip database migrations}
+                            {--skip-frontend : Skip dependency installation, frontend build and asset publication}';
 
     protected $description = 'Install Laravel Vben Admin and create the default administrator';
 
@@ -18,7 +21,7 @@ final class InstallCommand extends Command
     {
         $this->call('vendor:publish', [
             '--tag' => 'laravel-vben-admin-config',
-            '--force' => (bool) $this->option('force'),
+            '--force' => (bool) $this->option('overwrite-config'),
         ]);
 
         if ($this->call('vben-admin:publish-project') !== self::SUCCESS) {
@@ -34,18 +37,20 @@ final class InstallCommand extends Command
             $this->components->info('Sanctum migration already exists; publication skipped.');
         }
 
-        foreach (glob(database_path('migrations/*_create_personal_access_tokens_table.php')) ?: [] as $migration) {
-            if ($this->call('migrate', [
-                '--path' => $migration,
-                '--realpath' => true,
-                '--force' => true,
-            ]) !== self::SUCCESS) {
+        if (! $this->option('skip-migrate')) {
+            foreach (glob(database_path('migrations/*_create_personal_access_tokens_table.php')) ?: [] as $migration) {
+                if ($this->call('migrate', [
+                    '--path' => $migration,
+                    '--realpath' => true,
+                    '--force' => true,
+                ]) !== self::SUCCESS) {
+                    return self::FAILURE;
+                }
+            }
+
+            if ($this->call('migrate', ['--force' => true]) !== self::SUCCESS) {
                 return self::FAILURE;
             }
-        }
-
-        if ($this->call('migrate', ['--force' => true]) !== self::SUCCESS) {
-            return self::FAILURE;
         }
 
         if ($this->call('vben-admin:sync') !== self::SUCCESS) {
@@ -54,9 +59,23 @@ final class InstallCommand extends Command
 
         $this->createDefaultAdministrators();
 
+        if (! $this->option('skip-frontend') && $this->call('vben-admin:build', [
+            '--install' => true,
+            '--publish' => true,
+            '--force' => true,
+        ]) !== self::SUCCESS) {
+            return self::FAILURE;
+        }
+
+        if ($this->call('optimize:clear') !== self::SUCCESS) {
+            return self::FAILURE;
+        }
+
         $this->components->info('Laravel Vben Admin installed successfully.');
         $this->line('Administration URL: /'.config('laravel-vben-admin.path', 'admin'));
-        $this->line('Build and publish the Vue application with: php artisan vben-admin:build --install --publish --force');
+        if ($this->option('skip-frontend')) {
+            $this->components->warn('Frontend build was skipped. Run php artisan vben-admin:build --install --publish --force before opening the administration UI.');
+        }
 
         return self::SUCCESS;
     }

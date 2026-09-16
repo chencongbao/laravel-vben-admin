@@ -74,6 +74,8 @@
     "invalidCredentials": "The username or password is incorrect",
     "captchaInvalid": "The verification has expired or is invalid. Please try again",
     "loginIpNotAllowed": "The current IP address is not in the login whitelist",
+    "loginIpBlocked": "This IP address is blocked by the security policy. Contact a super administrator",
+    "loginTemporarilyLocked": "Too many login failures. Try again later",
     "twoFactorChallengeInvalid": "Two-factor verification has expired. Please sign in again",
     "twoFactorCodeInvalid": "The Google authentication code is incorrect"
   },

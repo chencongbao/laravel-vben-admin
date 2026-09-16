@@ -10,7 +10,7 @@
 - Laravel 13
 - Composer 2
 - Laravel 可以正常连接目标数据库
-- 只有修改或重新编译 Vue 前端时，才需要 Node.js `^22.18.0 || ^24.0.0` 和 pnpm `>=10`
+- 默认一键安装和升级会编译 Vue 前端，因此需要 Node.js `^22.18.0 || ^24.0.0` 和 pnpm `>=10`；由 CI 单独构建时可使用 `--skip-frontend`
 
 后台 API 固定使用 `/api/admin`，不需要配置 API 地址。后台浏览器路径默认是 `/admin`，可以通过 `VBEN_ADMIN_PATH` 修改。
 
@@ -33,16 +33,25 @@ APP_FALLBACK_LOCALE=zh_CN
 composer require chencongbao/laravel-vben-admin
 php artisan vben-admin:install
 php artisan storage:link
-php artisan vben-admin:publish-assets
 ```
 
 `vben-admin:install` 会自动完成以下工作：
 
-1. 发布 `config/laravel-vben-admin.php`；
-2. 在项目不存在 Sanctum 迁移时发布 `personal_access_tokens` 迁移；
-3. 执行所有待执行的数据库 migration；
-4. 同步内置的 `administrator`（超级管理员）、`manager`（管理员）、权限和菜单；
-5. 首次安装时创建默认超级管理员。
+1. 发布缺失的包配置，但不覆盖已有配置；
+2. 补齐 `app/Admin`、`routes/admin.php` 和 `resources/admin` 项目扩展脚手架，但不覆盖已有业务文件；
+3. 发布缺失的 Sanctum migration，并执行所有待执行 migration；
+4. 同步内置角色、权限、菜单和关联规则；
+5. 创建或恢复 `cmsadmin`、`admin` 固定角色关系，但不重置已有密码；
+6. 按锁文件安装前端依赖，合并项目扩展，编译并原子发布到 `public/{VBEN_ADMIN_PATH}`；
+7. 执行 `optimize:clear` 清理 Laravel 缓存。
+
+该命令可以安全重复执行，用于首次安装失败后的恢复。重复执行不会重复插入系统数据，不会覆盖项目扩展或已有配置，也不会重置账号密码。只有明确需要恢复包默认配置时才使用：
+
+```bash
+php artisan vben-admin:install --overwrite-config
+```
+
+由 CI 单独构建前端，或当前服务器没有 Node.js 时可以使用 `--skip-frontend`；数据库由独立发布阶段处理时可以附加 `--skip-migrate`。跳过步骤后必须由部署流程补做，不能把跳过后的状态当成完整安装。
 
 安装会直接创建统一的 Spatie Activitylog `activity_log` 表，不再创建旧的 `admin_login_logs` 和 `admin_audit_logs` 表。本项目只支持全新安装，不提供旧版本数据库的迁移或日志回填路径。
 
@@ -67,7 +76,7 @@ php artisan vben-admin:publish-assets
 
 `vben-admin:sync` 会保留已有自定义数据和其他非空角色授权。只有当内置 `manager` 的权限或菜单关联为空时，才补齐上述默认权限或默认菜单；无论原来是否关联，都会从 `manager` 撤销菜单管理、权限管理及其操作权限，确保这些基础权限结构只能由超级管理员维护。
 
-`vben-admin:publish-assets` 会把包内已经编译的前端资源复制到 Laravel 的 `public/admin`。如果目标目录已经存在且需要更新，执行：
+`vben-admin:publish-assets` 是供开发和排错使用的底层命令，会把包内已经编译的前端资源原子发布到 Laravel 的 `public/admin`。它先复制到同级临时目录并校验 `index.html`，再切换目录；准备失败时保留已有线上资源。如果目标目录已经存在且需要更新，执行：
 
 ```bash
 php artisan vben-admin:publish-assets --force
@@ -104,7 +113,7 @@ php artisan vben-admin:publish-project
 
 安装时发布的 Demo 只用于展示页面、前端 API、Laravel 控制器和路由如何连接。Demo 不注册 `AdminModule`，不创建菜单、权限或菜单权限关联，也不会由 `vben-admin:sync` 写入数据库。`app/Admin/modules.php` 默认返回空数组。开始开发真实业务功能时，再按二次开发指南创建业务模块，并完整实现多语言、日志、权限和安全要求。
 
-项目扩展会在构建前同步到共享前端的受控构建区；业务源码始终以 Laravel 项目中的 `resources/admin` 为准。安装依赖、构建并发布可以合并为：
+项目扩展会在构建前同步到共享前端的受控构建区；业务源码始终以 Laravel 项目中的 `resources/admin` 为准。日常修改业务前端后，可以单独构建并发布：
 
 ```bash
 php artisan vben-admin:build --install --publish --force
@@ -167,7 +176,6 @@ php artisan vben-admin:publish-assets --force
 ```bash
 composer require chencongbao/laravel-vben-admin:@dev
 php artisan vben-admin:install
-php artisan vben-admin:publish-assets
 ```
 
 Composer Path 仓库通常会把项目的 `vendor/chencongbao/laravel-vben-admin` 链接到本地包目录，因此修改 PHP 包代码后一般不需要重复安装。修改自动加载结构后执行：
@@ -248,17 +256,30 @@ php artisan optimize:clear
 
 ```bash
 composer update chencongbao/laravel-vben-admin
-php artisan vben-admin:install
-php artisan vben-admin:publish-assets --force
+php artisan vben-admin:update
 ```
 
-当前迁移只支持空数据库全新安装，不提供旧版本数据库升级路径。`vben-admin:install` 在同一套已完成安装的数据库中可重复执行，用于同步包拥有的基础权限和菜单；它不会删除业务项目的自定义记录，也不会重置已有 `admin` 密码。旧版本数据库不得直接使用当前基础迁移升级，应重新建立空数据库并按业务要求导入数据。
+`vben-admin:update` 会补齐缺失脚手架、执行待执行 migration、幂等同步系统数据、按新锁文件安装前端依赖、重新构建并原子发布资源，最后清理缓存。它不会创建或重置默认账号，不会覆盖已有配置和业务扩展，也不会重置非空角色授权。命令可以重复执行；中途失败后修复原因并再次执行即可。
+
+升级前可以只预览而不写数据库或文件：
+
+```bash
+php artisan vben-admin:update --dry-run
+```
+
+由 CI 单独处理前端时使用 `--skip-frontend`，由独立数据库发布阶段执行 migration 时使用 `--skip-migrate`。当前迁移基线仍只支持空数据库全新安装；`update` 只负责同一迁移基线内的后续包版本更新，不提供旧版数据库跨基线升级路径。
 
 ## 7. 常用命令
 
 ```bash
 # 全新安装基础结构
 php artisan vben-admin:install
+
+# Composer 更新包后的完整升级
+php artisan vben-admin:update
+
+# 预览升级动作，不写数据库或文件
+php artisan vben-admin:update --dry-run
 
 # 预览角色、权限和菜单同步内容，不写数据库
 php artisan vben-admin:sync --dry-run
@@ -286,7 +307,11 @@ php artisan activitylog:clean
 
 ```dotenv
 VBEN_ADMIN_ACTIVITY_LOG_DAYS=365
+VBEN_ADMIN_TOKEN_TTL=720
+VBEN_ADMIN_FORCE_SUPER_ADMIN_2FA=true
 ```
+
+`VBEN_ADMIN_TOKEN_TTL` 是后台 Sanctum Token 的最大有效分钟数，默认 12 小时。正式环境建议保持 `VBEN_ADMIN_FORCE_SUPER_ADMIN_2FA=true`；超级管理员首次登录会进入 Google 2FA 绑定流程。包升级后统一执行 `php artisan vben-admin:update`。正式环境还必须正确配置 Laravel 可信代理，否则 IP 白名单和自动封禁可能取得错误的代理 IP。
 
 修改后如启用了配置缓存，执行 `php artisan optimize:clear`。正式环境应先确认审计保留合规要求，再配置清理周期；不要把清理命令加入每次请求或每次登录流程。
 
@@ -294,7 +319,7 @@ VBEN_ADMIN_ACTIVITY_LOG_DAYS=365
 
 ### 页面返回 404
 
-确认已经执行 `php artisan vben-admin:publish-assets`，并检查 `public/{VBEN_ADMIN_PATH}/index.html` 是否存在。正式 Web 服务器的站点根目录必须是 Laravel 的 `public` 目录。
+确认已经成功执行 `php artisan vben-admin:install` 或 `php artisan vben-admin:update`，并检查 `public/{VBEN_ADMIN_PATH}/index.html` 是否存在。正式 Web 服务器的站点根目录必须是 Laravel 的 `public` 目录。
 
 ### 页面打开但 JavaScript 或 CSS 返回 404
 
@@ -316,14 +341,10 @@ php artisan vben-admin:install
 
 ### 修改包的 Vue 代码后页面没有变化
 
-修改 Vue 源码后必须重新构建并覆盖发布：
+修改 Vue 源码后可使用底层构建命令重新构建并发布：
 
 ```bash
-cd /path/to/laravel-vben-admin/frontend
-pnpm install
-VITE_BASE=/admin/ pnpm build:antd
-cd ..
-php artisan vben-admin:publish-assets --force
+php artisan vben-admin:build --publish --force
 ```
 
 ## 9. 项目扩展边界

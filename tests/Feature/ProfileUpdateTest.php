@@ -34,7 +34,7 @@ final class ProfileUpdateTest extends TestCase
 
     public function test_profile_update_returns_name_validation_error(): void
     {
-        $this->artisan('vben-admin:install')->assertSuccessful();
+        $this->artisan('vben-admin:install', ['--skip-frontend' => true])->assertSuccessful();
         $user = AdminUser::query()->where('username', 'cmsadmin')->firstOrFail();
         Sanctum::actingAs($user, ['admin']);
 
@@ -45,7 +45,7 @@ final class ProfileUpdateTest extends TestCase
 
     public function test_authenticated_user_without_roles_can_update_own_profile(): void
     {
-        $this->artisan('vben-admin:install')->assertSuccessful();
+        $this->artisan('vben-admin:install', ['--skip-frontend' => true])->assertSuccessful();
         $user = AdminUser::query()->create([
             'username' => 'profile-user',
             'password' => 'ValidPassword123',
@@ -65,7 +65,7 @@ final class ProfileUpdateTest extends TestCase
 
     public function test_avatar_only_profile_update_writes_avatar_action(): void
     {
-        $this->artisan('vben-admin:install')->assertSuccessful();
+        $this->artisan('vben-admin:install', ['--skip-frontend' => true])->assertSuccessful();
         $user = AdminUser::query()->where('username', 'cmsadmin')->firstOrFail();
         Sanctum::actingAs($user, ['admin']);
 
@@ -79,7 +79,7 @@ final class ProfileUpdateTest extends TestCase
 
     public function test_profile_and_avatar_changes_write_separate_actions(): void
     {
-        $this->artisan('vben-admin:install')->assertSuccessful();
+        $this->artisan('vben-admin:install', ['--skip-frontend' => true])->assertSuccessful();
         $user = AdminUser::query()->where('username', 'cmsadmin')->firstOrFail();
         Sanctum::actingAs($user, ['admin']);
 
@@ -96,7 +96,7 @@ final class ProfileUpdateTest extends TestCase
 
     public function test_unchanged_profile_does_not_write_activity(): void
     {
-        $this->artisan('vben-admin:install')->assertSuccessful();
+        $this->artisan('vben-admin:install', ['--skip-frontend' => true])->assertSuccessful();
         $user = AdminUser::query()->where('username', 'cmsadmin')->firstOrFail();
         Sanctum::actingAs($user, ['admin']);
 

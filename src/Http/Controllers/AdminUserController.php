@@ -164,6 +164,7 @@ final class AdminUserController extends Controller
         DB::transaction(function () use ($data, $request, $adminUser): void {
             $trackedFields = ['username', 'name', 'is_active', 'two_factor_enabled', 'login_ip_whitelist'];
             $before = $adminUser->only($trackedFields);
+            $beforeRoleIds = $adminUser->roles()->pluck('admin_roles.id')->map(fn ($id) => (int) $id)->sort()->values()->all();
             if (array_key_exists('login_ip_whitelist', $data)) {
                 $data['login_ip_whitelist'] = LoginIpWhitelist::normalize($data['login_ip_whitelist']);
             }
@@ -173,6 +174,15 @@ final class AdminUserController extends Controller
             }
             if (array_key_exists('role_ids', $data)) {
                 $adminUser->roles()->sync($data['role_ids']);
+            }
+            $afterRoleIds = $adminUser->roles()->pluck('admin_roles.id')->map(fn ($id) => (int) $id)->sort()->values()->all();
+            $securityChanged = array_key_exists('password', $data)
+                || (array_key_exists('is_active', $data) && (bool) $before['is_active'] !== (bool) $data['is_active'])
+                || array_key_exists('two_factor_enabled', $data)
+                || array_key_exists('login_ip_whitelist', $data)
+                || $beforeRoleIds !== $afterRoleIds;
+            if ($securityChanged) {
+                $adminUser->tokens()->delete();
             }
             $this->audit->record($request->user(), 'system.user.updated', $adminUser, ['before' => $before, 'after' => $adminUser->fresh()->only($trackedFields), 'roles_changed' => array_key_exists('role_ids', $data)]);
         });

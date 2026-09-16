@@ -16,6 +16,8 @@ final class EnsureAdminUser
         $token = $user?->currentAccessToken();
 
         if (! $user instanceof AdminUser || ! $user->is_active || ! $token?->can('admin')) {
+            $token?->delete();
+
             return new JsonResponse([
                 'message' => 'Unauthenticated.',
                 'code' => 'ADMIN_AUTH_REQUIRED',

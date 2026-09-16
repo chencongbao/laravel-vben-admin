@@ -78,6 +78,7 @@
       "menu": { "view": "Menu Management", "create": "Create Menu", "update": "Update Menu", "delete": "Delete Menu" },
       "audit": { "view": "Operation Logs" },
       "login-log": { "view": "Login Logs" },
+      "security": { "view": "Security Center", "update": "Manage Security Risks" },
       "setting": { "view": "System Configuration" },
       "theme-setting": { "view": "Theme Configuration" }
     }
@@ -94,6 +95,18 @@
     "prompts": { "delete": "Delete this menu?" }
   },
   "menuList": { "actions": { "addChild": "Add Child", "collapseChild": "Collapse Child Menus", "drag": "Drag to reorder menus", "edit": "Edit Menu", "expandChild": "Expand Child Menus" }, "empty": "No menus", "systemDeleteDisabled": "System menus cannot be deleted", "title": "Menu List", "treeLabel": "Menu Hierarchy and Order", "topLevel": "Top-level Menu" },
+  "securityCenter": "Security Center",
+  "security": {
+    "description": "Review login risk events and manage automatic or manual login IP blocks.",
+    "tabs": { "events": "Risk Events", "ipBlocks": "IP Blocks" },
+    "fields": { "event": "Event Code", "severity": "Severity", "username": "Username", "ipAddress": "IP Address", "status": "Status", "reason": "Reason Code", "source": "Source", "expiresAt": "Expires At", "durationHours": "Duration (hours)" },
+    "actions": { "resolve": "Mark Resolved", "blockIp": "Block IP", "release": "Release Block" },
+    "states": { "open": "Open", "resolved": "Resolved", "active": "Active", "expired": "Expired", "released": "Released", "permanent": "Permanent" },
+    "severities": { "info": "Info", "warning": "Warning", "critical": "Critical" },
+    "sources": { "automatic": "Automatic", "manual": "Manual" },
+    "placeholders": { "ipAddress": "Enter an exact IPv4 or IPv6 address" },
+    "messages": { "resolved": "Risk event resolved", "released": "IP block released", "blocked": "IP blocked", "required": "Enter the IP address and reason code", "invalidIp": "Only an exact IPv4 or IPv6 address can be blocked", "alreadyBlocked": "This IP address is already blocked" }
+  },
   "loginLogs": "Login Logs",
   "loginLogsDescription": "Review login results, access devices, user agents, IP addresses, and login times for back-office users.",
   "loginLog": {
@@ -124,9 +137,9 @@
     "actionTypes": { "created": "Create", "deleted": "Delete", "other": "Other", "updated": "Update" },
     "actionNames": {
       "avatarUpdated": "Update Avatar", "passwordUpdated": "Update Password", "profileUpdated": "Update Profile", "sessionRevoked": "Revoke Session", "sessionsRevoked": "Revoke Other Sessions", "twoFactorConfirmed": "Confirm Two-Factor Authentication", "twoFactorDisabled": "Disable Two-Factor Authentication", "twoFactorEnabled": "Enable Two-Factor Authentication",
-      "menuCreated": "Create Menu", "menuDeleted": "Delete Menu", "menuReordered": "Reorder Menus", "menuUpdated": "Update Menu", "permissionCreated": "Create Permission", "permissionDeleted": "Delete Permission", "permissionReordered": "Reorder Permissions", "permissionUpdated": "Update Permission", "roleAccessUpdated": "Update Role Access", "roleCreated": "Create Role", "roleDeleted": "Delete Role", "roleUpdated": "Update Role", "settingsUpdated": "Update System Settings", "themeSettingsUpdated": "Update Theme Settings", "userCreated": "Create User", "userDeleted": "Delete User", "userUpdated": "Update User"
+      "menuCreated": "Create Menu", "menuDeleted": "Delete Menu", "menuReordered": "Reorder Menus", "menuUpdated": "Update Menu", "permissionCreated": "Create Permission", "permissionDeleted": "Delete Permission", "permissionReordered": "Reorder Permissions", "permissionUpdated": "Update Permission", "roleAccessUpdated": "Update Role Access", "roleCreated": "Create Role", "roleDeleted": "Delete Role", "roleUpdated": "Update Role", "securityEventResolved": "Resolve Security Risk", "securityIpBlockCreated": "Block Login IP", "securityIpBlockReleased": "Release IP Block", "settingsUpdated": "Update System Settings", "themeSettingsUpdated": "Update Theme Settings", "userCreated": "Create User", "userDeleted": "Delete User", "userUpdated": "Update User"
     },
-    "subjectTypes": { "menu": "Menu", "permission": "Permission", "role": "Role", "setting": "System Settings", "user": "User" },
+    "subjectTypes": { "menu": "Menu", "permission": "Permission", "role": "Role", "setting": "System Settings", "securityEvent": "Security Risk Event", "securityIpBlock": "Login IP Block", "user": "User" },
     "detail": { "after": "After", "before": "Before", "changes": "Change Details", "context": "Business Context", "field": "Field", "noChanges": "No field changes", "request": "Request Information", "requestId": "Request ID", "requestInput": "Request Input (Redacted)", "routeName": "Route Name", "title": "Operation Log Details #{id}", "unknownActor": "Unknown Actor" }
   },
   "auditFields": {

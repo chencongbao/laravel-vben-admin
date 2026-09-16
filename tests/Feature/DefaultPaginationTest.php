@@ -28,7 +28,7 @@ final class DefaultPaginationTest extends TestCase
 
     public function test_saved_page_size_is_used_by_backend_and_public_bootstrap(): void
     {
-        $this->artisan('vben-admin:install')->assertSuccessful();
+        $this->artisan('vben-admin:install', ['--skip-frontend' => true])->assertSuccessful();
         AdminSetting::query()->create([
             'is_system' => true,
             'key' => 'system.page_size',
