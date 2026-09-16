@@ -83,7 +83,7 @@ const columns = computed(() => [
   { dataIndex: 'subject', title: $t('system.auditLog.fields.subject'), width: 180 },
   { dataIndex: 'ip_address', title: $t('system.auditLog.fields.ipAddress'), width: 140 },
   { dataIndex: 'created_at', title: $t('system.auditLog.fields.createdAt'), width: 170 },
-  { dataIndex: 'action_button', fixed: 'right' as const, title: $t('system.auditLog.fields.actions'), width: 100 },
+  { dataIndex: 'action_button', fixed: 'right' as const, title: $t('system.auditLog.fields.actions'), width: 70 },
 ]);
 const changeColumns = computed(() => [
   { dataIndex: 'field', title: $t('system.auditLog.detail.field'), width: 220 },
@@ -219,7 +219,7 @@ onMounted(async () => {
           <Tooltip v-else-if="column.dataIndex === 'description'" :title="record.action || undefined"><span class="block truncate">{{ actionLabel(record) }}</span></Tooltip>
           <span v-else-if="column.dataIndex === 'subject'">{{ subjectLabel(record) }}</span>
           <span v-else-if="column.dataIndex === 'created_at'">{{ formatBeijingDateTime(text) }}</span>
-          <PermissionButton v-else-if="column.dataIndex === 'action_button'" icon="lucide:eye" size="small" @click="showDetail(record)">{{ $t('system.auditLog.actions.detail') }}</PermissionButton>
+          <PermissionButton v-else-if="column.dataIndex === 'action_button'" icon="lucide:eye" icon-only permission="system.audit.view" :tooltip="$t('system.auditLog.actions.detail')" type="text" @click="showDetail(record)" />
         </template>
       </Table>
     </Card>

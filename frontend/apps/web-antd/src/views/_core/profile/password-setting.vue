@@ -15,6 +15,7 @@ import { $t } from '#/locales';
 
 const passwordPolicy = ref<AdminPasswordPolicy>({ min_length: 12, requires_mixed_case: true, requires_numbers: true, type: 'strong' });
 const passwordRequirement = computed(() => $t(`profile.password.requirements${passwordPolicy.value.type === 'strong' ? 'Strong' : 'Weak'}`));
+const passwordPlaceholder = computed(() => $t(`profile.password.newPlaceholder${passwordPolicy.value.type === 'strong' ? 'Strong' : 'Weak'}`));
 
 const formSchema = computed((): VbenFormSchema[] => [
   {
@@ -32,8 +33,9 @@ const formSchema = computed((): VbenFormSchema[] => [
     component: 'VbenInputPassword',
     componentProps: {
       passwordStrength: true,
-      placeholder: $t('profile.password.newPlaceholder'),
+      placeholder: passwordPlaceholder.value,
     },
+    description: passwordRequirement.value,
     fieldName: 'newPassword',
     label: $t('profile.password.new'),
     rules: z.string()

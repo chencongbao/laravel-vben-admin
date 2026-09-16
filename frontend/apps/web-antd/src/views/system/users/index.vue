@@ -79,6 +79,7 @@ const roleOptions = computed(() => {
   return availableRoles.map((role) => ({ label: `${roleName(role)} (${role.code})`, value: role.id }));
 });
 const passwordHelp = computed(() => $t(`system.userForm.tips.password.${passwordPolicy.value.type}`));
+const passwordPlaceholder = computed(() => $t(`system.userForm.placeholders.password.${passwordPolicy.value.type}`));
 function roleName(role: Role) {
   const roleNameKey = `system.roleNames.${role.code}`;
   const localizedName = $t(roleNameKey);
@@ -189,7 +190,7 @@ onMounted(async () => {
         <FormItem :label="$t('system.userForm.fields.username')" required><Input v-model:value="form.username" :disabled="editingId !== undefined" /></FormItem>
         <FormItem :label="$t('system.userForm.fields.name')" required><Input v-model:value="form.name" /></FormItem>
         <FormItem :label="editingId ? $t('system.userForm.fields.newPassword') : $t('system.userForm.fields.password')" :required="!editingId">
-          <Input.Password v-model:value="form.password" />
+          <Input.Password v-model:value="form.password" :placeholder="passwordPlaceholder" />
           <div class="setting-tip">{{ passwordHelp }}</div>
         </FormItem>
         <FormItem v-if="showRoleField" :label="$t('system.userForm.fields.role')"><Select v-model:value="form.role_id" allow-clear :options="roleOptions" /></FormItem>

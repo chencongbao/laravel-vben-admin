@@ -15,7 +15,8 @@ import {
   Input,
   InputNumber,
   message,
-  Select,
+  Radio,
+  RadioGroup,
   Switch,
 } from 'ant-design-vue';
 
@@ -141,16 +142,14 @@ onMounted(load);
                 "
                 class="w-full"
               />
-              <Select
+              <RadioGroup
                 v-else-if="item.key === 'system.password_strength'"
                 :id="`setting-${item.key}`"
                 v-model:value="item.value"
-                :options="[
-                  { label: $t('system.settingsForm.options.passwordStrength.weak'), value: 'weak' },
-                  { label: $t('system.settingsForm.options.passwordStrength.strong'), value: 'strong' },
-                ]"
-                :placeholder="translate(settingText(item.key, 'placeholder'), '')"
-              />
+              >
+                <Radio value="weak">{{ $t('system.settingsForm.options.passwordStrength.weak') }}</Radio>
+                <Radio value="strong">{{ $t('system.settingsForm.options.passwordStrength.strong') }}</Radio>
+              </RadioGroup>
               <Input
                 v-else
                 :id="`setting-${item.key}`"

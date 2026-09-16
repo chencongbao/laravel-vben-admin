@@ -36,7 +36,7 @@
     "actions": { "create": "Create User", "edit": "Edit User" },
     "fields": { "active": "Enabled", "loginAllowlist": "Login IP Allowlist", "name": "Name", "newPassword": "New Password (leave blank to keep it)", "password": "Password", "role": "Role", "security": "Login Security", "twoFactor": "Google 2FA", "username": "Username" },
     "messages": { "deleted": "User deleted", "required": "Complete the username, name, and password fields.", "saved": "User saved" },
-    "placeholders": { "allowlist": "Adding entries enables the allowlist; leave blank to disable it. One entry per line, for example:\n203.0.113.10\n10.0.0.0/24\n2001:db8::/32" },
+    "placeholders": { "allowlist": "Adding entries enables the allowlist; leave blank to disable it. One entry per line, for example:\n203.0.113.10\n10.0.0.0/24\n2001:db8::/32", "password": { "strong": "At least 12 characters with uppercase, lowercase, and numbers", "weak": "At least 6 characters" } },
     "tips": { "allowlist": "Outside the local environment, the current IP must match a configured allowlist entry to sign in.", "password": { "strong": "Strong passwords require at least 12 characters with uppercase letters, lowercase letters, and numbers.", "weak": "Weak passwords require at least 6 characters with no character-combination requirement." }, "twoFactor": "After the allowlist check passes, the user binds or verifies Google Authenticator on the login page." },
     "prompts": { "delete": "Delete this user?" }
   },
@@ -116,7 +116,7 @@
   "auditLogs": "Operation Logs",
   "auditLogsDescription": "Review create, update, delete, and other data operations performed by back-office users.",
   "auditLog": {
-    "actions": { "detail": "View Details" },
+    "actions": { "detail": "Details" },
     "changesCount": "{count} changes",
     "fields": { "actions": "Actions", "actionType": "Action Type", "actor": "Actor", "changes": "Changes", "createdAt": "Operation Time", "description": "Operation", "ipAddress": "IP Address", "method": "Method", "path": "Request Path", "subject": "Subject" },
     "filters": { "actionCode": "Action Code", "actor": "Actor", "businessAction": "Business Action", "description": "Content Keyword", "ipAddress": "IP Address", "subjectId": "Operation Object ID", "subjectType": "Subject Type", "timeRange": "Operation Time" },

@@ -38,7 +38,7 @@
       "active": "启用", "loginAllowlist": "登录 IP 白名单", "name": "姓名", "newPassword": "新密码（不修改请留空）", "password": "密码", "role": "角色", "security": "登录安全", "twoFactor": "Google 2FA", "username": "用户名"
     },
     "messages": { "deleted": "用户已删除", "required": "请完整填写用户名、姓名和密码", "saved": "用户保存成功" },
-    "placeholders": { "allowlist": "填写后自动开启；留空表示未开启。每行一个，例如：\n203.0.113.10\n10.0.0.0/24\n2001:db8::/32" },
+    "placeholders": { "allowlist": "填写后自动开启；留空表示未开启。每行一个，例如：\n203.0.113.10\n10.0.0.0/24\n2001:db8::/32", "password": { "strong": "至少 12 位，包含大小写字母和数字", "weak": "至少 6 位" } },
     "tips": { "allowlist": "非本地环境必须设置白名单并且当前 IP 命中才能登录。", "password": { "strong": "强密码至少 12 位，并且必须同时包含大写字母、小写字母和数字。", "weak": "弱密码至少 6 位，不强制大小写或数字组合。" }, "twoFactor": "开启后，白名单校验通过才会在登录页绑定或验证 Google 验证器。" },
     "prompts": { "delete": "确定删除该用户？" }
   },
@@ -118,7 +118,7 @@
   "auditLogs": "操作日志",
   "auditLogsDescription": "查看后台用户对系统数据执行的新增、修改、删除等操作记录。",
   "auditLog": {
-    "actions": { "detail": "查看详情" },
+    "actions": { "detail": "详情" },
     "changesCount": "{count} 项变更",
     "fields": { "actions": "操作", "actionType": "操作类型", "actor": "操作者", "changes": "变更内容", "createdAt": "操作时间", "description": "操作内容", "ipAddress": "IP 地址", "method": "请求方法", "path": "请求路径", "subject": "操作对象" },
     "filters": { "actionCode": "操作编码", "actor": "操作者", "businessAction": "业务动作", "description": "内容关键字", "ipAddress": "IP 地址", "subjectId": "操作对象ID", "subjectType": "对象类型", "timeRange": "操作时间" },

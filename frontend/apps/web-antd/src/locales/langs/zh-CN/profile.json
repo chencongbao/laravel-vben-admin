@@ -38,6 +38,8 @@
     "currentIncorrect": "当前密码不正确",
     "new": "新密码",
     "newPlaceholder": "至少 12 位，包含大小写字母和数字",
+    "newPlaceholderStrong": "至少 12 位，包含大小写字母和数字",
+    "newPlaceholderWeak": "至少 6 位",
     "newRequired": "请输入新密码",
     "requirements": "密码不符合当前系统密码规则",
     "requirementsStrong": "强密码至少 12 位，并且必须包含大写字母、小写字母和数字",

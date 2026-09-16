@@ -38,6 +38,8 @@
     "currentIncorrect": "The current password is incorrect",
     "new": "New Password",
     "newPlaceholder": "At least 12 characters with uppercase, lowercase, and numbers",
+    "newPlaceholderStrong": "At least 12 characters with uppercase, lowercase, and numbers",
+    "newPlaceholderWeak": "At least 6 characters",
     "newRequired": "Please enter a new password",
     "requirements": "The password does not meet the current system password policy",
     "requirementsStrong": "Strong passwords require at least 12 characters with uppercase letters, lowercase letters, and numbers",
