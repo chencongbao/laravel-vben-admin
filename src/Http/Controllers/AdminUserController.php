@@ -182,11 +182,18 @@ final class AdminUserController extends Controller
 
     public function destroy(Request $request, AdminUser $adminUser): JsonResponse
     {
-        if ($adminUser->roles()->whereIn('code', ['administrator', 'manager'])->exists()) {
+        if (array_key_exists($adminUser->username, self::FIXED_ACCOUNT_ROLES)) {
             return response()->json([
-                'message' => 'Administrator and super administrator accounts cannot be deleted.',
+                'message' => 'Built-in administrator accounts cannot be deleted.',
                 'code' => 'PROTECTED_ADMIN_USER_DELETE_DENIED',
             ], 422);
+        }
+
+        if (! $this->privilegeGuard->canManageUser($request->user(), $adminUser)) {
+            return response()->json([
+                'message' => 'This administrator exceeds your authority.',
+                'code' => 'ADMIN_PRIVILEGE_ESCALATION_DENIED',
+            ], 403);
         }
 
         DB::transaction(function () use ($adminUser, $request): void {

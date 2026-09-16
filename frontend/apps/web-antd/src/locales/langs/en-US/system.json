@@ -23,7 +23,7 @@
     "permissionHasChildren": "Delete or move the child permissions first.",
     "permissionInUse": "This permission is assigned to a role and cannot be deleted.",
     "permissionReorderIncomplete": "Submit the complete permission tree when reordering.",
-    "protectedAdminUserDeleteDenied": "Administrator and super administrator accounts cannot be deleted.",
+    "protectedAdminUserDeleteDenied": "Built-in administrator and super administrator accounts cannot be deleted.",
     "roleInUse": "This role is assigned to a user and cannot be deleted.",
     "superAdminRequired": "Only a super administrator can modify the manager role.",
     "systemMenuProtected": "System menus cannot be modified or deleted.",

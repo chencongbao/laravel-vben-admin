@@ -86,7 +86,7 @@ function roleName(role: Role) {
   return localizedName === roleNameKey ? $t(role.name) : localizedName;
 }
 function isProtectedAccount(user: Record<string, any>) {
-  return (user.roles ?? []).some((role: Role) => ['administrator', 'manager'].includes(role.code));
+  return ['admin', 'cmsadmin'].includes(user.username);
 }
 
 async function load() {

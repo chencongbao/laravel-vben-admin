@@ -213,7 +213,7 @@ final class SecurityBoundaryTest extends TestCase
         self::assertFalse(AdminUser::query()->where('username', 'rejected-super-administrator')->exists());
     }
 
-    public function test_administrator_and_super_administrator_can_delete_only_ordinary_users(): void
+    public function test_only_fixed_accounts_are_delete_protected(): void
     {
         $this->artisan('vben-admin:install')->assertSuccessful();
         $superAdministrator = AdminUser::query()->where('username', 'cmsadmin')->firstOrFail();
@@ -254,15 +254,14 @@ final class SecurityBoundaryTest extends TestCase
 
         Sanctum::actingAs($administrator, ['admin']);
         $this->deleteJson('/api/admin/system/users/'.$ordinaryUserForManager->getKey())->assertNoContent();
-        $this->deleteJson('/api/admin/system/users/'.$managerTarget->getKey())
-            ->assertUnprocessable()
-            ->assertJsonPath('code', 'PROTECTED_ADMIN_USER_DELETE_DENIED');
+        $this->deleteJson('/api/admin/system/users/'.$managerTarget->getKey())->assertNoContent();
         $this->deleteJson('/api/admin/system/users/'.$administratorTarget->getKey())
-            ->assertUnprocessable()
-            ->assertJsonPath('code', 'PROTECTED_ADMIN_USER_DELETE_DENIED');
+            ->assertForbidden()
+            ->assertJsonPath('code', 'ADMIN_PRIVILEGE_ESCALATION_DENIED');
 
         Sanctum::actingAs($superAdministrator, ['admin']);
         $this->deleteJson('/api/admin/system/users/'.$ordinaryUserForSuper->getKey())->assertNoContent();
+        $this->deleteJson('/api/admin/system/users/'.$administratorTarget->getKey())->assertNoContent();
         $this->deleteJson('/api/admin/system/users/'.$administrator->getKey())
             ->assertUnprocessable()
             ->assertJsonPath('code', 'PROTECTED_ADMIN_USER_DELETE_DENIED');
@@ -272,9 +271,9 @@ final class SecurityBoundaryTest extends TestCase
 
         self::assertFalse(AdminUser::query()->whereKey($ordinaryUserForManager->getKey())->exists());
         self::assertFalse(AdminUser::query()->whereKey($ordinaryUserForSuper->getKey())->exists());
-        self::assertTrue(AdminUser::query()->whereKey($managerTarget->getKey())->exists());
-        self::assertTrue(AdminUser::query()->whereKey($administratorTarget->getKey())->exists());
-        self::assertSame(2, Activity::query()->where('event', 'system.user.deleted')->count());
+        self::assertFalse(AdminUser::query()->whereKey($managerTarget->getKey())->exists());
+        self::assertFalse(AdminUser::query()->whereKey($administratorTarget->getKey())->exists());
+        self::assertSame(4, Activity::query()->where('event', 'system.user.deleted')->count());
     }
 
     public function test_default_administrator_accounts_keep_their_fixed_roles_and_usernames(): void

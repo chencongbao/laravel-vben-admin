@@ -23,7 +23,7 @@
     "permissionHasChildren": "请先删除或移动子权限",
     "permissionInUse": "该权限已分配给角色，不能删除",
     "permissionReorderIncomplete": "必须提交完整的权限树进行排序",
-    "protectedAdminUserDeleteDenied": "管理员和超级管理员账号不能删除",
+    "protectedAdminUserDeleteDenied": "内置管理员和内置超级管理员账号不能删除",
     "roleInUse": "该角色已分配给用户，不能删除",
     "superAdminRequired": "只有超级管理员可以修改管理员角色",
     "systemMenuProtected": "系统菜单不能修改或删除",
