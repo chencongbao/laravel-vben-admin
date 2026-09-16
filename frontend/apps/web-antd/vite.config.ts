@@ -12,6 +12,13 @@ export default defineConfig(async () => {
     new URL('src/views/dashboard/workspace/index.vue', import.meta.url),
   );
   const configuredWorkspace = process.env.VBEN_ADMIN_WORKSPACE?.trim();
+  const defaultProjectRoot = fileURLToPath(
+    new URL('src/project-admin', import.meta.url),
+  );
+  const configuredProjectRoot = process.env.VBEN_ADMIN_PROJECT_ROOT?.trim();
+  const projectRoot = configuredProjectRoot
+    ? resolve(configuredProjectRoot)
+    : defaultProjectRoot;
   const workspace = configuredWorkspace
     ? resolve(configuredWorkspace)
     : defaultWorkspace;
@@ -22,17 +29,28 @@ export default defineConfig(async () => {
     );
   }
 
+  if (!existsSync(projectRoot)) {
+    throw new Error(
+      `VBEN_ADMIN_PROJECT_ROOT points to a missing directory: ${projectRoot}`,
+    );
+  }
+
   return {
     application: {},
     vite: {
       resolve: {
         alias: {
+          '#project-admin': projectRoot,
           '#workspace': workspace,
         },
       },
       server: {
         fs: {
-          allow: [searchForWorkspaceRoot(process.cwd()), dirname(workspace)],
+          allow: [
+            searchForWorkspaceRoot(process.cwd()),
+            dirname(workspace),
+            projectRoot,
+          ],
         },
         proxy: {
           '/api': {

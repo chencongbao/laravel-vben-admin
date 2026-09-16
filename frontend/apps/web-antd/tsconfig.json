@@ -4,6 +4,7 @@
   "compilerOptions": {
     "paths": {
       "#/*": ["./src/*"],
+      "#project-admin/*": ["./src/project-admin/*"],
       "#workspace": ["./src/views/dashboard/workspace/index.vue"]
     }
   },

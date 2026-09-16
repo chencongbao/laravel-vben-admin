@@ -120,13 +120,17 @@ php artisan vben-admin:sync
 
 ### 4.3 增加前端页面映射
 
-后端菜单返回 `view_key` 后，必须在：
+后端菜单返回 `view_key` 后，由：
 
 ```text
 frontend/apps/web-antd/src/api/core/menu.ts
 ```
 
-把该键显式映射到本地页面组件。未知键保持进入404/兜底页，禁止将数据库值直接传给动态 `import()`。
+将合法的点分段键转换为项目页面路径，并只在编译期页面表中匹配组件。例如 `match.list` 转换为 `/match/list/index`。未知键或没有被编译的页面保持进入404/兜底页，禁止将数据库值直接传给动态 `import()`。
+
+宿主项目业务页面统一放在 `resources/admin/pages`，例如 `view_key=match.list` 对应 `resources/admin/pages/match/list/index.vue`。`vben-admin:build` 会把 `pages`、`api`、`locales`、`components` 同步到共享前端的受控构建区，再通过静态 `import.meta.glob` 编译；数据库值只用于匹配编译期页面表，不参与任意动态导入。
+
+宿主 API 路由统一放在 `routes/admin.php`。包会自动添加 `api` 中间件组和 `/api/admin` 前缀，项目路由仍须声明 `auth:sanctum`、`admin.user` 及逐操作的 `admin.permission:*` 校验。
 
 页面中的操作按钮继续使用与服务端相同的权限代码。按钮隐藏只改善体验，不能作为安全控制。
 

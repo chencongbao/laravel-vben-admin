@@ -1,0 +1,7 @@
+{
+  "apiLoading": "Checking the administration API",
+  "apiReady": "The administration API is ready",
+  "apiTitle": "API status",
+  "description": "This page is loaded from the Laravel resources/admin extension directory.",
+  "title": "Demo Page"
+}

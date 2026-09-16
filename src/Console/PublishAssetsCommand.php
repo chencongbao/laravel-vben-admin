@@ -9,13 +9,19 @@ use Throwable;
 
 final class PublishAssetsCommand extends Command
 {
-    protected $signature = 'vben-admin:publish-assets {--force : Replace an existing administration asset directory}';
+    protected $signature = 'vben-admin:publish-assets
+                            {--source= : Directory containing the compiled frontend index.html}
+                            {--force : Replace an existing administration asset directory}';
 
     protected $description = 'Publish the compiled Vben administration application to its configured public path';
 
     public function handle(): int
     {
-        $source = dirname(__DIR__, 2).'/frontend/apps/web-antd/dist';
+        $sourceOption = trim((string) $this->option('source'));
+        $source = rtrim(
+            $sourceOption !== '' ? $sourceOption : dirname(__DIR__, 2).'/frontend/apps/web-antd/dist',
+            DIRECTORY_SEPARATOR,
+        );
 
         try {
             $path = AdminPath::value();
@@ -27,7 +33,11 @@ final class PublishAssetsCommand extends Command
         }
 
         if (! File::isDirectory($source) || ! File::exists($source.'/index.html')) {
-            $this->components->error('Compiled frontend assets were not found. Build the package frontend first with: pnpm build:antd');
+            $this->components->error(
+                "Compiled frontend assets were not found at [{$source}]. "
+                .'Build the package frontend first with: pnpm build:antd, '
+                .'or pass --source=/absolute/path/to/dist.'
+            );
 
             return self::FAILURE;
         }

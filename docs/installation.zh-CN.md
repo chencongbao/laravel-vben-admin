@@ -73,6 +73,43 @@ php artisan vben-admin:publish-assets
 php artisan vben-admin:publish-assets --force
 ```
 
+默认来源是当前安装包内的 `frontend/apps/web-antd/dist`。如果本地 Path 仓库通过复制方式安装，或者构建产物位于共享包目录，可以用 `--source` 指定编译目录：
+
+```bash
+php artisan vben-admin:publish-assets --force \
+  --source=/absolute/path/to/laravel-vben-admin/frontend/apps/web-antd/dist
+```
+
+`--source` 必须指向包含 `index.html` 的 `dist` 目录；未传该参数时保持原有默认行为。
+
+### Laravel 项目扩展与一键构建
+
+安装命令会调用 `vben-admin:publish-project`，在宿主 Laravel 项目中创建不会随 Composer 升级被覆盖的扩展层：
+
+```text
+app/Admin/                  模块和后台控制器
+routes/admin.php            项目后台 API 路由，自动使用 /api/admin 前缀
+resources/admin/pages       项目 Vue 页面
+resources/admin/api         项目前端 API
+resources/admin/locales     项目中英文语言包
+resources/admin/components  项目组件
+resources/admin/workspace   项目工作台
+```
+
+已有文件默认保留。需要单独补齐缺失脚手架时执行：
+
+```bash
+php artisan vben-admin:publish-project
+```
+
+项目扩展会在构建前同步到共享前端的受控构建区；业务源码始终以 Laravel 项目中的 `resources/admin` 为准。安装依赖、构建并发布可以合并为：
+
+```bash
+php artisan vben-admin:build --install --publish --force
+```
+
+依赖已安装时省略 `--install`。本地需要使用另一个共享前端工作区时通过 `--frontend=/absolute/path/to/frontend` 指定。构建命令会绕过 Turbo 结果缓存，避免项目扩展变化被旧缓存遮蔽。
+
 ### 项目直接修改工作台
 
 工作台允许由每个 Laravel 项目完整接管，不需要修改共享包或 `vendor`。在宿主项目根目录执行一次：

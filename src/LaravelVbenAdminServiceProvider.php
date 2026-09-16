@@ -2,9 +2,11 @@
 
 namespace Chencongbao\LaravelVbenAdmin;
 
+use Chencongbao\LaravelVbenAdmin\Console\BuildFrontendCommand;
 use Chencongbao\LaravelVbenAdmin\Console\CreateAdminCommand;
 use Chencongbao\LaravelVbenAdmin\Console\InstallCommand;
 use Chencongbao\LaravelVbenAdmin\Console\PublishAssetsCommand;
+use Chencongbao\LaravelVbenAdmin\Console\PublishProjectCommand;
 use Chencongbao\LaravelVbenAdmin\Console\PublishWorkspaceCommand;
 use Chencongbao\LaravelVbenAdmin\Console\SyncSystemDataCommand;
 use Chencongbao\LaravelVbenAdmin\Contracts\AuditRecorder;
@@ -19,6 +21,7 @@ use Chencongbao\LaravelVbenAdmin\Services\ActivityLoginRecorder;
 use Chencongbao\LaravelVbenAdmin\Services\DatabaseAuthorizer;
 use Chencongbao\LaravelVbenAdmin\Services\InMemoryModuleRegistry;
 use Illuminate\Routing\Router;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 
@@ -44,6 +47,7 @@ final class LaravelVbenAdminServiceProvider extends ServiceProvider
     public function boot(Router $router): void
     {
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
+        $this->registerProjectModules();
 
         $router->aliasMiddleware('admin.user', EnsureAdminUser::class);
         $router->aliasMiddleware('admin.permission', RequirePermission::class);
@@ -52,6 +56,13 @@ final class LaravelVbenAdminServiceProvider extends ServiceProvider
             ->prefix('api/admin')
             ->group(__DIR__.'/../routes/admin.php');
 
+        $projectRoutes = base_path('routes/admin.php');
+        if (File::isFile($projectRoutes)) {
+            Route::middleware(config('laravel-vben-admin.route.middleware', ['api']))
+                ->prefix('api/admin')
+                ->group($projectRoutes);
+        }
+
         if ($this->app->runningInConsole()) {
             $this->publishes([
                 __DIR__.'/../config/laravel-vben-admin.php' => config_path('laravel-vben-admin.php'),
@@ -59,11 +70,33 @@ final class LaravelVbenAdminServiceProvider extends ServiceProvider
 
             $this->commands([
                 InstallCommand::class,
+                BuildFrontendCommand::class,
                 PublishAssetsCommand::class,
+                PublishProjectCommand::class,
                 PublishWorkspaceCommand::class,
                 CreateAdminCommand::class,
                 SyncSystemDataCommand::class,
             ]);
+        }
+    }
+
+    private function registerProjectModules(): void
+    {
+        $modulesFile = base_path('app/Admin/modules.php');
+        if (! File::isFile($modulesFile)) {
+            return;
+        }
+
+        $modules = require $modulesFile;
+        if (! is_array($modules)) {
+            return;
+        }
+
+        $registry = $this->app->make(ModuleRegistry::class);
+        foreach ($modules as $moduleClass) {
+            if (is_string($moduleClass) && class_exists($moduleClass)) {
+                $registry->register($this->app->make($moduleClass));
+            }
         }
     }
 }

@@ -19,17 +19,10 @@ export async function getAllMenusApi() {
   const response = await requestClient.get<{ menus: BackendMenu[] }>(
     '/access/menus',
   );
-  const components: Record<string, string> = {
-    'dashboard.workspace': '/dashboard/workspace/index',
-    'system.audit-logs': '/system/audit-logs/index',
-    'system.login-logs': '/system/login-logs/index',
-    'system.menus': '/system/menus/index',
-    'system.permissions': '/system/permissions/index',
-    'system.roles': '/system/roles/index',
-    'system.settings': '/system/settings/index',
-    'system.theme-settings': '/system/theme-settings/index',
-    'system.users': '/system/users/index',
-  };
+  const componentFor = (viewKey: string) =>
+    /^[a-z][a-z0-9-]*(\.[a-z][a-z0-9-]*)+$/.test(viewKey)
+      ? `/${viewKey.replaceAll('.', '/')}/index`
+      : '/_core/fallback/not-found';
 
   const mapMenu = (menu: BackendMenu): RouteRecordStringComponent => ({
     children: menu.children?.map(mapMenu),
@@ -37,7 +30,7 @@ export async function getAllMenusApi() {
       menu.type === 'directory'
         ? 'BasicLayout'
         : menu.view_key
-          ? (components[menu.view_key] ?? '/_core/fallback/not-found')
+          ? componentFor(menu.view_key)
           : '/_core/fallback/not-found',
     meta: menu.meta,
     name: menu.name || menu.code,

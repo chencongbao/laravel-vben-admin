@@ -19,7 +19,19 @@ import dayjs from 'dayjs';
 
 const antdLocale = ref<Locale>(antdDefaultLocale);
 
-const modules = import.meta.glob('./langs/**/*.json');
+const sharedModules = import.meta.glob('./langs/**/*.json');
+const projectModules = Object.fromEntries(
+  Object.entries(import.meta.glob('#project-admin/locales/**/*.json')).map(
+    ([path, loader]) => [
+      path.replace(/^#project-admin\/locales/, './langs'),
+      loader,
+    ],
+  ),
+);
+const modules = {
+  ...sharedModules,
+  ...projectModules,
+};
 
 const localesMap = loadLocalesMapFromDir(
   /\.\/langs\/([^/]+)\/(.*)\.json$/,

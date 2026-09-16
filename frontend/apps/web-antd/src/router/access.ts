@@ -15,7 +15,20 @@ import { $t } from '#/locales';
 const forbiddenComponent = () => import('#/views/_core/fallback/forbidden.vue');
 
 async function generateAccess(options: GenerateMenuAndRoutesOptions) {
-  const pageMap: ComponentRecordType = import.meta.glob('../views/**/*.vue');
+  const sharedPages: ComponentRecordType = import.meta.glob(
+    '../views/**/*.vue',
+  );
+  const projectPages = import.meta.glob('#project-admin/pages/**/*.vue');
+  const projectPageMap = Object.fromEntries(
+    Object.entries(projectPages).map(([path, component]) => [
+      path.replace(/^#project-admin\/pages/, '../views'),
+      component,
+    ]),
+  );
+  const pageMap: ComponentRecordType = {
+    ...sharedPages,
+    ...projectPageMap,
+  };
 
   const layoutMap: ComponentRecordType = {
     BasicLayout,

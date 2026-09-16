@@ -1,0 +1,7 @@
+{
+  "apiLoading": "正在检查后台接口",
+  "apiReady": "后台接口连接正常",
+  "apiTitle": "接口状态",
+  "description": "这个页面来自 Laravel 项目的 resources/admin 扩展目录。",
+  "title": "Demo 页面"
+}
