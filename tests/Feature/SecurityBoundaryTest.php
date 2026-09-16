@@ -154,6 +154,28 @@ final class SecurityBoundaryTest extends TestCase
         self::assertTrue($selfManagedUser->roles()->whereKey($selfManagedRole->getKey())->exists());
     }
 
+    public function test_super_administrator_can_change_the_builtin_manager_status_without_changing_its_fixed_role(): void
+    {
+        $this->artisan('vben-admin:install')->assertSuccessful();
+        $superAdministrator = AdminUser::query()->where('username', 'cmsadmin')->firstOrFail();
+        $administrator = AdminUser::query()->where('username', 'admin')->firstOrFail();
+        $managerRole = AdminRole::query()->where('code', 'manager')->firstOrFail();
+        Sanctum::actingAs($superAdministrator, ['admin']);
+
+        $this->patchJson('/api/admin/system/users/'.$administrator->getKey(), [
+            'is_active' => false,
+            'name' => 'Disabled administrator',
+        ])->assertOk()
+            ->assertJsonPath('user.is_active', false)
+            ->assertJsonPath('user.name', 'Disabled administrator');
+
+        self::assertFalse($administrator->fresh()->is_active);
+        self::assertEqualsCanonicalizing(
+            [$managerRole->getKey()],
+            $administrator->roles()->pluck('admin_roles.id')->all(),
+        );
+    }
+
     public function test_user_role_options_include_every_active_non_super_role_and_creation_rejects_super_role(): void
     {
         $this->artisan('vben-admin:install')->assertSuccessful();

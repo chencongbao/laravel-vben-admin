@@ -18,7 +18,9 @@ async function generateAccess(options: GenerateMenuAndRoutesOptions) {
   const sharedPages: ComponentRecordType = import.meta.glob(
     '../views/**/*.vue',
   );
-  const projectPages = import.meta.glob('#project-admin/pages/**/*.vue');
+  const projectPages = import.meta.glob(
+    '#project-admin/pages/**/*.vue',
+  ) as ComponentRecordType;
   const projectPageMap = Object.fromEntries(
     Object.entries(projectPages).map(([path, component]) => [
       path.replace(/^#project-admin\/pages/, '../views'),

@@ -38,7 +38,7 @@ final class ActivityLogTest extends TestCase
 
     public function test_install_creates_the_unified_activity_log_table(): void
     {
-        $this->artisan('vben-admin:install')->assertSuccessful();
+        $this->artisan('vben-admin:install', ['--force' => true])->assertSuccessful();
 
         self::assertTrue(Schema::hasColumns('activity_log', [
             'log_name',
@@ -62,7 +62,7 @@ final class ActivityLogTest extends TestCase
 
     public function test_failed_and_successful_logins_are_written_to_the_activity_log(): void
     {
-        $this->artisan('vben-admin:install')->assertSuccessful();
+        $this->artisan('vben-admin:install', ['--force' => true])->assertSuccessful();
         $this->app->detectEnvironment(fn (): string => 'local');
 
         $this->withHeader('User-Agent', 'Mozilla/5.0 (Macintosh; Intel Mac OS X)')
@@ -103,7 +103,7 @@ final class ActivityLogTest extends TestCase
 
     public function test_only_super_administrators_can_view_super_administrator_login_logs(): void
     {
-        $this->artisan('vben-admin:install')->assertSuccessful();
+        $this->artisan('vben-admin:install', ['--force' => true])->assertSuccessful();
         $this->app->detectEnvironment(fn (): string => 'local');
 
         $this->postJson('/api/admin/auth/login', [
@@ -155,7 +155,7 @@ final class ActivityLogTest extends TestCase
 
     public function test_only_super_administrators_can_query_super_administrator_operation_logs_and_operator_options(): void
     {
-        $this->artisan('vben-admin:install')->assertSuccessful();
+        $this->artisan('vben-admin:install', ['--force' => true])->assertSuccessful();
         $superAdministrator = AdminUser::query()->where('username', 'cmsadmin')->firstOrFail();
         $administrator = AdminUser::query()->where('username', 'admin')->firstOrFail();
         $administrator->roles()->firstOrFail()->permissions()->syncWithoutDetaching([
@@ -163,7 +163,7 @@ final class ActivityLogTest extends TestCase
         ]);
 
         $audit = $this->app->make(AuditRecorder::class);
-        $audit->record($superAdministrator, 'system.user.updated', $superAdministrator, ['after' => ['name' => 'Super']]);
+        $audit->record($superAdministrator, 'system.user.deleted', $superAdministrator, ['after' => ['name' => 'Super']]);
         $superActivity = Activity::query()->where('log_type', 'operation')->latest('id')->firstOrFail();
         $audit->record($administrator, 'system.user.updated', $administrator, ['after' => ['name' => 'Manager']]);
         $administratorActivity = Activity::query()->where('log_type', 'operation')->latest('id')->firstOrFail();
@@ -173,6 +173,13 @@ final class ActivityLogTest extends TestCase
             ->assertOk()
             ->assertJsonFragment(['username' => 'cmsadmin'])
             ->assertJsonFragment(['username' => 'admin']);
+        $this->getJson('/api/admin/system/audit-logs/actions')
+            ->assertOk()
+            ->assertJsonPath('actions.0.code', 'system.user.deleted')
+            ->assertJsonPath('actions.0.label_key', 'system.auditLog.actionNames.userDeleted')
+            ->assertJsonPath('actions.0.type', 'deleted')
+            ->assertJsonPath('actions.1.code', 'system.user.updated')
+            ->assertJsonPath('actions.1.label_key', 'system.auditLog.actionNames.userUpdated');
         $this->getJson('/api/admin/system/audit-logs?per_page=100')
             ->assertOk()
             ->assertJsonFragment(['id' => $superActivity->getKey()])
@@ -183,6 +190,11 @@ final class ActivityLogTest extends TestCase
             ->assertOk()
             ->assertJsonMissing(['username' => 'cmsadmin'])
             ->assertJsonFragment(['username' => 'admin']);
+        $this->getJson('/api/admin/system/audit-logs/actions')
+            ->assertOk()
+            ->assertJsonCount(1, 'actions')
+            ->assertJsonPath('actions.0.code', 'system.user.updated')
+            ->assertJsonPath('actions.0.label_key', 'system.auditLog.actionNames.userUpdated');
         $this->getJson('/api/admin/system/audit-logs?per_page=100')
             ->assertOk()
             ->assertJsonMissing(['id' => $superActivity->getKey()])
@@ -195,8 +207,9 @@ final class ActivityLogTest extends TestCase
 
     public function test_operation_audit_uses_spatie_and_redacts_sensitive_values(): void
     {
-        $this->artisan('vben-admin:install')->assertSuccessful();
+        $this->artisan('vben-admin:install', ['--force' => true])->assertSuccessful();
         $actor = AdminUser::query()->where('username', 'cmsadmin')->firstOrFail();
+        config()->set('vben-admin-log.fields.AdminUser.name', 'system.userForm.fields.name');
         $request = Request::create('/api/admin/system/settings', 'PUT', [
             'name' => 'RG LIVE',
             'password' => 'plain-text-password',
@@ -224,6 +237,9 @@ final class ActivityLogTest extends TestCase
         self::assertSame('[REDACTED]', $activity->getProperty('context.access_token'));
         self::assertSame('[REDACTED]', $activity->getProperty('request_input.password'));
         self::assertSame('[REDACTED]', $activity->getProperty('request_input.nested.two_factor_secret'));
+        self::assertSame('system.auditLog.actionNames.settingsUpdated', $activity->getProperty('action_label_key'));
+        self::assertSame('system.settings', $activity->getProperty('action_module'));
+        self::assertSame('updated', $activity->getProperty('action_type'));
         self::assertSame('203.0.113.10', $activity->ip_address);
         self::assertSame('PUT', $activity->method);
         self::assertSame('/api/admin/system/settings', $activity->path);
@@ -237,6 +253,8 @@ final class ActivityLogTest extends TestCase
             ->assertJsonPath('data.0.subject_type_name', 'AdminUser')
             ->assertJsonPath('data.0.changed_count', 1)
             ->assertJsonPath('data.0.action_type', 'updated')
+            ->assertJsonPath('data.0.action_label_key', 'system.auditLog.actionNames.settingsUpdated')
+            ->assertJsonPath('data.0.subject_label_key', 'system.auditLog.subjectTypes.user')
             ->assertJsonPath('data.0.method', 'PUT')
             ->assertJsonPath('data.0.path', '/api/admin/system/settings')
             ->assertJsonMissingPath('data.0.request_input');
@@ -248,13 +266,35 @@ final class ActivityLogTest extends TestCase
             ->assertJsonPath('request_id', 'request-audit-001')
             ->assertJsonPath('request_input.password', '[REDACTED]')
             ->assertJsonPath('changes.before.password', '[REDACTED]')
+            ->assertJsonPath('field_label_keys.name', 'system.userForm.fields.name')
             ->assertJsonPath('user_agent', 'ActivityLogTest/1.0');
 
     }
 
+    public function test_unregistered_operation_action_remains_queryable_with_safe_fallback_metadata(): void
+    {
+        $this->artisan('vben-admin:install', ['--force' => true])->assertSuccessful();
+        $actor = AdminUser::query()->where('username', 'cmsadmin')->firstOrFail();
+        $this->app->make(AuditRecorder::class)->record($actor, 'project.custom.completed', $actor);
+
+        Sanctum::actingAs($actor, ['admin']);
+        $this->getJson('/api/admin/system/audit-logs/actions')
+            ->assertOk()
+            ->assertJsonPath('actions.0.code', 'project.custom.completed')
+            ->assertJsonPath('actions.0.label_key', null)
+            ->assertJsonPath('actions.0.module', null)
+            ->assertJsonPath('actions.0.type', null);
+
+        $this->getJson('/api/admin/system/audit-logs?action=project.custom.completed')
+            ->assertOk()
+            ->assertJsonPath('data.0.action', 'project.custom.completed')
+            ->assertJsonPath('data.0.action_label_key', null)
+            ->assertJsonPath('data.0.action_type', 'other');
+    }
+
     public function test_setting_batch_creates_one_audit_record_and_unchanged_values_create_none(): void
     {
-        $this->artisan('vben-admin:install')->assertSuccessful();
+        $this->artisan('vben-admin:install', ['--force' => true])->assertSuccessful();
         $actor = AdminUser::query()->where('username', 'cmsadmin')->firstOrFail();
         Sanctum::actingAs($actor, ['admin']);
         $payload = [

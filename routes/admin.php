@@ -62,6 +62,7 @@ Route::middleware(['auth:sanctum', 'admin.user'])->group(function (): void {
     Route::delete('system/menus/{adminMenu}', [AdminMenuController::class, 'destroy'])->middleware('admin.permission:system.menu.delete');
 
     Route::get('system/audit-logs', [AdminLogController::class, 'audit'])->middleware('admin.permission:system.audit.view');
+    Route::get('system/audit-logs/actions', [AdminLogController::class, 'auditActions'])->middleware('admin.permission:system.audit.view');
     Route::get('system/audit-logs/operators', [AdminLogController::class, 'auditOperators'])->middleware('admin.permission:system.audit.view');
     Route::get('system/audit-logs/{activity}', [AdminLogController::class, 'auditDetail'])->whereNumber('activity')->middleware('admin.permission:system.audit.view');
     Route::get('system/login-logs', [AdminLogController::class, 'login'])->middleware('admin.permission:system.login-log.view');

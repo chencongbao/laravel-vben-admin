@@ -3,6 +3,7 @@
 namespace Chencongbao\LaravelVbenAdmin\Http\Controllers;
 
 use Chencongbao\LaravelVbenAdmin\Models\AdminUser;
+use Chencongbao\LaravelVbenAdmin\Services\AuditLogRegistry;
 use Chencongbao\LaravelVbenAdmin\Services\PrivilegeAssignmentGuard;
 use Chencongbao\LaravelVbenAdmin\Support\AdminPagination;
 use Illuminate\Http\JsonResponse;
@@ -12,7 +13,10 @@ use Spatie\Activitylog\Models\Activity;
 
 final class AdminLogController extends Controller
 {
-    public function __construct(private readonly PrivilegeAssignmentGuard $privilegeGuard) {}
+    public function __construct(
+        private readonly PrivilegeAssignmentGuard $privilegeGuard,
+        private readonly AuditLogRegistry $auditRegistry,
+    ) {}
 
     public function audit(Request $request): JsonResponse
     {
@@ -84,12 +88,31 @@ final class AdminLogController extends Controller
         return $this->operatorOptions($request);
     }
 
+    public function auditActions(Request $request): JsonResponse
+    {
+        /** @var AdminUser $actor */
+        $actor = $request->user();
+        $actions = Activity::query()
+            ->where('log_name', config('laravel-vben-admin.activity_log.log_name', 'admin'))
+            ->where('log_type', 'operation')
+            ->whereNotNull('event')
+            ->where('event', '<>', '')
+            ->when(! $this->privilegeGuard->isSuperAdmin($actor), fn ($query) => $this->excludeSuperAdministratorActivities($query, $this->superAdministratorIds()))
+            ->distinct()
+            ->orderBy('event')
+            ->pluck('event')
+            ->values();
+
+        return response()->json(['actions' => $this->auditRegistry->actions($actions)]);
+    }
+
     private function auditPayload(Activity $activity, bool $withDetails): array
     {
         $causer = $activity->causer;
         $payload = [
             'id' => $activity->getKey(),
             'action' => $activity->event,
+            'action_label_key' => $this->auditRegistry->action((string) $activity->event)['label_key'],
             'action_type' => $this->resolveActionType($activity),
             'description' => $activity->description,
             'actor_id' => $activity->causer_id,
@@ -100,6 +123,7 @@ final class AdminLogController extends Controller
             ],
             'subject_type' => $activity->subject_type,
             'subject_type_name' => $activity->subject_type ? class_basename($activity->subject_type) : null,
+            'subject_label_key' => $this->auditRegistry->subjectLabelKey($activity->subject_type),
             'subject_id' => $activity->subject_id,
             'changed_count' => $this->changedCount($activity->attribute_changes?->toArray() ?? []),
             'ip_address' => $activity->ip_address,
@@ -110,6 +134,7 @@ final class AdminLogController extends Controller
 
         if ($withDetails) {
             $payload['changes'] = $activity->attribute_changes?->toArray() ?? [];
+            $payload['field_label_keys'] = $this->auditRegistry->fieldLabelKeys($activity->subject_type);
             $payload['context'] = $activity->getProperty('context', []);
             $payload['request_input'] = $activity->getProperty('request_input', []);
             $payload['request_id'] = $activity->getProperty('request_id');
@@ -152,6 +177,11 @@ final class AdminLogController extends Controller
 
     private function resolveActionType(Activity $activity): string
     {
+        $registeredType = $this->auditRegistry->action((string) $activity->event)['type'];
+        if ($registeredType !== null) {
+            return $registeredType;
+        }
+
         $action = strtolower((string) $activity->event);
         $suffix = str_contains($action, '.') ? substr($action, (int) strrpos($action, '.') + 1) : $action;
 

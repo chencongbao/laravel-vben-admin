@@ -23,9 +23,12 @@ final class PublishProjectCommandTest extends TestCase
 
         self::assertFileExists(base_path('routes/admin.php'));
         self::assertFileExists(base_path('app/Admin/modules.php'));
+        self::assertFileDoesNotExist(base_path('app/Admin/Modules/DemoAdminModule.php'));
         self::assertFileExists(resource_path('admin/pages/demo/index.vue'));
         self::assertFileExists(resource_path('admin/locales/zh-CN/demo.json'));
         self::assertFileExists(resource_path('admin/workspace/index.vue'));
+        self::assertSame([], require base_path('app/Admin/modules.php'));
+        self::assertStringNotContainsString('admin.permission:demo.view', File::get(base_path('routes/admin.php')));
 
         File::put(base_path('routes/admin.php'), '<?php // project route');
         $this->artisan('vben-admin:publish-project')->assertSuccessful();

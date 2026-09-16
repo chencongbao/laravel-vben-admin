@@ -36,6 +36,7 @@ import { useAdminTableScrollY } from '#/utils/table';
 interface AuditActor { id: number; name?: null | string; username?: null | string }
 interface AuditLog {
   action?: null | string;
+  action_label_key?: null | string;
   action_type: 'created' | 'deleted' | 'other' | 'updated';
   actor?: AuditActor | null;
   actor_id?: null | number;
@@ -44,6 +45,7 @@ interface AuditLog {
   context?: Record<string, any>;
   created_at: string;
   description?: null | string;
+  field_label_keys?: Record<string, string>;
   id: number;
   ip_address?: null | string;
   method?: null | string;
@@ -54,28 +56,12 @@ interface AuditLog {
   subject_id?: null | number;
   subject_type?: null | string;
   subject_type_name?: null | string;
+  subject_label_key?: null | string;
   user_agent?: null | string;
 }
 interface ChangeRow { after: any; before: any; field: string }
 interface Operator { id: number; name?: null | string; username: string }
-
-const actionLocaleKeys: Record<string, string> = {
-  'auth.avatar.updated': 'avatarUpdated', 'auth.password.updated': 'passwordUpdated',
-  'auth.profile.updated': 'profileUpdated', 'auth.session.revoked': 'sessionRevoked',
-  'auth.sessions.revoked': 'sessionsRevoked', 'auth.two-factor.confirmed': 'twoFactorConfirmed',
-  'auth.two-factor.disabled': 'twoFactorDisabled', 'auth.two-factor.enabled': 'twoFactorEnabled',
-  'system.menu.created': 'menuCreated', 'system.menu.deleted': 'menuDeleted',
-  'system.menu.reordered': 'menuReordered', 'system.menu.updated': 'menuUpdated',
-  'system.permission.created': 'permissionCreated', 'system.permission.deleted': 'permissionDeleted',
-  'system.permission.reordered': 'permissionReordered', 'system.permission.updated': 'permissionUpdated',
-  'system.role.access-updated': 'roleAccessUpdated', 'system.role.created': 'roleCreated',
-  'system.role.deleted': 'roleDeleted', 'system.role.updated': 'roleUpdated',
-  'system.settings.updated': 'settingsUpdated', 'system.theme-settings.updated': 'themeSettingsUpdated',
-  'system.user.created': 'userCreated', 'system.user.deleted': 'userDeleted', 'system.user.updated': 'userUpdated',
-};
-const subjectLocaleKeys: Record<string, string> = {
-  AdminMenu: 'menu', AdminPermission: 'permission', AdminRole: 'role', AdminSetting: 'setting', AdminUser: 'user',
-};
+interface ActionOption { code: string; label_key?: null | string; module?: null | string; type?: null | string }
 
 const loading = ref(false);
 const rows = ref<AuditLog[]>([]);
@@ -83,6 +69,7 @@ const detail = ref<AuditLog>();
 const detailLoading = ref(false);
 const detailOpen = ref(false);
 const dateRange = ref<[Dayjs, Dayjs]>();
+const actions = ref<ActionOption[]>([]);
 const operators = ref<Operator[]>([]);
 const filters = reactive({ action: '', actor_id: undefined as number | undefined, description: '', id: undefined as number | undefined, ip_address: '', subject_id: undefined as number | undefined, subject_type: '' });
 const pagination = reactive(createAdminPagination());
@@ -94,7 +81,6 @@ const columns = computed(() => [
   { dataIndex: 'action_type', title: $t('system.auditLog.fields.actionType'), width: 110 },
   { dataIndex: 'description', ellipsis: true, title: $t('system.auditLog.fields.description'), width: 220 },
   { dataIndex: 'subject', title: $t('system.auditLog.fields.subject'), width: 180 },
-  { dataIndex: 'changed_count', title: $t('system.auditLog.fields.changes'), width: 120 },
   { dataIndex: 'ip_address', title: $t('system.auditLog.fields.ipAddress'), width: 140 },
   { dataIndex: 'created_at', title: $t('system.auditLog.fields.createdAt'), width: 170 },
   { dataIndex: 'action_button', fixed: 'right' as const, title: $t('system.auditLog.fields.actions'), width: 100 },
@@ -107,8 +93,9 @@ const changeColumns = computed(() => [
 const changeRows = computed(() => collectChangeRows(detail.value?.changes ?? {}));
 
 function actionLabel(record: AuditLog | Record<string, any>) {
-  const key = record.action ? actionLocaleKeys[record.action] : undefined;
-  return key ? $t(`system.auditLog.actionNames.${key}`) : (record.action || record.description || '-');
+  const code = record.action || ('code' in record ? record.code : undefined);
+  const key = record.action_label_key || ('label_key' in record ? record.label_key : undefined) || actions.value.find((item) => item.code === code)?.label_key;
+  return translatedLabel(key, code || record.description || '-');
 }
 function actionTypeLabel(type: AuditLog['action_type']) { return $t(`system.auditLog.actionTypes.${type}`); }
 function actionTypeColor(type: AuditLog['action_type']) { return { created: 'green', deleted: 'red', other: 'default', updated: 'orange' }[type]; }
@@ -120,9 +107,18 @@ function actorLabel(record: AuditLog | Record<string, any>) {
 }
 function subjectLabel(record: AuditLog | Record<string, any>) {
   if (!record.subject_type_name || !record.subject_id) return '-';
-  const localeKey = subjectLocaleKeys[record.subject_type_name];
-  const type = localeKey ? $t(`system.auditLog.subjectTypes.${localeKey}`) : record.subject_type_name;
+  const type = translatedLabel(record.subject_label_key, record.subject_type_name);
   return `${type} #${record.subject_id}`;
+}
+function translatedLabel(key: null | string | undefined, fallback: string) {
+  if (!key) return fallback;
+  const translated = $t(key);
+  return translated === key ? fallback : translated;
+}
+function changeFieldLabel(field: string) {
+  const directKey = detail.value?.field_label_keys?.[field];
+  const leaf = field.split('.').pop() || field;
+  return translatedLabel(directKey || detail.value?.field_label_keys?.[leaf], field);
 }
 function displayValue(value: any) {
   if (value === undefined) return '-';
@@ -183,8 +179,12 @@ async function showDetail(record: AuditLog | Record<string, any>) {
   finally { detailLoading.value = false; }
 }
 onMounted(async () => {
-  const result = await getCollection<{ operators: Operator[] }>('/system/audit-logs/operators');
-  operators.value = result.operators;
+  const [operatorResult, actionResult] = await Promise.all([
+    getCollection<{ operators: Operator[] }>('/system/audit-logs/operators'),
+    getCollection<{ actions: ActionOption[] }>('/system/audit-logs/actions'),
+  ]);
+  operators.value = operatorResult.operators;
+  actions.value = actionResult.actions;
   await load();
 });
 </script>
@@ -201,7 +201,7 @@ onMounted(async () => {
     <ListSearchPanel>
       <ListSearchField :label="$t('common.fields.id')"><InputNumber v-model:value="filters.id" :min="1" /></ListSearchField>
       <ListSearchField :label="$t('system.auditLog.filters.actor')"><Select v-model:value="filters.actor_id" allow-clear show-search :filter-option="(input, option) => String(option?.label ?? '').toLowerCase().includes(input.toLowerCase())" :options="operators.map((operator) => ({ label: operator.name ? `${operator.name}（${operator.username}）` : operator.username, value: operator.id }))" :placeholder="$t('system.auditLog.placeholders.actor')" class="w-full" /></ListSearchField>
-      <ListSearchField :label="$t('system.auditLog.filters.actionCode')"><Input v-model:value="filters.action" allow-clear @press-enter="search" /></ListSearchField>
+      <ListSearchField :label="$t('system.auditLog.filters.businessAction')"><Select v-model:value="filters.action" allow-clear show-search :filter-option="(input, option) => String(option?.label ?? '').toLowerCase().includes(input.toLowerCase())" :options="actions.map((action) => ({ label: actionLabel(action), value: action.code }))" :placeholder="$t('system.auditLog.placeholders.businessAction')" class="w-full" /></ListSearchField>
       <ListSearchField :label="$t('system.auditLog.filters.subjectType')"><Input v-model:value="filters.subject_type" allow-clear @press-enter="search" /></ListSearchField>
       <ListSearchField :label="$t('system.auditLog.filters.subjectId')"><InputNumber v-model:value="filters.subject_id" :min="1" /></ListSearchField>
       <ListSearchField :label="$t('system.auditLog.filters.description')"><Input v-model:value="filters.description" allow-clear @press-enter="search" /></ListSearchField>
@@ -213,14 +213,12 @@ onMounted(async () => {
       </template>
     </ListSearchPanel>
     <Card :body-style="{ padding: 0 }" :bordered="false" class="admin-table-card">
-      <Table :ref="setTableRef" bordered class="admin-data-table" :columns="columns" :data-source="rows" :loading="loading" :pagination="pagination" row-key="id" :scroll="{ x: 1400, y: tableScrollY }" @change="changePage">
+      <Table :ref="setTableRef" bordered class="admin-data-table" :columns="columns" :data-source="rows" :loading="loading" :pagination="pagination" row-key="id" :scroll="{ x: 1280, y: tableScrollY }" @change="changePage">
         <template #bodyCell="{ column, record, text }">
           <span v-if="column.dataIndex === 'actor'">{{ actorLabel(record) }}</span>
           <Tag v-else-if="column.dataIndex === 'action_type'" :color="actionTypeColor(record.action_type)">{{ actionTypeLabel(record.action_type) }}</Tag>
           <Tooltip v-else-if="column.dataIndex === 'description'" :title="record.action || undefined"><span class="block truncate">{{ actionLabel(record) }}</span></Tooltip>
           <span v-else-if="column.dataIndex === 'subject'">{{ subjectLabel(record) }}</span>
-          <a v-else-if="column.dataIndex === 'changed_count' && record.changed_count" @click="showDetail(record)">{{ $t('system.auditLog.changesCount', { count: record.changed_count }) }}</a>
-          <span v-else-if="column.dataIndex === 'changed_count'">-</span>
           <span v-else-if="column.dataIndex === 'created_at'">{{ formatBeijingDateTime(text) }}</span>
           <PermissionButton v-else-if="column.dataIndex === 'action_button'" icon="lucide:eye" size="small" @click="showDetail(record)">{{ $t('system.auditLog.actions.detail') }}</PermissionButton>
         </template>
@@ -240,7 +238,7 @@ onMounted(async () => {
         <section>
           <h3 class="mb-2 font-medium">{{ $t('system.auditLog.detail.changes') }}</h3>
           <Table bordered :columns="changeColumns" :data-source="changeRows" :pagination="false" row-key="field" size="small">
-            <template #bodyCell="{ column, text }"><code v-if="column.dataIndex === 'field'">{{ text }}</code><pre v-else class="m-0 max-h-40 whitespace-pre-wrap break-all">{{ displayValue(text) }}</pre></template>
+            <template #bodyCell="{ column, text }"><code v-if="column.dataIndex === 'field'">{{ changeFieldLabel(text) }}</code><pre v-else class="m-0 max-h-40 whitespace-pre-wrap break-all">{{ displayValue(text) }}</pre></template>
             <template #emptyText>{{ $t('system.auditLog.detail.noChanges') }}</template>
           </Table>
         </section>

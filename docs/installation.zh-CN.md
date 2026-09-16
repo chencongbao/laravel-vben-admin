@@ -102,6 +102,8 @@ resources/admin/workspace   项目工作台
 php artisan vben-admin:publish-project
 ```
 
+安装时发布的 Demo 只用于展示页面、前端 API、Laravel 控制器和路由如何连接。Demo 不注册 `AdminModule`，不创建菜单、权限或菜单权限关联，也不会由 `vben-admin:sync` 写入数据库。`app/Admin/modules.php` 默认返回空数组。开始开发真实业务功能时，再按二次开发指南创建业务模块，并完整实现多语言、日志、权限和安全要求。
+
 项目扩展会在构建前同步到共享前端的受控构建区；业务源码始终以 Laravel 项目中的 `resources/admin` 为准。安装依赖、构建并发布可以合并为：
 
 ```bash
@@ -331,3 +333,4 @@ php artisan vben-admin:publish-assets --force
 - 项目自有前端页面和资源放在 `resources/admin`；
 - 业务权限和菜单通过包提供的模块契约注册，然后执行 `vben-admin:sync`；
 - 敏感操作必须同时经过 Laravel 服务端权限校验，不能只依赖前端隐藏按钮。
+日志动作、操作类型、模块、多语言键和对象多语言键集中维护在发布后的 `config/vben-admin-log.php`。配置项只保存翻译键；实际文案放在各语言文件中，因此新增第三种及更多语言时无需修改日志配置或数据库。包升级新增的系统动作应与项目自定义动作合并检查，项目自定义稳定动作码不得在升级时被静默删除。

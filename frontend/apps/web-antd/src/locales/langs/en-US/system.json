@@ -119,8 +119,8 @@
     "actions": { "detail": "View Details" },
     "changesCount": "{count} changes",
     "fields": { "actions": "Actions", "actionType": "Action Type", "actor": "Actor", "changes": "Changes", "createdAt": "Operation Time", "description": "Operation", "ipAddress": "IP Address", "method": "Method", "path": "Request Path", "subject": "Subject" },
-    "filters": { "actionCode": "Action Code", "actor": "Actor", "description": "Content Keyword", "ipAddress": "IP Address", "subjectId": "Subject ID", "subjectType": "Subject Type", "timeRange": "Operation Time" },
-    "placeholders": { "actor": "Select an operator" },
+    "filters": { "actionCode": "Action Code", "actor": "Actor", "businessAction": "Business Action", "description": "Content Keyword", "ipAddress": "IP Address", "subjectId": "Subject ID", "subjectType": "Subject Type", "timeRange": "Operation Time" },
+    "placeholders": { "actor": "Select an operator", "businessAction": "Select or search for a business action" },
     "actionTypes": { "created": "Create", "deleted": "Delete", "other": "Other", "updated": "Update" },
     "actionNames": {
       "avatarUpdated": "Update Avatar", "passwordUpdated": "Update Password", "profileUpdated": "Update Profile", "sessionRevoked": "Revoke Session", "sessionsRevoked": "Revoke Other Sessions", "twoFactorConfirmed": "Confirm Two-Factor Authentication", "twoFactorDisabled": "Disable Two-Factor Authentication", "twoFactorEnabled": "Enable Two-Factor Authentication",

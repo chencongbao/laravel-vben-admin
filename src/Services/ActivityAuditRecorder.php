@@ -12,10 +12,14 @@ final class ActivityAuditRecorder implements AuditRecorder
 {
     use RedactsActivityData;
 
-    public function __construct(private readonly Request $request) {}
+    public function __construct(
+        private readonly Request $request,
+        private readonly AuditLogRegistry $registry,
+    ) {}
 
     public function record(AdminUser $actor, string $action, ?object $subject = null, array $changes = [], array $context = []): void
     {
+        $definition = $this->registry->action($action);
         $logger = activity(config('laravel-vben-admin.activity_log.log_name', 'admin'))
             ->causedBy($actor)
             ->event($action)
@@ -25,6 +29,9 @@ final class ActivityAuditRecorder implements AuditRecorder
                 'request_input' => $this->redactActivityData($this->request->all()),
                 'request_id' => $this->request->header('X-Request-ID'),
                 'route_name' => $this->request->route()?->getName(),
+                'action_label_key' => $definition['label_key'],
+                'action_module' => $definition['module'],
+                'action_type' => $definition['type'],
             ])
             ->tap(function (Activity $activity): void {
                 $activity->log_type = 'operation';

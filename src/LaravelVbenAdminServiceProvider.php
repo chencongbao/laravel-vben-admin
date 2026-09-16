@@ -18,6 +18,7 @@ use Chencongbao\LaravelVbenAdmin\Http\Middleware\RequirePermission;
 use Chencongbao\LaravelVbenAdmin\Http\Middleware\RequireSuperAdmin;
 use Chencongbao\LaravelVbenAdmin\Services\ActivityAuditRecorder;
 use Chencongbao\LaravelVbenAdmin\Services\ActivityLoginRecorder;
+use Chencongbao\LaravelVbenAdmin\Services\AuditLogRegistry;
 use Chencongbao\LaravelVbenAdmin\Services\DatabaseAuthorizer;
 use Chencongbao\LaravelVbenAdmin\Services\InMemoryModuleRegistry;
 use Illuminate\Routing\Router;
@@ -30,9 +31,16 @@ final class LaravelVbenAdminServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->mergeConfigFrom(__DIR__.'/../config/laravel-vben-admin.php', 'laravel-vben-admin');
+        $defaultLogConfig = require __DIR__.'/../config/vben-admin-log.php';
+        $configuredLogConfig = $this->app->make('config')->get('vben-admin-log', []);
+        $this->app->make('config')->set(
+            'vben-admin-log',
+            array_replace_recursive($defaultLogConfig, is_array($configuredLogConfig) ? $configuredLogConfig : []),
+        );
 
         $this->app->singleton(ModuleRegistry::class, InMemoryModuleRegistry::class);
         $this->app->singleton(Authorizer::class, DatabaseAuthorizer::class);
+        $this->app->singleton(AuditLogRegistry::class);
         $this->app->scoped(AuditRecorder::class, ActivityAuditRecorder::class);
         $this->app->scoped(LoginRecorder::class, ActivityLoginRecorder::class);
 
@@ -66,6 +74,7 @@ final class LaravelVbenAdminServiceProvider extends ServiceProvider
         if ($this->app->runningInConsole()) {
             $this->publishes([
                 __DIR__.'/../config/laravel-vben-admin.php' => config_path('laravel-vben-admin.php'),
+                __DIR__.'/../config/vben-admin-log.php' => config_path('vben-admin-log.php'),
             ], 'laravel-vben-admin-config');
 
             $this->commands([

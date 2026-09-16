@@ -63,8 +63,11 @@ const columns = computed<TableColumnsType>(() => [
   { dataIndex: 'is_active', title: $t('system.userList.fields.status') }, { dataIndex: 'action', fixed: 'right', title: $t('system.userList.fields.action'), width: 82 },
 ]);
 const isFixedRoleAccount = computed(() => editingId.value !== undefined && ['admin', 'cmsadmin'].includes(form.username));
+const isEditingManagerAccount = computed(() => editingId.value !== undefined && form.username === 'admin');
 const isEditingSelf = computed(() => editingId.value !== undefined && String(editingId.value) === userStore.userInfo?.userId);
-const isRoleLocked = computed(() => isFixedRoleAccount.value || isEditingSelf.value);
+const isSuperAdministrator = computed(() => userStore.userInfo?.roles?.includes('administrator') ?? false);
+const showRoleField = computed(() => editingId.value === undefined || (!isFixedRoleAccount.value && !isEditingSelf.value));
+const showStatusField = computed(() => editingId.value === undefined || (!isEditingSelf.value && (!isEditingManagerAccount.value || isSuperAdministrator.value)));
 const roleOptions = computed(() => {
   const availableRoles = [...roles.value];
   if (editingRole.value && !availableRoles.some((role) => role.id === editingRole.value?.id)) {
@@ -119,10 +122,8 @@ async function save() {
       role_ids: form.role_id ? [form.role_id] : [],
     };
     delete payload.role_id;
-    if (isEditingSelf.value) {
-      delete payload.is_active;
-      delete payload.role_ids;
-    }
+    if (!showStatusField.value) delete payload.is_active;
+    if (!showRoleField.value) delete payload.role_ids;
     if (!payload.password) delete payload.password;
     await (editingId.value ? updateResource('/system/users', editingId.value, payload) : createResource('/system/users', payload));
     visible.value = false; message.success($t('system.userForm.messages.saved')); await load();
@@ -175,8 +176,8 @@ onMounted(load);
           <Input.Password v-model:value="form.password" />
           <div class="setting-tip">{{ $t('system.userForm.tips.password') }}</div>
         </FormItem>
-        <FormItem :label="$t('system.userForm.fields.role')"><Select v-model:value="form.role_id" allow-clear :disabled="isRoleLocked" :options="roleOptions" /></FormItem>
-        <FormItem :label="$t('system.userForm.fields.active')"><Switch v-model:checked="form.is_active" :disabled="isEditingSelf" /></FormItem>
+        <FormItem v-if="showRoleField" :label="$t('system.userForm.fields.role')"><Select v-model:value="form.role_id" allow-clear :options="roleOptions" /></FormItem>
+        <FormItem v-if="showStatusField" :label="$t('system.userForm.fields.active')"><Switch v-model:checked="form.is_active" /></FormItem>
         <div class="security-settings">
           <h3>{{ $t('system.userForm.fields.security') }}</h3>
           <FormItem :label="$t('system.userForm.fields.twoFactor')">

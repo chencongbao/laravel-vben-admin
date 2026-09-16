@@ -121,8 +121,8 @@
     "actions": { "detail": "查看详情" },
     "changesCount": "{count} 项变更",
     "fields": { "actions": "操作", "actionType": "操作类型", "actor": "操作者", "changes": "变更内容", "createdAt": "操作时间", "description": "操作内容", "ipAddress": "IP 地址", "method": "请求方法", "path": "请求路径", "subject": "操作对象" },
-    "filters": { "actionCode": "操作编码", "actor": "操作者", "description": "内容关键字", "ipAddress": "IP 地址", "subjectId": "对象编号", "subjectType": "对象类型", "timeRange": "操作时间" },
-    "placeholders": { "actor": "请选择操作者" },
+    "filters": { "actionCode": "操作编码", "actor": "操作者", "businessAction": "业务动作", "description": "内容关键字", "ipAddress": "IP 地址", "subjectId": "对象编号", "subjectType": "对象类型", "timeRange": "操作时间" },
+    "placeholders": { "actor": "请选择操作者", "businessAction": "请选择或搜索业务动作" },
     "actionTypes": { "created": "新增", "deleted": "删除", "other": "其他", "updated": "修改" },
     "actionNames": {
       "avatarUpdated": "修改头像", "passwordUpdated": "修改密码", "profileUpdated": "修改个人资料", "sessionRevoked": "撤销登录会话", "sessionsRevoked": "撤销其他登录会话", "twoFactorConfirmed": "绑定双重验证", "twoFactorDisabled": "关闭双重验证", "twoFactorEnabled": "开启双重验证",
