@@ -86,11 +86,11 @@
   "menusDescription": "Maintain menu hierarchy, routes, icons, ordering, and access permissions.",
   "menuForm": {
     "actions": { "create": "Create Menu", "edit": "Edit: {name}" },
-    "fields": { "icon": "Menu Icon", "permissions": "Menu Permissions", "routePath": "Route Path", "title": "Menu Title", "type": "Menu Type", "parent": "Parent Menu" },
-    "help": { "routePath": "The frontend route for the administration page, for example /system/users; this is not a backend API path." },
-    "messages": { "deleted": "Menu deleted", "required": "Complete the menu title, icon, and menu type.", "saved": "Menu saved", "sortFailed": "Menu reordering failed and the previous order was restored.", "sortSaved": "Menu hierarchy and order saved" },
+    "fields": { "externalUrl": "External URL", "icon": "Menu Icon", "permissions": "Menu Permissions", "routePath": "Route Path", "title": "Menu Title", "type": "Menu Type", "parent": "Parent Menu" },
+    "help": { "externalUrl": "Enter a complete http:// or https:// URL. The menu opens it in a new browser tab.", "routePath": "The frontend route for the administration page, for example /system/users; this is not a backend API path." },
+    "messages": { "deleted": "Menu deleted", "invalidExternalUrl": "Enter a complete http:// or https:// URL without embedded credentials.", "required": "Complete the menu title, icon, and menu type.", "saved": "Menu saved", "sortFailed": "Menu reordering failed and the previous order was restored.", "sortSaved": "Menu hierarchy and order saved" },
     "options": { "directory": "Directory", "external": "External Link", "page": "Page" },
-    "placeholders": { "parent": "Select a parent menu", "routePath": "For example: /content/articles", "title": "Enter a menu title or locale key" },
+    "placeholders": { "externalUrl": "For example: https://www.example.com/docs", "parent": "Select a parent menu", "routePath": "For example: /content/articles", "title": "Enter a menu title or locale key" },
     "prompts": { "delete": "Delete this menu?" }
   },
   "menuList": { "actions": { "addChild": "Add Child", "collapseChild": "Collapse Child Menus", "drag": "Drag to reorder menus", "edit": "Edit Menu", "expandChild": "Expand Child Menus" }, "empty": "No menus", "systemDeleteDisabled": "System menus cannot be deleted", "title": "Menu List", "treeLabel": "Menu Hierarchy and Order", "topLevel": "Top-level Menu" },

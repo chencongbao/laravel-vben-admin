@@ -186,6 +186,21 @@ const menuTypeOptions = computed(() => [
   { label: $t('system.menuForm.options.page'), value: 'page' },
   { label: $t('system.menuForm.options.external'), value: 'external' },
 ]);
+const routePathFieldLabel = computed(() => $t(
+  form.type === 'external'
+    ? 'system.menuForm.fields.externalUrl'
+    : 'system.menuForm.fields.routePath',
+));
+const routePathHelp = computed(() => $t(
+  form.type === 'external'
+    ? 'system.menuForm.help.externalUrl'
+    : 'system.menuForm.help.routePath',
+));
+const routePathPlaceholder = computed(() => $t(
+  form.type === 'external'
+    ? 'system.menuForm.placeholders.externalUrl'
+    : 'system.menuForm.placeholders.routePath',
+));
 
 function permissionName(permission: Pick<Permission, 'code' | 'name'>) {
   const systemNameKey = `system.permissionNames.${permission.code}`;
@@ -292,6 +307,31 @@ function codeFromRoutePath(path: string) {
     .toLowerCase() ?? '';
 }
 
+function codeFromExternalUrl(value: string) {
+  try {
+    const url = new URL(value);
+    const source = `${url.hostname}${url.pathname}${url.search}${url.hash}`;
+    const normalized = source
+      .replaceAll(/[^a-zA-Z0-9]+/g, '.')
+      .replaceAll(/^\.+|\.+$/g, '')
+      .toLowerCase();
+    return normalized ? `external.${normalized}` : '';
+  } catch {
+    return '';
+  }
+}
+
+function isSafeExternalUrl(value: string) {
+  try {
+    const url = new URL(value);
+    return ['http:', 'https:'].includes(url.protocol)
+      && !url.username
+      && !url.password;
+  } catch {
+    return false;
+  }
+}
+
 function routeNameFromCode(code: string) {
   return code
     .split(/[^a-zA-Z0-9]+/)
@@ -302,7 +342,9 @@ function routeNameFromCode(code: string) {
 
 function syncGeneratedRouteFields() {
   if (editing.value?.is_system) return;
-  const code = codeFromRoutePath(form.route_path);
+  const code = form.type === 'external'
+    ? codeFromExternalUrl(form.route_path)
+    : codeFromRoutePath(form.route_path);
   form.code = code;
   form.route_name = routeNameFromCode(code);
   form.view_key = form.type === 'page' ? code : '';
@@ -315,7 +357,10 @@ function handleRoutePathInput(value: string) {
 
 async function save() {
   syncGeneratedRouteFields();
-  if (!form.code || !form.title || !form.type || !form.icon) {
+  if (form.type === 'external' && !isSafeExternalUrl(form.route_path)) {
+    return void message.warning($t('system.menuForm.messages.invalidExternalUrl'));
+  }
+  if (!form.code || !form.title || !form.type || !form.icon || (form.type === 'external' && !form.route_path)) {
     return void message.warning($t('system.menuForm.messages.required'));
   }
   saving.value = true;
@@ -496,11 +541,11 @@ onMounted(() => load());
               @change="form.icon = $event"
             />
           </FormItem>
-          <FormItem :label="$t('system.menuForm.fields.routePath')">
-            <Input :value="form.route_path" :placeholder="$t('system.menuForm.placeholders.routePath')" @update:value="handleRoutePathInput">
+          <FormItem :label="routePathFieldLabel" :required="form.type === 'external'">
+            <Input :value="form.route_path" :placeholder="routePathPlaceholder" @update:value="handleRoutePathInput">
               <template #prefix><IconifyIcon icon="lucide:link" /></template>
             </Input>
-            <div class="admin-menu-editor__help">{{ $t('system.menuForm.help.routePath') }}</div>
+            <div class="admin-menu-editor__help">{{ routePathHelp }}</div>
           </FormItem>
           <FormItem :label="$t('system.menuForm.fields.type')" required>
             <Select v-model:value="form.type" :options="menuTypeOptions" />

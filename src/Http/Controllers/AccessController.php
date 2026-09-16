@@ -57,7 +57,9 @@ final class AccessController extends Controller
             'parent_id' => $menu->parent_id,
             'type' => $menu->type,
             'name' => $menu->route_name,
-            'path' => $menu->route_path,
+            'path' => $menu->type === 'external'
+                ? '/external/menu/'.$menu->getKey()
+                : $menu->route_path,
             'view_key' => $menu->view_key,
             'meta' => [
                 'title' => $menu->title,
@@ -66,6 +68,10 @@ final class AccessController extends Controller
                 'affixTab' => $menu->code === self::DEFAULT_MENU_CODE,
                 'tabClosable' => $menu->code !== self::DEFAULT_MENU_CODE,
                 'authority' => $menu->permissions->pluck('code')->values()->all(),
+                ...($menu->type === 'external' ? [
+                    'link' => $menu->route_path,
+                    'openInNewWindow' => true,
+                ] : []),
             ],
             'children' => [],
         ])->keyBy('id')->all();

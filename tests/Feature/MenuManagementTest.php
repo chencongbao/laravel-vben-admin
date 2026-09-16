@@ -114,6 +114,46 @@ final class MenuManagementTest extends TestCase
             ->assertJsonFragment(['code' => 'system.menu.update']);
     }
 
+    public function test_external_menu_is_returned_as_a_safe_new_window_link(): void
+    {
+        $response = $this->postJson('/api/admin/system/menus', [
+            'code' => 'external.example.docs',
+            'title' => 'Example docs',
+            'type' => 'external',
+            'route_name' => 'ExternalExampleDocs',
+            'route_path' => 'https://www.example.com/docs',
+            'view_key' => 'should.be.cleared',
+        ])->assertCreated()
+            ->assertJsonPath('menu.view_key', null);
+
+        $menuId = $response->json('menu.id');
+
+        $this->getJson('/api/admin/access/menus')
+            ->assertOk()
+            ->assertJsonFragment([
+                'code' => 'external.example.docs',
+                'path' => '/external/menu/'.$menuId,
+                'link' => 'https://www.example.com/docs',
+                'openInNewWindow' => true,
+            ]);
+
+        self::assertNull(AdminMenu::query()->findOrFail($menuId)->view_key);
+    }
+
+    public function test_external_menu_rejects_missing_or_unsafe_urls(): void
+    {
+        foreach ([null, '/internal/path', 'javascript:alert(1)', 'ftp://example.com/file', 'https://user:secret@example.com'] as $routePath) {
+            $this->postJson('/api/admin/system/menus', [
+                'code' => 'external.invalid.'.md5((string) $routePath),
+                'title' => 'Invalid external link',
+                'type' => 'external',
+                'route_name' => 'InvalidExternal'.md5((string) $routePath),
+                'route_path' => $routePath,
+            ])->assertUnprocessable()
+                ->assertJsonValidationErrors('route_path');
+        }
+    }
+
     public function test_menu_table_has_no_visibility_columns(): void
     {
         $menus = config('laravel-vben-admin.tables.menus', 'admin_menus');

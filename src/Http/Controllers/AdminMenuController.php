@@ -181,6 +181,20 @@ final class AdminMenuController extends Controller
         $menuTable = config('laravel-vben-admin.tables.menus', 'admin_menus');
         $permissionTable = config('laravel-vben-admin.tables.permissions', 'admin_permissions');
         $workspaceId = AdminMenu::query()->where('code', self::DEFAULT_MENU_CODE)->value('id');
+        $effectiveType = $request->input('type', $menu?->type);
+        $routePathRules = $effectiveType === 'external'
+            ? [
+                'required',
+                'string',
+                'max:2048',
+                'url:http,https',
+                static function (string $attribute, mixed $value, \Closure $fail): void {
+                    if (is_string($value) && (parse_url($value, PHP_URL_USER) !== null || parse_url($value, PHP_URL_PASS) !== null)) {
+                        $fail('validation.url')->translate();
+                    }
+                },
+            ]
+            : ['nullable', 'string', 'max:255'];
 
         $data = $request->validate([
             'code' => [$menu ? 'sometimes' : 'required', 'string', 'max:160', Rule::unique($menuTable, 'code')->ignore($menu?->getKey())],
@@ -188,7 +202,7 @@ final class AdminMenuController extends Controller
             'title' => [$menu ? 'sometimes' : 'required', 'string', 'max:160'],
             'type' => [$menu ? 'sometimes' : 'required', Rule::in(['directory', 'page', 'external'])],
             'route_name' => ['nullable', 'string', 'max:160', Rule::unique($menuTable, 'route_name')->ignore($menu?->getKey())],
-            'route_path' => ['nullable', 'string', 'max:255'],
+            'route_path' => $routePathRules,
             'view_key' => ['nullable', 'string', 'max:160', 'regex:/^[a-zA-Z0-9._-]+$/'],
             'permission_ids' => ['sometimes', 'array', 'max:500'],
             'permission_ids.*' => ['required', 'integer', 'distinct', Rule::exists($permissionTable, 'id')],
@@ -198,6 +212,10 @@ final class AdminMenuController extends Controller
 
         if ((! $menu || array_key_exists('icon', $data)) && blank($data['icon'] ?? null)) {
             $data['icon'] = self::DEFAULT_MENU_ICON;
+        }
+
+        if ($effectiveType === 'external') {
+            $data['view_key'] = null;
         }
 
         return $data;

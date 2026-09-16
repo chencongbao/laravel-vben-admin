@@ -88,11 +88,11 @@
   "menusDescription": "维护后台菜单层级、路由、图标、排序与访问权限。",
   "menuForm": {
     "actions": { "create": "新增菜单", "edit": "编辑：{name}" },
-    "fields": { "icon": "菜单图标", "permissions": "菜单权限", "routePath": "路由路径", "title": "菜单标题", "type": "菜单类型", "parent": "父级菜单" },
-    "help": { "routePath": "后台前端页面的路由路径，例如：/system/users；不是后端 API 路径。" },
-    "messages": { "deleted": "菜单已删除", "required": "请填写菜单标题、菜单图标和菜单类型", "saved": "菜单保存成功", "sortFailed": "菜单拖动保存失败，已恢复原顺序", "sortSaved": "菜单层级和排序已保存" },
+    "fields": { "externalUrl": "外部链接地址", "icon": "菜单图标", "permissions": "菜单权限", "routePath": "路由路径", "title": "菜单标题", "type": "菜单类型", "parent": "父级菜单" },
+    "help": { "externalUrl": "填写完整的 http:// 或 https:// 地址，点击菜单后将在新标签页打开。", "routePath": "后台前端页面的路由路径，例如：/system/users；不是后端 API 路径。" },
+    "messages": { "deleted": "菜单已删除", "invalidExternalUrl": "请输入不含账号凭据的完整 http:// 或 https:// 地址", "required": "请填写菜单标题、菜单图标和菜单类型", "saved": "菜单保存成功", "sortFailed": "菜单拖动保存失败，已恢复原顺序", "sortSaved": "菜单层级和排序已保存" },
     "options": { "directory": "目录", "external": "外部链接", "page": "页面" },
-    "placeholders": { "parent": "请选择父级菜单", "routePath": "例如：/content/articles", "title": "请输入菜单标题或语言键" },
+    "placeholders": { "externalUrl": "例如：https://www.example.com/docs", "parent": "请选择父级菜单", "routePath": "例如：/content/articles", "title": "请输入菜单标题或语言键" },
     "prompts": { "delete": "确定删除该菜单？" }
   },
   "menuList": { "actions": { "addChild": "新增子级", "collapseChild": "收起子菜单", "drag": "按住拖动菜单", "edit": "编辑菜单", "expandChild": "展开子菜单" }, "empty": "暂无菜单", "systemDeleteDisabled": "系统菜单不可删除", "title": "菜单列表", "treeLabel": "菜单层级与排序", "topLevel": "顶级菜单" },
