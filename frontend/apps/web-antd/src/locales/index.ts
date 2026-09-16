@@ -21,9 +21,9 @@ const antdLocale = ref<Locale>(antdDefaultLocale);
 
 const sharedModules = import.meta.glob('./langs/**/*.json');
 const projectModules = Object.fromEntries(
-  Object.entries(import.meta.glob('#project-admin/locales/**/*.json')).map(
+  Object.entries(import.meta.glob('../project-admin/locales/**/*.json')).map(
     ([path, loader]) => [
-      path.replace(/^#project-admin\/locales/, './langs'),
+      path.replace(/^\.\.\/project-admin\/locales/, './langs'),
       loader,
     ],
   ),
