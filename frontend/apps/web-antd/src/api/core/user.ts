@@ -47,6 +47,19 @@ export interface DefaultAvatar {
   url: string;
 }
 
+export interface AdminPasswordPolicy {
+  min_length: number;
+  requires_mixed_case: boolean;
+  requires_numbers: boolean;
+  type: 'strong' | 'weak';
+}
+
+export async function getPasswordPolicyApi() {
+  return requestClient.get<{ password_policy: AdminPasswordPolicy }>(
+    '/auth/password-policy',
+  );
+}
+
 export async function getDefaultAvatarsApi() {
   return requestClient.get<{ avatars: DefaultAvatar[] }>('/auth/avatars');
 }

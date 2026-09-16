@@ -39,7 +39,7 @@
     },
     "messages": { "deleted": "用户已删除", "required": "请完整填写用户名、姓名和密码", "saved": "用户保存成功" },
     "placeholders": { "allowlist": "填写后自动开启；留空表示未开启。每行一个，例如：\n203.0.113.10\n10.0.0.0/24\n2001:db8::/32" },
-    "tips": { "allowlist": "非本地环境必须设置白名单并且当前 IP 命中才能登录。", "password": "密码至少 12 位，并且必须同时包含大写字母、小写字母和数字。", "twoFactor": "开启后，白名单校验通过才会在登录页绑定或验证 Google 验证器。" },
+    "tips": { "allowlist": "非本地环境必须设置白名单并且当前 IP 命中才能登录。", "password": { "strong": "强密码至少 12 位，并且必须同时包含大写字母、小写字母和数字。", "weak": "弱密码至少 6 位，不强制大小写或数字组合。" }, "twoFactor": "开启后，白名单校验通过才会在登录页绑定或验证 Google 验证器。" },
     "prompts": { "delete": "确定删除该用户？" }
   },
   "userList": {
@@ -121,8 +121,8 @@
     "actions": { "detail": "查看详情" },
     "changesCount": "{count} 项变更",
     "fields": { "actions": "操作", "actionType": "操作类型", "actor": "操作者", "changes": "变更内容", "createdAt": "操作时间", "description": "操作内容", "ipAddress": "IP 地址", "method": "请求方法", "path": "请求路径", "subject": "操作对象" },
-    "filters": { "actionCode": "操作编码", "actor": "操作者", "businessAction": "业务动作", "description": "内容关键字", "ipAddress": "IP 地址", "subjectId": "对象编号", "subjectType": "对象类型", "timeRange": "操作时间" },
-    "placeholders": { "actor": "请选择操作者", "businessAction": "请选择或搜索业务动作" },
+    "filters": { "actionCode": "操作编码", "actor": "操作者", "businessAction": "业务动作", "description": "内容关键字", "ipAddress": "IP 地址", "subjectId": "操作对象ID", "subjectType": "对象类型", "timeRange": "操作时间" },
+    "placeholders": { "actionType": "请选择或搜索操作类型", "actor": "请选择操作者", "businessAction": "请选择或搜索业务动作" },
     "actionTypes": { "created": "新增", "deleted": "删除", "other": "其他", "updated": "修改" },
     "actionNames": {
       "avatarUpdated": "修改头像", "passwordUpdated": "修改密码", "profileUpdated": "修改个人资料", "sessionRevoked": "撤销登录会话", "sessionsRevoked": "撤销其他登录会话", "twoFactorConfirmed": "绑定双重验证", "twoFactorDisabled": "关闭双重验证", "twoFactorEnabled": "开启双重验证",
@@ -155,6 +155,11 @@
         "label": "默认分页数量",
         "placeholder": "请输入每页记录数"
       },
+      "passwordStrength": {
+        "description": "控制新增用户、重置密码、个人修改密码和命令行创建管理员时使用的密码规则。修改后只影响后续设置的密码。",
+        "label": "密码类型",
+        "placeholder": "请选择密码类型"
+      },
       "loginRememberMe": {
         "description": "控制后台登录页面是否显示“记住账号”选项。",
         "label": "显示记住账号"
@@ -176,6 +181,7 @@
       }
     },
     "options": {
+      "passwordStrength": { "strong": "强密码", "weak": "弱密码" },
       "loginTheme": {
         "default": "默认蓝色",
         "violet": "紫罗兰",
@@ -196,6 +202,7 @@
       "loginDescriptionInvalid": "登录页宣传语必须是文本，且不能超过 500 个字符",
       "loginRememberMeInvalid": "“显示记住账号”配置格式不正确",
       "pageSizeInvalid": "默认分页数量必须是 10 至 100 之间的整数",
+      "passwordStrengthInvalid": "密码类型只能选择弱密码或强密码",
       "saved": "系统设置已保存",
       "systemNameInvalid": "系统名称必须是文本，且不能超过 500 个字符"
     }

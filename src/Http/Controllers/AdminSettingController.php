@@ -17,6 +17,7 @@ final class AdminSettingController extends Controller
     private const SYSTEM_KEYS = [
         'system.name',
         'system.page_size',
+        'system.password_strength',
         'system.login_remember_me',
         'system.login_description',
     ];

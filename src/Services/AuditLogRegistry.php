@@ -34,6 +34,22 @@ final class AuditLogRegistry
         return $actions;
     }
 
+    /**
+     * @return list<array{code: string, label_key: string|null, module: string|null, type: string|null}>
+     */
+    public function allActions(): array
+    {
+        $definitions = config('vben-admin-log.actions', []);
+        if (! is_array($definitions)) {
+            return [];
+        }
+
+        $codes = array_filter(array_keys($definitions), 'is_string');
+        sort($codes);
+
+        return $this->actions($codes);
+    }
+
     public function subjectLabelKey(?string $subjectType): ?string
     {
         if ($subjectType === null || $subjectType === '') {

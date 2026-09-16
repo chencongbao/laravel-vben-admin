@@ -4,10 +4,10 @@ namespace Chencongbao\LaravelVbenAdmin\Console;
 
 use Chencongbao\LaravelVbenAdmin\Models\AdminRole;
 use Chencongbao\LaravelVbenAdmin\Models\AdminUser;
+use Chencongbao\LaravelVbenAdmin\Support\AdminPasswordPolicy;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\Rules\Password;
 
 final class CreateAdminCommand extends Command
 {
@@ -24,7 +24,7 @@ final class CreateAdminCommand extends Command
         Validator::make(compact('username', 'name', 'password'), [
             'username' => ['required', 'string', 'max:120', 'unique:'.config('laravel-vben-admin.tables.users', 'admin_users').',username'],
             'name' => ['required', 'string', 'max:120'],
-            'password' => ['required', 'string', Password::min(12)->letters()->mixedCase()->numbers()],
+            'password' => ['required', 'string', AdminPasswordPolicy::rule()],
         ])->validate();
 
         $role = AdminRole::query()->where('code', 'administrator')->where('is_super_admin', true)->firstOrFail();

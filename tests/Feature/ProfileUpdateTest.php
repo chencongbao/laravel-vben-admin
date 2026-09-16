@@ -8,6 +8,7 @@ use Laravel\Sanctum\Sanctum;
 use Laravel\Sanctum\SanctumServiceProvider;
 use Orchestra\Testbench\TestCase;
 use Spatie\Activitylog\ActivitylogServiceProvider;
+use Spatie\Activitylog\Models\Activity;
 
 final class ProfileUpdateTest extends TestCase
 {
@@ -59,5 +60,51 @@ final class ProfileUpdateTest extends TestCase
             ->assertJsonPath('user.name', 'Updated Profile');
 
         self::assertSame('Updated Profile', $user->fresh()->name);
+        self::assertSame(['auth.profile.updated'], Activity::query()->pluck('event')->all());
+    }
+
+    public function test_avatar_only_profile_update_writes_avatar_action(): void
+    {
+        $this->artisan('vben-admin:install')->assertSuccessful();
+        $user = AdminUser::query()->where('username', 'cmsadmin')->firstOrFail();
+        Sanctum::actingAs($user, ['admin']);
+
+        $this->patchJson('/api/admin/auth/profile', [
+            'name' => $user->name,
+            'avatar' => 'default:avatar-2',
+        ])->assertOk();
+
+        self::assertSame(['auth.avatar.updated'], Activity::query()->pluck('event')->all());
+    }
+
+    public function test_profile_and_avatar_changes_write_separate_actions(): void
+    {
+        $this->artisan('vben-admin:install')->assertSuccessful();
+        $user = AdminUser::query()->where('username', 'cmsadmin')->firstOrFail();
+        Sanctum::actingAs($user, ['admin']);
+
+        $this->patchJson('/api/admin/auth/profile', [
+            'name' => 'Updated Administrator',
+            'avatar' => 'default:avatar-3',
+        ])->assertOk();
+
+        self::assertSame(
+            ['auth.profile.updated', 'auth.avatar.updated'],
+            Activity::query()->orderBy('id')->pluck('event')->all(),
+        );
+    }
+
+    public function test_unchanged_profile_does_not_write_activity(): void
+    {
+        $this->artisan('vben-admin:install')->assertSuccessful();
+        $user = AdminUser::query()->where('username', 'cmsadmin')->firstOrFail();
+        Sanctum::actingAs($user, ['admin']);
+
+        $this->patchJson('/api/admin/auth/profile', [
+            'name' => $user->name,
+            'avatar' => $user->avatar,
+        ])->assertOk();
+
+        self::assertSame(0, Activity::query()->count());
     }
 }

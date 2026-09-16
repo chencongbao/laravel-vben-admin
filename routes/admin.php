@@ -20,6 +20,7 @@ Route::middleware(['auth:sanctum', 'admin.user'])->group(function (): void {
     Route::post('auth/logout', [AuthController::class, 'logout']);
     Route::get('auth/me', [AuthController::class, 'me']);
     Route::get('auth/avatars', [AuthController::class, 'avatars']);
+    Route::get('auth/password-policy', [AuthController::class, 'passwordPolicy']);
     Route::post('auth/avatar', [AuthController::class, 'uploadAvatar'])->middleware('throttle:12,1');
     Route::get('auth/two-factor', [AuthController::class, 'twoFactorStatus']);
     Route::post('auth/two-factor/enable', [AuthController::class, 'enableTwoFactor'])->middleware('throttle:6,1');

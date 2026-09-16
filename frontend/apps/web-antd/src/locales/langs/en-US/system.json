@@ -37,7 +37,7 @@
     "fields": { "active": "Enabled", "loginAllowlist": "Login IP Allowlist", "name": "Name", "newPassword": "New Password (leave blank to keep it)", "password": "Password", "role": "Role", "security": "Login Security", "twoFactor": "Google 2FA", "username": "Username" },
     "messages": { "deleted": "User deleted", "required": "Complete the username, name, and password fields.", "saved": "User saved" },
     "placeholders": { "allowlist": "Adding entries enables the allowlist; leave blank to disable it. One entry per line, for example:\n203.0.113.10\n10.0.0.0/24\n2001:db8::/32" },
-    "tips": { "allowlist": "Outside the local environment, the current IP must match a configured allowlist entry to sign in.", "password": "Use at least 12 characters with uppercase letters, lowercase letters, and numbers.", "twoFactor": "After the allowlist check passes, the user binds or verifies Google Authenticator on the login page." },
+    "tips": { "allowlist": "Outside the local environment, the current IP must match a configured allowlist entry to sign in.", "password": { "strong": "Strong passwords require at least 12 characters with uppercase letters, lowercase letters, and numbers.", "weak": "Weak passwords require at least 6 characters with no character-combination requirement." }, "twoFactor": "After the allowlist check passes, the user binds or verifies Google Authenticator on the login page." },
     "prompts": { "delete": "Delete this user?" }
   },
   "userList": {
@@ -119,8 +119,8 @@
     "actions": { "detail": "View Details" },
     "changesCount": "{count} changes",
     "fields": { "actions": "Actions", "actionType": "Action Type", "actor": "Actor", "changes": "Changes", "createdAt": "Operation Time", "description": "Operation", "ipAddress": "IP Address", "method": "Method", "path": "Request Path", "subject": "Subject" },
-    "filters": { "actionCode": "Action Code", "actor": "Actor", "businessAction": "Business Action", "description": "Content Keyword", "ipAddress": "IP Address", "subjectId": "Subject ID", "subjectType": "Subject Type", "timeRange": "Operation Time" },
-    "placeholders": { "actor": "Select an operator", "businessAction": "Select or search for a business action" },
+    "filters": { "actionCode": "Action Code", "actor": "Actor", "businessAction": "Business Action", "description": "Content Keyword", "ipAddress": "IP Address", "subjectId": "Operation Object ID", "subjectType": "Subject Type", "timeRange": "Operation Time" },
+    "placeholders": { "actionType": "Select or search for an action type", "actor": "Select an operator", "businessAction": "Select or search for a business action" },
     "actionTypes": { "created": "Create", "deleted": "Delete", "other": "Other", "updated": "Update" },
     "actionNames": {
       "avatarUpdated": "Update Avatar", "passwordUpdated": "Update Password", "profileUpdated": "Update Profile", "sessionRevoked": "Revoke Session", "sessionsRevoked": "Revoke Other Sessions", "twoFactorConfirmed": "Confirm Two-Factor Authentication", "twoFactorDisabled": "Disable Two-Factor Authentication", "twoFactorEnabled": "Enable Two-Factor Authentication",
@@ -153,6 +153,11 @@
         "label": "Default page size",
         "placeholder": "Enter records per page"
       },
+      "passwordStrength": {
+        "description": "Control the password rule used when creating users, resetting passwords, changing a personal password, and creating administrators from the command line. Changes affect only passwords set afterward.",
+        "label": "Password type",
+        "placeholder": "Select a password type"
+      },
       "loginRememberMe": {
         "description": "Control whether the Remember Me option is displayed on the administration login page.",
         "label": "Show Remember Me"
@@ -174,6 +179,7 @@
       }
     },
     "options": {
+      "passwordStrength": { "strong": "Strong password", "weak": "Weak password" },
       "loginTheme": {
         "default": "Default Blue",
         "violet": "Violet",
@@ -194,6 +200,7 @@
       "loginDescriptionInvalid": "The login description must be text with no more than 500 characters.",
       "loginRememberMeInvalid": "The Show Remember Me setting is invalid.",
       "pageSizeInvalid": "The default page size must be an integer from 10 to 100.",
+      "passwordStrengthInvalid": "The password type must be weak or strong.",
       "saved": "System settings saved",
       "systemNameInvalid": "The system name must be text with no more than 500 characters."
     }

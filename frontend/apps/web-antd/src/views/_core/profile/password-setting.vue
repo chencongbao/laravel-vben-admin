@@ -1,15 +1,20 @@
 <script setup lang="ts">
 import type { Recordable } from '@vben/types';
 import type { VbenFormSchema } from '#/adapter/form';
+import type { AdminPasswordPolicy } from '#/api/core/user';
 
-import { computed } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 
 import { ProfilePasswordSetting, z } from '@vben/common-ui';
 
 import { message } from 'ant-design-vue';
 
 import { updatePasswordApi } from '#/api';
+import { getPasswordPolicyApi } from '#/api/core/user';
 import { $t } from '#/locales';
+
+const passwordPolicy = ref<AdminPasswordPolicy>({ min_length: 12, requires_mixed_case: true, requires_numbers: true, type: 'strong' });
+const passwordRequirement = computed(() => $t(`profile.password.requirements${passwordPolicy.value.type === 'strong' ? 'Strong' : 'Weak'}`));
 
 const formSchema = computed((): VbenFormSchema[] => [
   {
@@ -31,11 +36,12 @@ const formSchema = computed((): VbenFormSchema[] => [
     },
     fieldName: 'newPassword',
     label: $t('profile.password.new'),
-    rules: z
-      .string()
+    rules: z.string()
       .min(1, { message: $t('profile.password.newRequired') })
-      .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{12,}$/, {
-        message: $t('profile.password.requirements'),
+      .refine((value) => passwordPolicy.value.type === 'weak'
+        ? value.length >= 6
+        : /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{12,}$/.test(value), {
+        message: passwordRequirement.value,
       }),
   },
   {
@@ -63,6 +69,10 @@ const formSchema = computed((): VbenFormSchema[] => [
     },
   },
 ]);
+onMounted(async () => {
+  const result = await getPasswordPolicyApi();
+  passwordPolicy.value = result.password_policy;
+});
 async function submit(values: Recordable<any>) {
   await updatePasswordApi({
     current_password: values.currentPassword,

@@ -20,6 +20,11 @@ final class SystemSettings
                 'min' => 10,
                 'max' => 100,
             ],
+            'system.password_strength' => [
+                'type' => 'enum',
+                'default' => 'strong',
+                'values' => ['weak', 'strong'],
+            ],
             'system.login_remember_me' => [
                 'type' => 'boolean',
                 'default' => true,

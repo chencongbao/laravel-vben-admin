@@ -175,11 +175,16 @@ final class ActivityLogTest extends TestCase
             ->assertJsonFragment(['username' => 'admin']);
         $this->getJson('/api/admin/system/audit-logs/actions')
             ->assertOk()
-            ->assertJsonPath('actions.0.code', 'system.user.deleted')
-            ->assertJsonPath('actions.0.label_key', 'system.auditLog.actionNames.userDeleted')
-            ->assertJsonPath('actions.0.type', 'deleted')
-            ->assertJsonPath('actions.1.code', 'system.user.updated')
-            ->assertJsonPath('actions.1.label_key', 'system.auditLog.actionNames.userUpdated');
+            ->assertJsonFragment([
+                'code' => 'system.user.deleted',
+                'label_key' => 'system.auditLog.actionNames.userDeleted',
+                'module' => 'system.users',
+                'type' => 'deleted',
+            ])
+            ->assertJsonFragment([
+                'code' => 'system.user.updated',
+                'label_key' => 'system.auditLog.actionNames.userUpdated',
+            ]);
         $this->getJson('/api/admin/system/audit-logs?per_page=100')
             ->assertOk()
             ->assertJsonFragment(['id' => $superActivity->getKey()])
@@ -192,9 +197,14 @@ final class ActivityLogTest extends TestCase
             ->assertJsonFragment(['username' => 'admin']);
         $this->getJson('/api/admin/system/audit-logs/actions')
             ->assertOk()
-            ->assertJsonCount(1, 'actions')
-            ->assertJsonPath('actions.0.code', 'system.user.updated')
-            ->assertJsonPath('actions.0.label_key', 'system.auditLog.actionNames.userUpdated');
+            ->assertJsonFragment([
+                'code' => 'system.user.deleted',
+                'label_key' => 'system.auditLog.actionNames.userDeleted',
+            ])
+            ->assertJsonFragment([
+                'code' => 'system.user.updated',
+                'label_key' => 'system.auditLog.actionNames.userUpdated',
+            ]);
         $this->getJson('/api/admin/system/audit-logs?per_page=100')
             ->assertOk()
             ->assertJsonMissing(['id' => $superActivity->getKey()])
@@ -245,7 +255,7 @@ final class ActivityLogTest extends TestCase
         self::assertSame('/api/admin/system/settings', $activity->path);
 
         Sanctum::actingAs($actor, ['admin']);
-        $this->getJson('/api/admin/system/audit-logs?id='.$activity->getKey().'&action=system.setting.updated&actor=cmsadmin&subject_type=AdminUser&subject_id='.$actor->getKey().'&description=setting&ip_address=203.0.113.10')
+        $this->getJson('/api/admin/system/audit-logs?id='.$activity->getKey().'&action=system.setting.updated&action_type=updated&actor=cmsadmin&subject_type=AdminUser&subject_id='.$actor->getKey().'&description=setting&ip_address=203.0.113.10')
             ->assertOk()
             ->assertJsonPath('total', 1)
             ->assertJsonPath('data.0.id', $activity->getKey())
@@ -258,6 +268,10 @@ final class ActivityLogTest extends TestCase
             ->assertJsonPath('data.0.method', 'PUT')
             ->assertJsonPath('data.0.path', '/api/admin/system/settings')
             ->assertJsonMissingPath('data.0.request_input');
+
+        $this->getJson('/api/admin/system/audit-logs?action_type=deleted')
+            ->assertOk()
+            ->assertJsonPath('total', 0);
 
         $this->getJson('/api/admin/system/audit-logs/'.$activity->getKey())
             ->assertOk()
@@ -280,10 +294,7 @@ final class ActivityLogTest extends TestCase
         Sanctum::actingAs($actor, ['admin']);
         $this->getJson('/api/admin/system/audit-logs/actions')
             ->assertOk()
-            ->assertJsonPath('actions.0.code', 'project.custom.completed')
-            ->assertJsonPath('actions.0.label_key', null)
-            ->assertJsonPath('actions.0.module', null)
-            ->assertJsonPath('actions.0.type', null);
+            ->assertJsonMissing(['code' => 'project.custom.completed']);
 
         $this->getJson('/api/admin/system/audit-logs?action=project.custom.completed')
             ->assertOk()

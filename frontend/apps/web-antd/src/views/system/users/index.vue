@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import type { TableColumnsType } from 'ant-design-vue';
+import type { AdminPasswordPolicy } from '#/api/core/user';
 
 import { computed, onMounted, reactive, ref } from 'vue';
 
@@ -9,6 +10,7 @@ import { useUserStore } from '@vben/stores';
 import { Card, Form, FormItem, Input, InputNumber, message, Modal, Popconfirm, Select, Space, Switch, Table, Tag } from 'ant-design-vue';
 
 import { createResource, deleteResource, getCollection, getResource, updateResource } from '#/api/system';
+import { getPasswordPolicyApi } from '#/api/core/user';
 import ListRefreshButton from '#/components/system/list-refresh-button.vue';
 import ListSearchField from '#/components/system/list-search-field.vue';
 import ListSearchPanel from '#/components/system/list-search-panel.vue';
@@ -42,6 +44,7 @@ const editingId = ref<number>();
 const editingRole = ref<Role>();
 const users = ref<AdminUser[]>([]);
 const roles = ref<Role[]>([]);
+const passwordPolicy = ref<AdminPasswordPolicy>({ min_length: 12, requires_mixed_case: true, requires_numbers: true, type: 'strong' });
 const pagination = reactive(createAdminPagination());
 const searchId = ref<number>(); const showFilters = ref(true);
 const form = reactive({
@@ -75,6 +78,7 @@ const roleOptions = computed(() => {
   }
   return availableRoles.map((role) => ({ label: `${roleName(role)} (${role.code})`, value: role.id }));
 });
+const passwordHelp = computed(() => $t(`system.userForm.tips.password.${passwordPolicy.value.type}`));
 function roleName(role: Role) {
   const roleNameKey = `system.roleNames.${role.code}`;
   const localizedName = $t(roleNameKey);
@@ -113,6 +117,14 @@ async function save() {
   if (!form.username || !form.name || (!editingId.value && !form.password)) {
     message.warning($t('system.userForm.messages.required')); return;
   }
+  if (form.password) {
+    const validPassword = passwordPolicy.value.type === 'weak'
+      ? form.password.length >= 6
+      : /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{12,}$/.test(form.password);
+    if (!validPassword) {
+      message.warning(passwordHelp.value); return;
+    }
+  }
   const whitelist = [...new Set(form.login_ip_whitelist.split(/[,\n]/).map((item) => item.trim()).filter(Boolean))];
   saving.value = true;
   try {
@@ -141,7 +153,11 @@ function changePage(page: { current?: number; pageSize?: number }) {
 }
 function search() { pagination.current = 1; void load(); }
 function resetSearch() { searchId.value = undefined; search(); }
-onMounted(load);
+onMounted(async () => {
+  const result = await getPasswordPolicyApi();
+  passwordPolicy.value = result.password_policy;
+  await load();
+});
 </script>
 
 <template>
@@ -174,7 +190,7 @@ onMounted(load);
         <FormItem :label="$t('system.userForm.fields.name')" required><Input v-model:value="form.name" /></FormItem>
         <FormItem :label="editingId ? $t('system.userForm.fields.newPassword') : $t('system.userForm.fields.password')" :required="!editingId">
           <Input.Password v-model:value="form.password" />
-          <div class="setting-tip">{{ $t('system.userForm.tips.password') }}</div>
+          <div class="setting-tip">{{ passwordHelp }}</div>
         </FormItem>
         <FormItem v-if="showRoleField" :label="$t('system.userForm.fields.role')"><Select v-model:value="form.role_id" allow-clear :options="roleOptions" /></FormItem>
         <FormItem v-if="showStatusField" :label="$t('system.userForm.fields.active')"><Switch v-model:checked="form.is_active" /></FormItem>

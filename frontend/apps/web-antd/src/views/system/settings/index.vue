@@ -1,4 +1,6 @@
 <script lang="ts" setup>
+import type { SettingItem } from '#/api/system';
+
 import { onMounted, ref } from 'vue';
 
 import { Page } from '@vben/common-ui';
@@ -13,10 +15,11 @@ import {
   Input,
   InputNumber,
   message,
+  Select,
   Switch,
 } from 'ant-design-vue';
 
-import { getCollection, type SettingItem, updateSettings } from '#/api/system';
+import { getCollection, updateSettings } from '#/api/system';
 import { $t } from '#/locales';
 import { setAdminDefaultPageSize } from '#/utils/pagination';
 
@@ -37,6 +40,11 @@ const settingMeta: Record<
     description: 'system.settingsForm.fields.pageSize.description',
     label: 'system.settingsForm.fields.pageSize.label',
     placeholder: 'system.settingsForm.fields.pageSize.placeholder',
+  },
+  'system.password_strength': {
+    description: 'system.settingsForm.fields.passwordStrength.description',
+    label: 'system.settingsForm.fields.passwordStrength.label',
+    placeholder: 'system.settingsForm.fields.passwordStrength.placeholder',
   },
   'system.login_remember_me': {
     description: 'system.settingsForm.fields.loginRememberMe.description',
@@ -132,6 +140,16 @@ onMounted(load);
                   translate(settingText(item.key, 'placeholder'), '')
                 "
                 class="w-full"
+              />
+              <Select
+                v-else-if="item.key === 'system.password_strength'"
+                :id="`setting-${item.key}`"
+                v-model:value="item.value"
+                :options="[
+                  { label: $t('system.settingsForm.options.passwordStrength.weak'), value: 'weak' },
+                  { label: $t('system.settingsForm.options.passwordStrength.strong'), value: 'strong' },
+                ]"
+                :placeholder="translate(settingText(item.key, 'placeholder'), '')"
               />
               <Input
                 v-else

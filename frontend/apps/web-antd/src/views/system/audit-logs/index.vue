@@ -71,7 +71,7 @@ const detailOpen = ref(false);
 const dateRange = ref<[Dayjs, Dayjs]>();
 const actions = ref<ActionOption[]>([]);
 const operators = ref<Operator[]>([]);
-const filters = reactive({ action: '', actor_id: undefined as number | undefined, description: '', id: undefined as number | undefined, ip_address: '', subject_id: undefined as number | undefined, subject_type: '' });
+const filters = reactive({ action: '', action_type: '', actor_id: undefined as number | undefined, id: undefined as number | undefined, ip_address: '', subject_id: undefined as number | undefined });
 const pagination = reactive(createAdminPagination());
 const { setTableRef, tableScrollY } = useAdminTableScrollY();
 
@@ -162,7 +162,7 @@ async function load() {
 }
 function search() { pagination.current = 1; void load(); }
 function reset() {
-  Object.assign(filters, { action: '', actor_id: undefined, description: '', id: undefined, ip_address: '', subject_id: undefined, subject_type: '' });
+  Object.assign(filters, { action: '', action_type: '', actor_id: undefined, id: undefined, ip_address: '', subject_id: undefined });
   dateRange.value = undefined;
   search();
 }
@@ -202,9 +202,8 @@ onMounted(async () => {
       <ListSearchField :label="$t('common.fields.id')"><InputNumber v-model:value="filters.id" :min="1" /></ListSearchField>
       <ListSearchField :label="$t('system.auditLog.filters.actor')"><Select v-model:value="filters.actor_id" allow-clear show-search :filter-option="(input, option) => String(option?.label ?? '').toLowerCase().includes(input.toLowerCase())" :options="operators.map((operator) => ({ label: operator.name ? `${operator.name}（${operator.username}）` : operator.username, value: operator.id }))" :placeholder="$t('system.auditLog.placeholders.actor')" class="w-full" /></ListSearchField>
       <ListSearchField :label="$t('system.auditLog.filters.businessAction')"><Select v-model:value="filters.action" allow-clear show-search :filter-option="(input, option) => String(option?.label ?? '').toLowerCase().includes(input.toLowerCase())" :options="actions.map((action) => ({ label: actionLabel(action), value: action.code }))" :placeholder="$t('system.auditLog.placeholders.businessAction')" class="w-full" /></ListSearchField>
-      <ListSearchField :label="$t('system.auditLog.filters.subjectType')"><Input v-model:value="filters.subject_type" allow-clear @press-enter="search" /></ListSearchField>
+      <ListSearchField :label="$t('system.auditLog.fields.actionType')"><Select v-model:value="filters.action_type" allow-clear show-search :filter-option="(input, option) => String(option?.label ?? '').toLowerCase().includes(input.toLowerCase())" :options="(['created', 'updated', 'deleted', 'other'] as const).map((type) => ({ label: actionTypeLabel(type), value: type }))" :placeholder="$t('system.auditLog.placeholders.actionType')" class="w-full" /></ListSearchField>
       <ListSearchField :label="$t('system.auditLog.filters.subjectId')"><InputNumber v-model:value="filters.subject_id" :min="1" /></ListSearchField>
-      <ListSearchField :label="$t('system.auditLog.filters.description')"><Input v-model:value="filters.description" allow-clear @press-enter="search" /></ListSearchField>
       <ListSearchField :label="$t('system.auditLog.filters.ipAddress')"><Input v-model:value="filters.ip_address" allow-clear @press-enter="search" /></ListSearchField>
       <ListSearchField :label="$t('system.auditLog.filters.timeRange')"><RangePicker v-model:value="dateRange" class="w-full" /></ListSearchField>
       <template #actions>

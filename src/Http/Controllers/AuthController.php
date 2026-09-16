@@ -9,13 +9,13 @@ use Chencongbao\LaravelVbenAdmin\Services\LoginCaptcha;
 use Chencongbao\LaravelVbenAdmin\Services\LoginClientClassifier;
 use Chencongbao\LaravelVbenAdmin\Services\LoginIpWhitelist;
 use Chencongbao\LaravelVbenAdmin\Services\TwoFactorAuthentication;
+use Chencongbao\LaravelVbenAdmin\Support\AdminPasswordPolicy;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\ValidationException;
 
 final class AuthController extends Controller
@@ -217,10 +217,25 @@ final class AuthController extends Controller
         $before = $user->only(['name', 'avatar']);
         $oldAvatar = $user->avatar;
         $user->update($data);
-        if ($oldAvatar !== $user->avatar) {
+        $after = $user->only(['name', 'avatar']);
+        $nameChanged = $before['name'] !== $after['name'];
+        $avatarChanged = $before['avatar'] !== $after['avatar'];
+
+        if ($avatarChanged) {
             $this->deleteUploadedAvatar($user, $oldAvatar);
         }
-        $this->audit->record($user, 'auth.profile.updated', $user, ['before' => $before, 'after' => $user->only(['name', 'avatar'])]);
+        if ($nameChanged) {
+            $this->audit->record($user, 'auth.profile.updated', $user, [
+                'before' => ['name' => $before['name']],
+                'after' => ['name' => $after['name']],
+            ]);
+        }
+        if ($avatarChanged) {
+            $this->audit->record($user, 'auth.avatar.updated', $user, [
+                'before' => ['avatar' => $before['avatar']],
+                'after' => ['avatar' => $after['avatar']],
+            ]);
+        }
 
         return response()->json(['user' => $this->userPayload($user)]);
     }
@@ -231,6 +246,11 @@ final class AuthController extends Controller
             'id' => 'default:'.$id,
             'url' => $this->defaultAvatarUrl($id),
         ])]);
+    }
+
+    public function passwordPolicy(): JsonResponse
+    {
+        return response()->json(['password_policy' => AdminPasswordPolicy::payload()]);
     }
 
     public function uploadAvatar(Request $request): JsonResponse
@@ -266,7 +286,7 @@ final class AuthController extends Controller
         $user = $request->user();
         $data = $request->validate([
             'current_password' => ['required', 'string'],
-            'password' => ['required', 'confirmed', 'different:current_password', Password::min(12)->letters()->mixedCase()->numbers()],
+            'password' => ['required', 'confirmed', 'different:current_password', AdminPasswordPolicy::rule()],
         ]);
 
         if (! Hash::check($data['current_password'], $user->password)) {

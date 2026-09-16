@@ -104,6 +104,7 @@ final class InstallCommandTest extends TestCase
         self::assertSame('default', SystemSettings::value('system.login_theme'));
         self::assertSame('panel-right', SystemSettings::value('system.login_layout'));
         self::assertTrue(SystemSettings::value('system.login_remember_me'));
+        self::assertSame('strong', SystemSettings::value('system.password_strength'));
         self::assertSame('安全、高效、易扩展的后台管理平台', SystemSettings::value('system.login_description'));
         self::assertSame('default', SystemSettings::value('system.admin_theme'));
         self::assertSame('light', SystemSettings::value('system.admin_theme_mode'));

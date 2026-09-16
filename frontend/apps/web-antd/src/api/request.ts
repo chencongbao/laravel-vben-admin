@@ -66,6 +66,8 @@ const validationErrorKeys: Record<string, string> = {
     'system.settingsForm.messages.loginRememberMeInvalid',
   'settings.system.name': 'system.settingsForm.messages.systemNameInvalid',
   'settings.system.page_size': 'system.settingsForm.messages.pageSizeInvalid',
+  'settings.system.password_strength':
+    'system.settingsForm.messages.passwordStrengthInvalid',
 };
 
 function createRequestClient(baseURL: string, options?: RequestClientOptions) {

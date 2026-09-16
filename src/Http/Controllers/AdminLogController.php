@@ -23,6 +23,7 @@ final class AdminLogController extends Controller
         $filters = $request->validate([
             'id' => ['nullable', 'integer', 'min:1'],
             'action' => ['nullable', 'string', 'max:160'],
+            'action_type' => ['nullable', 'string', 'in:created,updated,deleted,other'],
             'actor' => ['nullable', 'string', 'max:120'],
             'actor_id' => ['nullable', 'integer', 'min:1'],
             'description' => ['nullable', 'string', 'max:160'],
@@ -44,6 +45,7 @@ final class AdminLogController extends Controller
             ->when(! $canViewSuperAdministratorLogs, fn ($query) => $this->excludeSuperAdministratorActivities($query, $superAdministratorIds))
             ->when($id, fn ($query) => $query->whereKey($id))
             ->when($filters['action'] ?? null, fn ($query, $action) => $query->where('event', $action))
+            ->when($filters['action_type'] ?? null, fn ($query, $actionType) => $query->where('properties->action_type', $actionType))
             ->when($filters['actor'] ?? null, function ($query, $actor): void {
                 $query->whereHasMorph('causer', [AdminUser::class], function ($actorQuery) use ($actor): void {
                     $actorQuery->where(function ($nested) use ($actor): void {
@@ -88,22 +90,9 @@ final class AdminLogController extends Controller
         return $this->operatorOptions($request);
     }
 
-    public function auditActions(Request $request): JsonResponse
+    public function auditActions(): JsonResponse
     {
-        /** @var AdminUser $actor */
-        $actor = $request->user();
-        $actions = Activity::query()
-            ->where('log_name', config('laravel-vben-admin.activity_log.log_name', 'admin'))
-            ->where('log_type', 'operation')
-            ->whereNotNull('event')
-            ->where('event', '<>', '')
-            ->when(! $this->privilegeGuard->isSuperAdmin($actor), fn ($query) => $this->excludeSuperAdministratorActivities($query, $this->superAdministratorIds()))
-            ->distinct()
-            ->orderBy('event')
-            ->pluck('event')
-            ->values();
-
-        return response()->json(['actions' => $this->auditRegistry->actions($actions)]);
+        return response()->json(['actions' => $this->auditRegistry->allActions()]);
     }
 
     private function auditPayload(Activity $activity, bool $withDetails): array

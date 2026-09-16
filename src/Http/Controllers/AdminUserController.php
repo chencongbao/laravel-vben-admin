@@ -9,13 +9,13 @@ use Chencongbao\LaravelVbenAdmin\Services\LoginIpWhitelist;
 use Chencongbao\LaravelVbenAdmin\Services\PrivilegeAssignmentGuard;
 use Chencongbao\LaravelVbenAdmin\Services\TwoFactorAuthentication;
 use Chencongbao\LaravelVbenAdmin\Support\AdminPagination;
+use Chencongbao\LaravelVbenAdmin\Support\AdminPasswordPolicy;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\Rules\Password;
 
 final class AdminUserController extends Controller
 {
@@ -62,7 +62,7 @@ final class AdminUserController extends Controller
         $data = $request->validate([
             'username' => ['required', 'string', 'max:120', Rule::unique(config('laravel-vben-admin.tables.users', 'admin_users'), 'username')],
             'name' => ['required', 'string', 'max:120'],
-            'password' => ['required', 'string', Password::min(12)->letters()->mixedCase()->numbers()],
+            'password' => ['required', 'string', AdminPasswordPolicy::rule()],
             'is_active' => ['sometimes', 'boolean'],
             'two_factor_enabled' => ['sometimes', 'boolean'],
             'login_ip_whitelist' => ['sometimes', 'array', 'max:100'],
@@ -113,7 +113,7 @@ final class AdminUserController extends Controller
         $data = $request->validate([
             'username' => ['sometimes', 'string', 'max:120', Rule::unique(config('laravel-vben-admin.tables.users', 'admin_users'), 'username')->ignore($adminUser->getKey())],
             'name' => ['sometimes', 'string', 'max:120'],
-            'password' => ['sometimes', 'string', Password::min(12)->letters()->mixedCase()->numbers()],
+            'password' => ['sometimes', 'string', AdminPasswordPolicy::rule()],
             'is_active' => ['sometimes', 'boolean'],
             'two_factor_enabled' => ['sometimes', 'boolean'],
             'login_ip_whitelist' => ['sometimes', 'array', 'max:100'],
