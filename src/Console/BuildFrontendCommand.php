@@ -3,6 +3,7 @@
 namespace Chencongbao\LaravelVbenAdmin\Console;
 
 use Chencongbao\LaravelVbenAdmin\Support\AdminPath;
+use Chencongbao\LaravelVbenAdmin\Support\FrontendRuntimeRequirements;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 use Symfony\Component\Process\Process;
@@ -35,13 +36,38 @@ final class BuildFrontendCommand extends Command
             return self::FAILURE;
         }
 
-        if (! $this->runProcess(['node', '--version'], $frontend) || ! $this->runProcess(['pnpm', '--version'], $frontend)) {
+        $nodeVersion = $this->readVersion(['node', '--version'], $frontend);
+        $pnpmVersion = $this->readVersion(['pnpm', '--version'], $frontend);
+
+        if ($nodeVersion === null || $pnpmVersion === null) {
             $this->components->error('Node.js and pnpm are required to build the administration frontend.');
 
             return self::FAILURE;
         }
 
-        if ($this->option('install') && ! $this->runProcess(['pnpm', 'install', '--frozen-lockfile'], $frontend)) {
+        if (! FrontendRuntimeRequirements::supportsNode($nodeVersion)) {
+            $this->components->error(
+                "Unsupported Node.js [{$nodeVersion}]. This frontend requires Node.js ".FrontendRuntimeRequirements::NODE.'. Switch Node.js and retry.'
+            );
+
+            return self::FAILURE;
+        }
+
+        if (! FrontendRuntimeRequirements::supportsPnpm($pnpmVersion)) {
+            $this->components->error(
+                "Unsupported pnpm [{$pnpmVersion}]. This frontend requires pnpm ".FrontendRuntimeRequirements::PNPM.'. Upgrade pnpm and retry.'
+            );
+
+            return self::FAILURE;
+        }
+
+        $this->line("Node.js {$nodeVersion}; pnpm {$pnpmVersion}");
+
+        if ($this->option('install') && ! $this->runProcess(
+            ['pnpm', 'install', '--frozen-lockfile', '--force'],
+            $frontend,
+            ['CI' => 'true'],
+        )) {
             return self::FAILURE;
         }
 
@@ -101,6 +127,23 @@ final class BuildFrontendCommand extends Command
     private function resolvePath(string $option, string $default): string
     {
         return rtrim(trim($option) !== '' ? trim($option) : $default, DIRECTORY_SEPARATOR);
+    }
+
+    /** @param list<string> $command */
+    private function readVersion(array $command, string $workingDirectory): ?string
+    {
+        $process = new Process($command, $workingDirectory, null, null, 30);
+        $process->run();
+
+        if (! $process->isSuccessful()) {
+            return null;
+        }
+
+        $version = ltrim(trim($process->getOutput()), 'vV');
+
+        return preg_match('/^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/', $version) === 1
+            ? $version
+            : null;
     }
 
     private function syncProjectExtensions(string $projectRoot, string $buildRoot): void

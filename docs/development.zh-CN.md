@@ -132,6 +132,8 @@ frontend/apps/web-antd/src/api/core/menu.ts
 
 宿主 API 路由统一放在 `routes/admin.php`。包会自动添加 `api` 中间件组和 `/api/admin` 前缀，项目路由仍须声明 `auth:sanctum`、`admin.user` 及逐操作的 `admin.permission:*` 校验。
 
+前端构建环境必须使用 Node.js `^22.18.0 || ^24.0.0` 和 pnpm `>=10.0.0`。`vben-admin:build` 会在执行依赖安装前检查版本；不得为兼容 Node.js 18 而跳过 workspace 的 `postinstall`，否则生成的内部包可能不完整。
+
 页面中的操作按钮继续使用与服务端相同的权限代码。按钮隐藏只改善体验，不能作为安全控制。
 
 ## 5. 数据库开发规则

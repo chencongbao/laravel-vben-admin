@@ -110,6 +110,20 @@ php artisan vben-admin:build --install --publish --force
 
 依赖已安装时省略 `--install`。本地需要使用另一个共享前端工作区时通过 `--frontend=/absolute/path/to/frontend` 指定。构建命令会绕过 Turbo 结果缓存，避免项目扩展变化被旧缓存遮蔽。
 
+构建命令会在安装依赖前校验 Node.js 和 pnpm 版本。不支持的版本会直接停止，并显示实际版本和要求，不再进入 `postinstall` 后才失败。`--install` 会按照锁文件强制重建依赖，因此也可修复曾经使用错误 Node.js 版本安装后遗留的缺失原生绑定。如果看到 Node.js 18 等版本错误，可使用项目现有的 Node 版本管理器切换：
+
+```bash
+nvm install 22.23.0
+nvm use 22.23.0
+corepack enable
+corepack prepare pnpm@10.33.4 --activate
+node --version
+pnpm --version
+php artisan vben-admin:build --install --publish --force
+```
+
+`node --version` 必须满足 `^22.18.0 || ^24.0.0`，`pnpm --version` 必须至少为 `10.0.0`。如果没有使用 nvm，请通过服务器实际采用的 Node.js 安装方式升级；不要通过忽略 engines 或跳过 `postinstall` 强行安装，因为构建依赖本身不支持 Node.js 18。
+
 ### 项目直接修改工作台
 
 工作台允许由每个 Laravel 项目完整接管，不需要修改共享包或 `vendor`。在宿主项目根目录执行一次：
