@@ -3,7 +3,15 @@ import { computed, onMounted, reactive, ref } from 'vue';
 
 import { Page } from '@vben/common-ui';
 
-import { Card, Input, InputNumber, Select, Table, Tag, Tooltip } from 'ant-design-vue';
+import {
+  Card,
+  Input,
+  InputNumber,
+  Select,
+  Table,
+  Tag,
+  Tooltip,
+} from 'ant-design-vue';
 
 import { getResource } from '#/api/system';
 import AutoRefresh from '#/components/system/auto-refresh.vue';
@@ -33,26 +41,53 @@ const props = defineProps<{
   permission?: string;
   title: string;
 }>();
-const loading = ref(false); const rows = ref<Record<string, any>[]>([]);
+const loading = ref(false);
+const rows = ref<Record<string, any>[]>([]);
 const { setTableRef, tableScrollY } = useAdminTableScrollY();
 const showFilters = ref(true);
 const values = reactive<Record<string, any>>({});
 const pagination = reactive(createAdminPagination());
-const effectiveFilters = computed<LogFilter[]>(() => props.filters.some((filter) => filter.key === 'id')
-  ? props.filters
-  : [{ key: 'id', label: $t('common.fields.id'), type: 'number' }, ...props.filters]);
+const effectiveFilters = computed<LogFilter[]>(() =>
+  props.filters.some((filter) => filter.key === 'id')
+    ? props.filters
+    : [
+        { key: 'id', label: $t('common.fields.id'), type: 'number' },
+        ...props.filters,
+      ],
+);
 
 async function load() {
   loading.value = true;
   try {
-    const params = Object.fromEntries(Object.entries(values).filter(([, value]) => value !== '' && value !== undefined));
-    const result = await getResource(props.path, { ...params, page: pagination.current, per_page: pagination.pageSize });
-    rows.value = result.data; pagination.total = result.total;
-  } finally { loading.value = false; }
+    const params = Object.fromEntries(
+      Object.entries(values).filter(
+        ([, value]) => value !== '' && value !== undefined,
+      ),
+    );
+    const result = await getResource(props.path, {
+      ...params,
+      page: pagination.current,
+      per_page: pagination.pageSize,
+    });
+    rows.value = result.data;
+    pagination.total = result.total;
+  } finally {
+    loading.value = false;
+  }
 }
-function search() { pagination.current = 1; void load(); }
-function reset() { Object.keys(values).forEach((key) => delete values[key]); search(); }
-function changePage(page: { current?: number; pageSize?: number }) { pagination.current = page.current ?? 1; pagination.pageSize = page.pageSize ?? pagination.pageSize; void load(); }
+function search() {
+  pagination.current = 1;
+  void load();
+}
+function reset() {
+  Object.keys(values).forEach((key) => delete values[key]);
+  search();
+}
+function changePage(page: { current?: number; pageSize?: number }) {
+  pagination.current = page.current ?? 1;
+  pagination.pageSize = page.pageSize ?? pagination.pageSize;
+  void load();
+}
 onMounted(load);
 </script>
 
@@ -61,36 +96,115 @@ onMounted(load);
     <ListToolbar>
       <template #left>
         <ListRefreshButton :loading="loading" />
-        <PermissionButton icon="lucide:filter" @click="showFilters = !showFilters">{{ $t('common.actions.filter') }}</PermissionButton>
+        <PermissionButton
+          icon="lucide:filter"
+          @click="showFilters = !showFilters"
+          >{{ $t('common.actions.filter') }}</PermissionButton
+        >
       </template>
       <template #right>
         <AutoRefresh :loading="loading" :storage-key="path" />
-        <TableExportButton :columns="columns" :filename="title" :permission="permission" :rows="rows" />
+        <TableExportButton
+          :columns="columns"
+          :filename="title"
+          :permission="permission"
+          :rows="rows"
+        />
         <slot name="actions"></slot>
       </template>
     </ListToolbar>
     <ListSearchPanel v-if="showFilters">
-      <ListSearchField v-for="filter in effectiveFilters" :key="filter.key" :label="filter.label">
-        <Select v-if="filter.options" v-model:value="values[filter.key]" allow-clear show-search :filter-option="(input, option) => String(option?.label ?? '').toLowerCase().includes(input.toLowerCase())" :options="filter.options" :placeholder="filter.label" class="w-full" />
-        <InputNumber v-else-if="filter.type === 'number'" v-model:value="values[filter.key]" :min="1" :placeholder="filter.label" />
-        <Input v-else v-model:value="values[filter.key]" allow-clear :placeholder="filter.label" @press-enter="search" />
+      <ListSearchField
+        v-for="filter in effectiveFilters"
+        :key="filter.key"
+        :label="filter.label"
+      >
+        <Select
+          v-if="filter.options"
+          v-model:value="values[filter.key]"
+          allow-clear
+          show-search
+          :filter-option="
+            (input, option) =>
+              String(option?.label ?? '')
+                .toLowerCase()
+                .includes(input.toLowerCase())
+          "
+          :options="filter.options"
+          :placeholder="filter.label"
+          class="w-full"
+        />
+        <InputNumber
+          v-else-if="filter.type === 'number'"
+          v-model:value="values[filter.key]"
+          :min="1"
+          :placeholder="filter.label"
+        />
+        <Input
+          v-else
+          v-model:value="values[filter.key]"
+          allow-clear
+          :placeholder="filter.label"
+          @press-enter="search"
+        />
       </ListSearchField>
       <template #actions>
-        <PermissionButton icon="lucide:search" type="primary" @click="search">{{ $t('common.actions.search') }}</PermissionButton>
-        <PermissionButton icon="lucide:rotate-ccw" @click="reset">{{ $t('common.actions.reset') }}</PermissionButton>
+        <PermissionButton icon="lucide:search" type="primary" @click="search">{{
+          $t('common.actions.search')
+        }}</PermissionButton>
+        <PermissionButton icon="lucide:rotate-ccw" @click="reset">{{
+          $t('common.actions.reset')
+        }}</PermissionButton>
       </template>
     </ListSearchPanel>
-    <Card :body-style="{ padding: 0 }" :bordered="false" class="admin-table-card">
-      <Table :ref="setTableRef" bordered class="admin-data-table" :columns="columns" :data-source="rows" :loading="loading" :pagination="pagination" row-key="id" :scroll="{ y: tableScrollY }" @change="changePage">
-        <template #bodyCell="{ column, text }">
-          <Tag v-if="column.dataIndex === 'succeeded'" :color="text ? 'green' : 'red'">
-            {{ text ? $t('system.loginLog.states.succeeded') : $t('system.loginLog.states.failed') }}
+    <Card
+      :body-style="{ padding: 0 }"
+      :bordered="false"
+      class="admin-table-card"
+    >
+      <Table
+        :ref="setTableRef"
+        bordered
+        class="admin-data-table"
+        :columns="columns"
+        :data-source="rows"
+        :loading="loading"
+        :pagination="pagination"
+        row-key="id"
+        :scroll="{ y: tableScrollY }"
+        @change="changePage"
+      >
+        <template #bodyCell="{ column, record, text }">
+          <slot
+            v-if="column.dataIndex === 'action_button'"
+            name="row-actions"
+            :record="record"
+          ></slot>
+          <Tag
+            v-else-if="column.dataIndex === 'succeeded'"
+            :color="text ? 'green' : 'red'"
+          >
+            {{
+              text
+                ? $t('system.loginLog.states.succeeded')
+                : $t('system.loginLog.states.failed')
+            }}
           </Tag>
-          <Tooltip v-else-if="column.dataIndex === 'user_agent' && text" :title="String(text)">
+          <Tooltip
+            v-else-if="column.dataIndex === 'user_agent' && text"
+            :title="String(text)"
+          >
             <span class="block truncate">{{ text }}</span>
           </Tooltip>
-          <span v-else-if="isDateTimeField(String(column.dataIndex ?? ''))">{{ formatBeijingDateTime(text) }}</span>
-          <code v-else-if="column.dataIndex === 'changes' || column.dataIndex === 'context'">{{ JSON.stringify(text) }}</code>
+          <span v-else-if="isDateTimeField(String(column.dataIndex ?? ''))">{{
+            formatBeijingDateTime(text)
+          }}</span>
+          <code
+            v-else-if="
+              column.dataIndex === 'changes' || column.dataIndex === 'context'
+            "
+            >{{ JSON.stringify(text) }}</code
+          >
         </template>
       </Table>
     </Card>
