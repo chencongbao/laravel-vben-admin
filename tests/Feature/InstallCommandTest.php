@@ -65,8 +65,7 @@ final class InstallCommandTest extends TestCase
                     'system.permission.delete',
                     'system.permission.update',
                     'system.permission.view',
-                    'system.security.update',
-                    'system.security.view',
+                    'system.theme-setting.view',
                 ])
                 ->pluck('id')
                 ->all(),
@@ -75,13 +74,13 @@ final class InstallCommandTest extends TestCase
         self::assertEqualsCanonicalizing(
             AdminMenu::query()
                 ->where('is_system', true)
-                ->whereNotIn('code', ['dashboard.workspace', 'system.menus', 'system.permissions', 'system.security'])
+                ->whereNotIn('code', ['dashboard.workspace', 'system.menus', 'system.permissions', 'system.theme-settings'])
                 ->pluck('id')
                 ->all(),
             $manager->menus()->pluck('id')->all(),
         );
         self::assertFalse($manager->menus()->where('code', 'dashboard.workspace')->exists());
-        self::assertFalse($manager->menus()->whereIn('code', ['system.menus', 'system.permissions', 'system.security'])->exists());
+        self::assertFalse($manager->menus()->whereIn('code', ['system.menus', 'system.permissions', 'system.theme-settings'])->exists());
         self::assertFalse($manager->permissions()->whereIn('code', [
             'system.menu.create',
             'system.menu.delete',
@@ -91,9 +90,13 @@ final class InstallCommandTest extends TestCase
             'system.permission.delete',
             'system.permission.update',
             'system.permission.view',
+            'system.theme-setting.view',
+        ])->exists());
+        self::assertTrue($manager->menus()->where('code', 'system.security')->exists());
+        self::assertSame(2, $manager->permissions()->whereIn('code', [
             'system.security.update',
             'system.security.view',
-        ])->exists());
+        ])->count());
         self::assertTrue(Schema::hasColumns('personal_access_tokens', ['ip_address', 'user_agent']));
         self::assertTrue(Schema::hasColumns('activity_log', ['log_name', 'log_type', 'event', 'attribute_changes', 'properties']));
         self::assertFalse(Schema::hasTable('admin_login_logs'));

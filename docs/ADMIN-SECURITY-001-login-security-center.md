@@ -46,7 +46,7 @@
 - `system.security.view`：查看页面和列表。
 - `system.security.update`：处理风险、封禁和解除 IP。
 - 页面菜单关联 `system.security.view`。
-- 超级管理员隐式拥有全部权限；内置 `manager` 默认不获得菜单和上述权限，后续可由超级管理员显式授权。
+- 超级管理员隐式拥有全部权限；内置 `manager` 默认获得安全中心菜单及上述查看、处理权限。
 
 ## 安全规则
 

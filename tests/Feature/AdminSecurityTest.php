@@ -44,16 +44,13 @@ final class AdminSecurityTest extends TestCase
         self::assertTrue(AdminSecurityEvent::query()->where('code', 'auth.login.risk_threshold')->exists());
     }
 
-    public function test_security_center_requires_permissions_and_writes_audit_logs(): void
+    public function test_default_manager_can_use_security_center_and_writes_audit_logs(): void
     {
         $this->artisan('vben-admin:install', ['--skip-frontend' => true])->assertSuccessful();
         $this->getJson('/api/admin/system/security/events')->assertUnauthorized();
         $manager = AdminUser::query()->where('username', 'admin')->firstOrFail();
         Sanctum::actingAs($manager, ['admin']);
-        $this->getJson('/api/admin/system/security/events')->assertForbidden();
-
-        $superAdministrator = AdminUser::query()->where('username', 'cmsadmin')->firstOrFail();
-        Sanctum::actingAs($superAdministrator, ['admin']);
+        $this->getJson('/api/admin/system/security/events')->assertOk();
         $blockId = $this->postJson('/api/admin/system/security/ip-blocks', [
             'ip_address' => '203.0.113.10',
             'reason_code' => 'MANUAL_SECURITY_BLOCK',
@@ -91,11 +88,13 @@ final class AdminSecurityTest extends TestCase
         self::assertSame(0, AdminLoginIpBlock::query()->count());
     }
 
-    public function test_security_permissions_and_menu_are_synchronized_but_not_granted_to_manager(): void
+    public function test_security_permissions_and_menu_are_granted_to_manager_by_default(): void
     {
         $this->artisan('vben-admin:install', ['--skip-frontend' => true])->assertSuccessful();
         self::assertTrue(AdminPermission::query()->where('code', 'system.security.view')->exists());
-        self::assertFalse(AdminUser::query()->where('username', 'admin')->firstOrFail()->roles()->firstOrFail()
-            ->permissions()->where('code', 'system.security.view')->exists());
+        $manager = AdminUser::query()->where('username', 'admin')->firstOrFail()->roles()->firstOrFail();
+        self::assertTrue($manager->permissions()->where('code', 'system.security.view')->exists());
+        self::assertTrue($manager->permissions()->where('code', 'system.security.update')->exists());
+        self::assertTrue($manager->menus()->where('code', 'system.security')->exists());
     }
 }

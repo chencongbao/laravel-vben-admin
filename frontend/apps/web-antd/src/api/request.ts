@@ -21,6 +21,7 @@ import { useAuthStore } from '#/store';
 const { apiURL } = useAppConfig(import.meta.env, import.meta.env.PROD);
 
 const localizedErrorKeys: Record<string, string> = {
+  ADMIN_AUTH_REQUIRED: 'ui.fallback.http.unauthorized',
   ADMIN_PERMISSION_DENIED: 'common.errors.permissionDenied',
   ADMIN_PRIVILEGE_ESCALATION_DENIED: 'common.errors.privilegeEscalationDenied',
   ADMIN_SELF_DEMOTION_DENIED: 'system.errors.adminSelfDemotionDenied',

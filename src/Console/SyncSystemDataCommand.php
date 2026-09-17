@@ -16,7 +16,7 @@ final class SyncSystemDataCommand extends Command
     private const MANAGER_EXCLUDED_MENU_CODES = [
         'system.menus',
         'system.permissions',
-        'system.security',
+        'system.theme-settings',
     ];
 
     private const MANAGER_EXCLUDED_PERMISSION_CODES = [
@@ -28,8 +28,7 @@ final class SyncSystemDataCommand extends Command
         'system.permission.delete',
         'system.permission.update',
         'system.permission.view',
-        'system.security.view',
-        'system.security.update',
+        'system.theme-setting.view',
     ];
 
     protected $signature = 'vben-admin:sync {--dry-run : Preview changes without writing them}';
