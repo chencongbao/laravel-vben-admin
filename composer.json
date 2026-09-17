@@ -4,8 +4,9 @@
     "type": "library",
     "license": "MIT",
     "require": {
-        "bacon/bacon-qr-code": "^3.1",
         "php": "^8.4",
+        "bacon/bacon-qr-code": "^3.1",
+        "chencongbao/foundation": "^1.11",
         "illuminate/auth": "^13.0",
         "illuminate/console": "^13.0",
         "illuminate/database": "^13.0",

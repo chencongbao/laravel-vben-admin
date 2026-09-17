@@ -26,7 +26,10 @@ const formSchema = computed((): VbenFormSchema[] => [
     fieldName: 'currentPassword',
     label: $t('profile.password.current'),
     rules: z
-      .string()
+      .string({
+        invalid_type_error: $t('profile.password.currentRequired'),
+        required_error: $t('profile.password.currentRequired'),
+      })
       .min(1, { message: $t('profile.password.currentRequired') }),
   },
   {
@@ -38,7 +41,10 @@ const formSchema = computed((): VbenFormSchema[] => [
     description: passwordRequirement.value,
     fieldName: 'newPassword',
     label: $t('profile.password.new'),
-    rules: z.string()
+    rules: z.string({
+      invalid_type_error: $t('profile.password.newRequired'),
+      required_error: $t('profile.password.newRequired'),
+    })
       .min(1, { message: $t('profile.password.newRequired') })
       .refine((value) => passwordPolicy.value.type === 'weak'
         ? value.length >= 6
@@ -58,6 +64,7 @@ const formSchema = computed((): VbenFormSchema[] => [
       rules(values) {
         return z
           .string({
+            invalid_type_error: $t('profile.password.confirmRequired'),
             required_error: $t('profile.password.confirmRequired'),
           })
           .min(1, {
