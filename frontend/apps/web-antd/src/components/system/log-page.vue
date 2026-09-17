@@ -180,6 +180,11 @@ onMounted(load);
             name="row-actions"
             :record="record"
           ></slot>
+          <slot
+            v-else-if="column.dataIndex === 'failure_code'"
+            name="failure-reason"
+            :record="record"
+          ></slot>
           <Tag
             v-else-if="column.dataIndex === 'succeeded'"
             :color="text ? 'green' : 'red'"

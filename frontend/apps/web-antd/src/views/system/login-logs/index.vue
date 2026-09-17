@@ -53,6 +53,10 @@ const columns = computed(() => [
   { dataIndex: 'username', title: $t('system.loginLog.fields.username') },
   { dataIndex: 'ip_address', title: $t('system.loginLog.fields.ipAddress') },
   { dataIndex: 'succeeded', title: $t('system.loginLog.fields.result') },
+  {
+    dataIndex: 'failure_code',
+    title: $t('system.loginLog.fields.failureReason'),
+  },
   { dataIndex: 'created_at', title: $t('common.fields.createdAt') },
   {
     dataIndex: 'action_button',
@@ -88,13 +92,14 @@ function showDetail(record: Record<string, any>) {
   detailOpen.value = true;
 }
 
-function failureReasonLabel(record: LoginLog): string {
-  if (record.succeeded || !record.failure_code) {
+function failureReasonLabel(record: LoginLog | Record<string, any>): string {
+  const loginLog = record as LoginLog;
+  if (loginLog.succeeded || !loginLog.failure_code) {
     return '-';
   }
 
   return $t(
-    failureReasonKeys[record.failure_code] ??
+    failureReasonKeys[loginLog.failure_code] ??
       'system.loginLog.failureReasons.unknown',
   );
 }
@@ -109,6 +114,9 @@ function failureReasonLabel(record: LoginLog): string {
     permission="system.login-log.view"
     :title="$t('system.loginLogs')"
   >
+    <template #failure-reason="{ record }">
+      {{ failureReasonLabel(record) }}
+    </template>
     <template #row-actions="{ record }">
       <PermissionButton
         icon="lucide:eye"
