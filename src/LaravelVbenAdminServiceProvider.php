@@ -2,6 +2,8 @@
 
 namespace Chencongbao\LaravelVbenAdmin;
 
+use Chencongbao\Foundation\Exceptions\TelegramTransportException;
+use Chencongbao\Foundation\FoundationServiceProvider;
 use Chencongbao\LaravelVbenAdmin\Console\BuildFrontendCommand;
 use Chencongbao\LaravelVbenAdmin\Console\CreateAdminCommand;
 use Chencongbao\LaravelVbenAdmin\Console\InstallCommand;
@@ -10,6 +12,7 @@ use Chencongbao\LaravelVbenAdmin\Console\PublishProjectCommand;
 use Chencongbao\LaravelVbenAdmin\Console\PublishWorkspaceCommand;
 use Chencongbao\LaravelVbenAdmin\Console\SyncSystemDataCommand;
 use Chencongbao\LaravelVbenAdmin\Console\UpdateCommand;
+use Chencongbao\LaravelVbenAdmin\Contracts\AdminAlertReporter;
 use Chencongbao\LaravelVbenAdmin\Contracts\AuditRecorder;
 use Chencongbao\LaravelVbenAdmin\Contracts\Authorizer;
 use Chencongbao\LaravelVbenAdmin\Contracts\LoginRecorder;
@@ -21,16 +24,21 @@ use Chencongbao\LaravelVbenAdmin\Services\ActivityAuditRecorder;
 use Chencongbao\LaravelVbenAdmin\Services\ActivityLoginRecorder;
 use Chencongbao\LaravelVbenAdmin\Services\AuditLogRegistry;
 use Chencongbao\LaravelVbenAdmin\Services\DatabaseAuthorizer;
+use Chencongbao\LaravelVbenAdmin\Services\FoundationAdminAlertReporter;
 use Chencongbao\LaravelVbenAdmin\Services\InMemoryModuleRegistry;
+use Chencongbao\LaravelVbenAdmin\Services\TelegramMessageDispatcher;
+use Illuminate\Contracts\Debug\ExceptionHandler;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
+use Throwable;
 
 final class LaravelVbenAdminServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        $this->app->register(FoundationServiceProvider::class);
         $this->mergeConfigFrom(__DIR__.'/../config/laravel-vben-admin.php', 'laravel-vben-admin');
         $defaultLogConfig = require __DIR__.'/../config/vben-admin-log.php';
         $configuredLogConfig = $this->app->make('config')->get('vben-admin-log', []);
@@ -42,6 +50,8 @@ final class LaravelVbenAdminServiceProvider extends ServiceProvider
         $this->app->singleton(ModuleRegistry::class, InMemoryModuleRegistry::class);
         $this->app->singleton(Authorizer::class, DatabaseAuthorizer::class);
         $this->app->singleton(AuditLogRegistry::class);
+        $this->app->singleton(AdminAlertReporter::class, FoundationAdminAlertReporter::class);
+        $this->app->singleton(TelegramMessageDispatcher::class);
         $this->app->scoped(AuditRecorder::class, ActivityAuditRecorder::class);
         $this->app->scoped(LoginRecorder::class, ActivityLoginRecorder::class);
 
@@ -50,6 +60,17 @@ final class LaravelVbenAdminServiceProvider extends ServiceProvider
                 'activitylog.clean_after_days',
                 config('laravel-vben-admin.activity_log.clean_after_days', 365),
             );
+
+            $handler = $this->app->make(ExceptionHandler::class);
+            if (method_exists($handler, 'reportable')) {
+                $handler->reportable(function (Throwable $exception): void {
+                    if ($exception instanceof TelegramTransportException) {
+                        return;
+                    }
+
+                    $this->app->make(AdminAlertReporter::class)->reportSystemException($exception);
+                });
+            }
         });
     }
 

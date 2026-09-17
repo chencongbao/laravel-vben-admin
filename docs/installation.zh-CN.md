@@ -355,3 +355,30 @@ php artisan vben-admin:build --publish --force
 - 业务权限和菜单通过包提供的模块契约注册，然后执行 `vben-admin:sync`；
 - 敏感操作必须同时经过 Laravel 服务端权限校验，不能只依赖前端隐藏按钮。
 日志动作、操作类型、模块、多语言键和对象多语言键集中维护在发布后的 `config/vben-admin-log.php`。配置项只保存翻译键；实际文案放在各语言文件中，因此新增第三种及更多语言时无需修改日志配置或数据库。包升级新增的系统动作应与项目自定义动作合并检查，项目自定义稳定动作码不得在升级时被静默删除。
+# Telegram 异常告警
+
+`chencongbao/laravel-vben-admin` 复用 `chencongbao/foundation` 的异常日志、去重、脱敏和异步 Telegram 通知能力。Laravel 判定需要报告的未处理系统异常和失败的后台登录日志默认都会进入告警流程。
+
+在宿主项目 `.env` 中配置，不得把 Bot Token 写入仓库、数据库种子或操作日志：
+
+```dotenv
+FOUNDATION_TELEGRAM_ENABLED=true
+FOUNDATION_TELEGRAM_BOT_TOKEN=
+FOUNDATION_TELEGRAM_CHAT_IDS=
+FOUNDATION_TELEGRAM_QUEUE_ENABLED=true
+FOUNDATION_TELEGRAM_QUEUE=notice
+FOUNDATION_TELEGRAM_QUEUE_TRIES=3
+FOUNDATION_TELEGRAM_QUEUE_TIMEOUT=30
+FOUNDATION_TELEGRAM_QUEUE_BACKOFF=5
+
+VBEN_ADMIN_ALERT_SYSTEM_EXCEPTIONS=true
+VBEN_ADMIN_ALERT_LOGIN_FAILURES=true
+```
+
+生产环境必须使用非 `sync` 的 `QUEUE_CONNECTION`，并持续运行队列 Worker：
+
+```bash
+php artisan queue:work --queue=notice,default --tries=3
+```
+
+系统异常先写入 Foundation 异常日志，再投递队列。登录失败只写数据库登录日志，随后投递 `SendTelegramMessage`，不额外写入 Foundation 本地异常日志。通知发送失败不影响原请求，且 Telegram 传输异常不会再次触发 Telegram 告警，避免循环通知。

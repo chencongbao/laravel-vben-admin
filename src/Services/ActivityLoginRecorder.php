@@ -2,6 +2,7 @@
 
 namespace Chencongbao\LaravelVbenAdmin\Services;
 
+use Chencongbao\LaravelVbenAdmin\Contracts\AdminAlertReporter;
 use Chencongbao\LaravelVbenAdmin\Contracts\LoginRecorder;
 use Chencongbao\LaravelVbenAdmin\Models\AdminUser;
 use Illuminate\Http\Request;
@@ -9,7 +10,10 @@ use Spatie\Activitylog\Contracts\Activity;
 
 final class ActivityLoginRecorder implements LoginRecorder
 {
-    public function __construct(private readonly LoginClientClassifier $clientClassifier) {}
+    public function __construct(
+        private readonly LoginClientClassifier $clientClassifier,
+        private readonly AdminAlertReporter $alertReporter,
+    ) {}
 
     public function record(
         Request $request,
@@ -42,5 +46,9 @@ final class ActivityLoginRecorder implements LoginRecorder
         }
 
         $logger->log($succeeded ? '登录成功' : '登录失败');
+
+        if (! $succeeded) {
+            $this->alertReporter->reportLoginFailure($request, $username, $user, $failureCode);
+        }
     }
 }

@@ -22,6 +22,11 @@ return [
         'clean_after_days' => (int) env('VBEN_ADMIN_ACTIVITY_LOG_DAYS', 365),
     ],
 
+    'alerts' => [
+        'system_exceptions' => (bool) env('VBEN_ADMIN_ALERT_SYSTEM_EXCEPTIONS', true),
+        'login_failures' => (bool) env('VBEN_ADMIN_ALERT_LOGIN_FAILURES', true),
+    ],
+
     'tables' => [
         'users' => 'admin_users',
         'roles' => 'admin_roles',

@@ -194,6 +194,40 @@ frontend/apps/web-antd/src/api/core/menu.ts
 
 ## 6. API约定
 
+### 项目主动异步发送 Telegram 消息
+
+后台包统一提供 `SendTelegramMessage` Job 和 `TelegramMessageDispatcher`，底层复用 Foundation
+的 Telegram 发送器、`notice` 队列、重试和失败日志。业务代码不得自行
+拼接 Telegram API URL，也不得把 Bot Token 或 Chat ID 传入 Job Payload：
+
+```php
+use Chencongbao\LaravelVbenAdmin\Jobs\SendTelegramMessage;
+use Chencongbao\LaravelVbenAdmin\Services\TelegramMessageDispatcher;
+
+SendTelegramMessage::dispatch([
+    'event' => 'example.completed',
+    'object_id' => 1001,
+], 'json', '业务通知');
+
+final class ExampleService
+{
+    public function __construct(private TelegramMessageDispatcher $telegram) {}
+
+    public function handle(): void
+    {
+        $this->telegram->text('任务处理完成', '业务通知');
+        $this->telegram->json([
+            'event' => 'example.completed',
+            'object_id' => 1001,
+        ], '业务通知');
+    }
+}
+```
+
+`text()` 会转义外部文本，`json()` 适合结构化内容。`html()` 只能接收调用方
+已确认安全的 Telegram HTML，不得直接传入用户内容。实际发送依赖已运行的
+`notice` 队列 Worker。
+
 后台API固定使用 `/api/admin`，不要根据 `VBEN_ADMIN_PATH` 改动API前缀。浏览器路径和API路径是两套独立概念。
 
 ### 请求验证
