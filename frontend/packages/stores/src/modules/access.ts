@@ -100,14 +100,10 @@ export const useAccessStore = defineStore('core-access', {
     },
   },
   persist: {
-    // 持久化
-    pick: [
-      'accessToken',
-      'refreshToken',
-      'accessCodes',
-      'isLockScreen',
-      'lockScreenPassword',
-    ],
+    // Authentication state is scoped to the current browser tab. The local
+    // screen-lock password must never be written to Web Storage.
+    pick: ['accessToken', 'refreshToken', 'accessCodes'],
+    storage: sessionStorage,
   },
   state: (): AccessState => ({
     accessCodes: [],

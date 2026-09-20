@@ -221,7 +221,9 @@ final class ActivityLogTest extends TestCase
         $actor = AdminUser::query()->where('username', 'cmsadmin')->firstOrFail();
         config()->set('vben-admin-log.fields.AdminUser.name', 'system.userForm.fields.name');
         $request = Request::create('/api/admin/system/settings', 'PUT', [
-            'name' => 'RG LIVE',
+            'settings' => [
+                ['key' => 'system.name', 'value' => 'RG LIVE'],
+            ],
             'password' => 'plain-text-password',
             'nested' => ['two_factor_secret' => 'plain-text-secret'],
         ], server: [
@@ -245,8 +247,9 @@ final class ActivityLogTest extends TestCase
         self::assertSame($actor->getKey(), $activity->subject_id);
         self::assertSame('[REDACTED]', $activity->attribute_changes->get('before')['password']);
         self::assertSame('[REDACTED]', $activity->getProperty('context.access_token'));
-        self::assertSame('[REDACTED]', $activity->getProperty('request_input.password'));
-        self::assertSame('[REDACTED]', $activity->getProperty('request_input.nested.two_factor_secret'));
+        self::assertSame('system.name', $activity->getProperty('request_input.settings.0.key'));
+        self::assertNull($activity->getProperty('request_input.password'));
+        self::assertNull($activity->getProperty('request_input.nested'));
         self::assertSame('system.auditLog.actionNames.settingsUpdated', $activity->getProperty('action_label_key'));
         self::assertSame('system.settings', $activity->getProperty('action_module'));
         self::assertSame('updated', $activity->getProperty('action_type'));
@@ -278,7 +281,9 @@ final class ActivityLogTest extends TestCase
             ->assertJsonPath('id', $activity->getKey())
             ->assertJsonPath('actor.username', 'cmsadmin')
             ->assertJsonPath('request_id', 'request-audit-001')
-            ->assertJsonPath('request_input.password', '[REDACTED]')
+            ->assertJsonPath('request_input.settings.0.value', 'RG LIVE')
+            ->assertJsonMissingPath('request_input.password')
+            ->assertJsonMissingPath('request_input.nested')
             ->assertJsonPath('changes.before.password', '[REDACTED]')
             ->assertJsonPath('field_label_keys.name', 'system.userForm.fields.name')
             ->assertJsonPath('user_agent', 'ActivityLogTest/1.0');

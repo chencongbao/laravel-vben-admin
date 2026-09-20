@@ -46,12 +46,13 @@ final class AdminUserController extends Controller
         return response()->json($users);
     }
 
-    public function roleOptions(): JsonResponse
+    public function roleOptions(Request $request): JsonResponse
     {
+        $assignableRoleIds = $this->privilegeGuard->assignableRoleIds($request->user());
+
         return response()->json([
             'roles' => AdminRole::query()
-                ->where('is_active', true)
-                ->where('is_super_admin', false)
+                ->whereKey($assignableRoleIds)
                 ->latest('id')
                 ->get(['id', 'code', 'name']),
         ]);

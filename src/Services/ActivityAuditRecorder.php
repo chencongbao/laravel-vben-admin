@@ -26,7 +26,9 @@ final class ActivityAuditRecorder implements AuditRecorder
             ->withChanges($this->redactActivityData($changes))
             ->withProperties([
                 'context' => $this->redactActivityData($context),
-                'request_input' => $this->redactActivityData($this->request->all()),
+                'request_input' => $this->redactActivityData(
+                    $this->request->only($this->registry->requestFields($action)),
+                ),
                 'request_id' => $this->request->header('X-Request-ID'),
                 'route_name' => $this->request->route()?->getName(),
                 'action_label_key' => $definition['label_key'],

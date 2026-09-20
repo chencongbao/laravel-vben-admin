@@ -107,4 +107,21 @@ final class ProfileUpdateTest extends TestCase
 
         self::assertSame(0, Activity::query()->count());
     }
+
+    public function test_profile_rejects_remote_and_other_users_uploaded_avatar_urls(): void
+    {
+        $this->artisan('vben-admin:install', ['--skip-frontend' => true])->assertSuccessful();
+        $user = AdminUser::query()->where('username', 'admin')->firstOrFail();
+        Sanctum::actingAs($user, ['admin']);
+
+        $this->patchJson('/api/admin/auth/profile', [
+            'name' => $user->name,
+            'avatar' => 'https://tracker.example/avatar.png',
+        ])->assertUnprocessable()->assertJsonValidationErrors('avatar');
+
+        $this->patchJson('/api/admin/auth/profile', [
+            'name' => $user->name,
+            'avatar' => '/storage/laravel-vben-admin/avatars/999/avatar.png',
+        ])->assertUnprocessable()->assertJsonValidationErrors('avatar');
+    }
 }

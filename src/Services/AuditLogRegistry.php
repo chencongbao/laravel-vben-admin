@@ -20,6 +20,15 @@ final class AuditLogRegistry
         ];
     }
 
+    /** @return list<string> */
+    public function requestFields(string $code): array
+    {
+        $definitions = config('vben-admin-log.actions', []);
+        $definition = is_array($definitions) ? ($definitions[$code] ?? []) : [];
+
+        return $this->requestFieldsFromDefinition($definition);
+    }
+
     /**
      * @param  iterable<int, string>  $codes
      * @return list<array{code: string, label_key: string|null, module: string|null, type: string|null}>
@@ -82,6 +91,19 @@ final class AuditLogRegistry
         $type = $this->stringValue($definition, 'type');
 
         return in_array($type, ['created', 'deleted', 'other', 'updated'], true) ? $type : null;
+    }
+
+    /** @return list<string> */
+    private function requestFieldsFromDefinition(mixed $definition): array
+    {
+        if (! is_array($definition) || ! is_array($definition['request_fields'] ?? null)) {
+            return [];
+        }
+
+        return array_values(array_filter(
+            $definition['request_fields'],
+            fn ($field) => is_string($field) && preg_match('/^[A-Za-z0-9_.-]+$/', $field) === 1,
+        ));
     }
 
     private function stringValue(mixed $definition, string $key): ?string

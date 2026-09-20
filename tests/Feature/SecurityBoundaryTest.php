@@ -176,7 +176,7 @@ final class SecurityBoundaryTest extends TestCase
         );
     }
 
-    public function test_user_role_options_include_every_active_non_super_role_and_creation_rejects_super_role(): void
+    public function test_user_role_options_only_include_roles_within_the_actor_scope_and_creation_rejects_elevated_roles(): void
     {
         $this->artisan('vben-admin:install', ['--skip-frontend' => true])->assertSuccessful();
         $superAdministrator = AdminUser::query()->where('username', 'cmsadmin')->firstOrFail();
@@ -193,6 +193,16 @@ final class SecurityBoundaryTest extends TestCase
             'name' => 'Disabled user role option',
             'is_active' => false,
         ]);
+        $unheldPermission = AdminPermission::query()->create([
+            'code' => 'security.elevated',
+            'name' => 'Elevated permission',
+        ]);
+        $elevatedRole = AdminRole::query()->create([
+            'code' => 'elevated-user-role-option',
+            'name' => 'Elevated user role option',
+            'is_active' => true,
+        ]);
+        $elevatedRole->permissions()->sync([$unheldPermission->getKey()]);
 
         Sanctum::actingAs($administrator, ['admin']);
         $response = $this->getJson('/api/admin/system/users/role-options')->assertOk();
@@ -201,8 +211,20 @@ final class SecurityBoundaryTest extends TestCase
         self::assertContains($customRole->getKey(), $roleIds);
         self::assertNotContains($superRole->getKey(), $roleIds);
         self::assertNotContains($disabledRole->getKey(), $roleIds);
+        self::assertNotContains($elevatedRole->getKey(), $roleIds);
+
+        $this->postJson('/api/admin/system/users', [
+            'name' => 'Rejected elevated user',
+            'password' => 'SecurePassword123',
+            'role_ids' => [$elevatedRole->getKey()],
+            'username' => 'rejected-elevated-user',
+        ])->assertForbidden()->assertJsonPath('code', 'ADMIN_PRIVILEGE_ESCALATION_DENIED');
+
+        self::assertFalse(AdminUser::query()->where('username', 'rejected-elevated-user')->exists());
 
         Sanctum::actingAs($superAdministrator, ['admin']);
+        $superRoleOptions = $this->getJson('/api/admin/system/users/role-options')->assertOk();
+        self::assertContains($elevatedRole->getKey(), collect($superRoleOptions->json('roles'))->pluck('id')->all());
         $this->postJson('/api/admin/system/users', [
             'name' => 'Rejected super administrator',
             'password' => 'SecurePassword123',
@@ -211,6 +233,26 @@ final class SecurityBoundaryTest extends TestCase
         ])->assertUnprocessable()->assertJsonPath('code', 'ADMIN_SUPER_ROLE_ASSIGNMENT_DENIED');
 
         self::assertFalse(AdminUser::query()->where('username', 'rejected-super-administrator')->exists());
+    }
+
+    public function test_super_administrator_cannot_assign_the_super_role_through_user_update(): void
+    {
+        $this->artisan('vben-admin:install', ['--skip-frontend' => true])->assertSuccessful();
+        $superAdministrator = AdminUser::query()->where('username', 'cmsadmin')->firstOrFail();
+        $superRole = AdminRole::query()->where('is_super_admin', true)->firstOrFail();
+        $target = AdminUser::query()->create([
+            'username' => 'ordinary-target',
+            'name' => 'Ordinary target',
+            'password' => 'SecurePassword123',
+            'is_active' => true,
+        ]);
+        Sanctum::actingAs($superAdministrator, ['admin']);
+
+        $this->patchJson('/api/admin/system/users/'.$target->getKey(), [
+            'role_ids' => [$superRole->getKey()],
+        ])->assertForbidden()->assertJsonPath('code', 'ADMIN_PRIVILEGE_ESCALATION_DENIED');
+
+        self::assertFalse($target->roles()->whereKey($superRole->getKey())->exists());
     }
 
     public function test_only_fixed_accounts_are_delete_protected(): void

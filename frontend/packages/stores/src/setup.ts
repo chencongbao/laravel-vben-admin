@@ -43,6 +43,11 @@ export async function initStores(app: App, options: InitStoreOptions) {
   const { createPersistedState } = await import('pinia-plugin-persistedstate');
   pinia = createPinia();
   const { namespace } = options;
+
+  // Access credentials used to be persisted in localStorage. Remove that
+  // legacy entry before the access store starts using sessionStorage.
+  localStorage.removeItem(`${namespace}-core-access`);
+
   const ls = new SecureLSConstructor({
     encodingType: 'aes',
     encryptionSecret: import.meta.env.VITE_APP_STORE_SECURE_KEY,

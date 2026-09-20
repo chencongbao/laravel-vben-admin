@@ -27,6 +27,12 @@ return [
         'login_failures' => (bool) env('VBEN_ADMIN_ALERT_LOGIN_FAILURES', true),
     ],
 
+    'login_failure_alerts' => [
+        'window_seconds' => (int) env('VBEN_ADMIN_LOGIN_ALERT_WINDOW', 600),
+        'thresholds' => [1, 5, 10, 20],
+        'global_limit' => (int) env('VBEN_ADMIN_LOGIN_ALERT_GLOBAL_LIMIT', 30),
+    ],
+
     'tables' => [
         'users' => 'admin_users',
         'roles' => 'admin_roles',

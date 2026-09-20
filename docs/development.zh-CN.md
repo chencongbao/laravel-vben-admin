@@ -295,9 +295,9 @@ $this->audit->record(
 
 动作名使用稳定的 `领域.资源.动作` 或 `领域.动作` 英文编码，不使用会变化的中文标题。`subject` 传被操作的 Eloquent 模型；没有单一对象的批量或配置操作传 `null`。一次请求修改多项配置时只写一条请求级日志，把各项前后值放入同一个 `changes`，避免循环生成碎片日志。
 
-每个动作编码还必须注册到 `config/vben-admin-log.php` 的 `actions` 中，定义 `type`、`module` 和 `label_key`。配置只保存多语言键，不保存中文、英文或其他具体译文；每种前端语言在自己的语言文件中实现同一个键。宿主项目可以在发布后的配置中添加业务动作。未注册动作仍会写入和查询，接口返回空元数据、前端回退显示原始编码，不能因日志元数据遗漏阻断真实业务。`subjects` 与 `fields` 同样只配置多语言键；详情接口返回当前对象的字段键映射，前端翻译变更字段，缺失时回退原字段名。业务动作筛选展示全部已注册动作；操作者选项按角色数据范围提供当前用户，日志列表和详情继续执行服务端数据范围校验。
+每个动作编码还必须注册到 `config/vben-admin-log.php` 的 `actions` 中，定义 `type`、`module`、`label_key` 和允许进入审计详情的 `request_fields` 请求字段白名单。未声明 `request_fields` 时不保存任何请求参数，不得恢复记录整个 `$request->all()` 的黑名单模式。配置只保存多语言键，不保存中文、英文或其他具体译文；每种前端语言在自己的语言文件中实现同一个键。宿主项目可以在发布后的配置中添加业务动作。未注册动作仍会写入和查询，接口返回空元数据、前端回退显示原始编码，但请求参数保持为空。`subjects` 与 `fields` 同样只配置多语言键；详情接口返回当前对象的字段键映射，前端翻译变更字段，缺失时回退原字段名。业务动作筛选展示全部已注册动作；操作者选项按角色数据范围提供当前用户，日志列表和详情继续执行服务端数据范围校验。
 
-记录器自动补充操作者、IP、HTTP 方法、请求路径、User-Agent 和经过脱敏的请求参数。包含 `password`、`token`、`secret`、`credential`、`authorization`、`cookie`、`private_key`、`captcha`、`totp`、`two_factor` 的键会递归替换为 `[REDACTED]`；上传内容只记录文件元数据。新增敏感字段时必须同步扩展脱敏规则和测试。
+记录器自动补充操作者、IP、HTTP 方法、请求路径、User-Agent，并且只记录当前动作 `request_fields` 明确允许的请求参数。白名单通过后仍执行第二层递归脱敏：包含 `password`、`token`、`secret`、`credential`、`authorization`、`cookie`、`private_key`、`captcha`、`totp`、`two_factor` 的键替换为 `[REDACTED]`；上传内容只记录文件元数据。新增字段必须先判断是否确有审计价值，敏感字段不得加入白名单。
 
 登录流程由包内部的 `LoginRecorder` 统一记录成功、失败原因和 `client_type`。宿主业务不要调用它伪造登录事件。日志写入应与关键业务写入处于合理的事务边界；审计失败是否阻断业务必须在需求中明确，安全和权限类变更默认要求同时成功。
 
@@ -306,6 +306,7 @@ $this->audit->record(
 ## 8. 认证和会话不可破坏规则
 
 - Token撤销或过期后，前端收到401必须清理本地认证并跳转登录页，不能再次用失效Token调用退出接口。
+- Bearer Token 只持久化到当前标签页的 `sessionStorage`，关闭标签页后失效于浏览器存储；锁屏密码只保存在运行内存中，不得进入 Local Storage、Session Storage 或其他持久化介质。
 - 多个并发401只能触发一次退出跳转。
 - 管理员会话只允许查询和撤销自己的Token。
 - 当前会话不能通过“撤销其他会话”接口删除，正常退出走 `/auth/logout`。
@@ -349,7 +350,7 @@ $this->audit->record(
 - 菜单关联权限只定义该菜单的访问要求和前端 `meta.authority`，不等于把权限授予角色；角色编辑必须分别保存 `admin_role_menus` 和 `admin_role_permissions`。非超级管理员只有同时拥有该角色菜单且满足菜单关联权限时才看到菜单；未关联任何权限的角色菜单只校验角色菜单关系。超级管理员隐式拥有全部权限并可查看全部菜单，固定工作台对所有已登录后台用户可见。
 - 内置 `manager` 管理员角色只允许 `administrator` 超级管理员通过角色管理页编辑其菜单和权限授权；其他角色即使拥有 `system.role.update`，服务端也必须返回 `ADMIN_SUPER_ADMIN_REQUIRED`。管理员角色的标识、内置名称和启用状态固定。管理员及其他非超级管理员在拥有 `system.role.create`、`system.role.update` 时，可以新增和编辑普通自定义角色，但列表、详情和编辑均不得暴露 `administrator`、`manager` 两个内置角色，并且只能把自己实际拥有的菜单与权限分配给普通角色。角色编辑器必须通过角色模块的 `/system/roles/access-options` 加载当前操作者可分配的菜单和权限树，不得依赖权限管理或菜单管理列表接口；新安装的默认授权不勾选菜单管理、权限管理，但超级管理员后续可以主动分配，系统同步必须保留非空的人工授权，不得再次强制撤销。
 - 用户管理允许具有 `system.user.update` 的管理员编辑自己的姓名、密码、登录白名单和 2FA 等账号资料，但当前登录账号不能修改自己的角色或启用状态。前端角色控件必须显示角色名称而不是裸角色 ID，并在编辑本人时禁用角色和状态；服务端对角色或状态的实际变更分别返回 `ADMIN_SELF_ROLE_CHANGE_DENIED`、`ADMIN_SELF_STATUS_CHANGE_DENIED`。
-- 用户新增表单必须通过 `/system/users/role-options` 加载角色选项，显示所有启用且非超级管理员的角色，包括内置 `manager` 管理员角色和普通自定义角色；不得复用角色管理列表的数据范围。服务端创建用户时即使操作者是超级管理员，也不得分配 `is_super_admin=true` 的角色，越权提交返回 `ADMIN_SUPER_ROLE_ASSIGNMENT_DENIED`。
+- 用户新增表单必须通过 `/system/users/role-options` 加载角色选项。超级管理员可以看到所有启用且非超级管理员的角色；其他操作者只看到权限集合和菜单集合均不超过自身有效授权的角色。服务端新增和编辑执行同一子集校验，绕过选项接口提交越级角色返回 `ADMIN_PRIVILEGE_ESCALATION_DENIED`。任何操作者都不得通过用户新增或编辑分配 `is_super_admin=true` 的角色；新增时返回 `ADMIN_SUPER_ROLE_ASSIGNMENT_DENIED`，编辑时返回 `ADMIN_PRIVILEGE_ESCALATION_DENIED`。
 - 用户删除使用独立的 `system.user.delete` 权限并记录 `system.user.deleted` 审计。只有固定内置账号 `cmsadmin`、`admin` 禁止删除，前端不显示其删除按钮，服务端直接调用返回 `PROTECTED_ADMIN_USER_DELETE_DENIED`；之后通过用户管理新增的账号均可删除，包括分配 `manager` 管理员角色的账号。非超级管理员仍不得越权删除持有超级管理员角色的账号，服务端返回 `ADMIN_PRIVILEGE_ESCALATION_DENIED`。删除用户时同步撤销其访问令牌，角色关联由外键级联清理。
 - 服务端授权始终以路由中间件绑定的稳定权限 `code` 为准，菜单路由、菜单是否显示和按钮隐藏都不能替代服务端权限校验。菜单、权限的新增、编辑、删除分别要求对应的 `system.menu.*`、`system.permission.*` 权限，并记录操作审计。
 - 查看与写入必须使用独立权限：系统设置使用 `system.setting.view` / `system.setting.update`，主题配置使用 `system.theme-setting.view` / `system.theme-setting.update`；拥有查看权限不得调用保存接口，前端保存按钮也必须绑定对应更新权限。

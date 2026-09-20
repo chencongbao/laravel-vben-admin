@@ -355,6 +355,10 @@ php artisan vben-admin:build --publish --force
 - 业务权限和菜单通过包提供的模块契约注册，然后执行 `vben-admin:sync`；
 - 敏感操作必须同时经过 Laravel 服务端权限校验，不能只依赖前端隐藏按钮。
 日志动作、操作类型、模块、多语言键和对象多语言键集中维护在发布后的 `config/vben-admin-log.php`。配置项只保存翻译键；实际文案放在各语言文件中，因此新增第三种及更多语言时无需修改日志配置或数据库。包升级新增的系统动作应与项目自定义动作合并检查，项目自定义稳定动作码不得在升级时被静默删除。
+
+每个日志动作还可以声明 `request_fields` 请求字段白名单。未声明时该动作不保存请求参数；白名单后的数据仍会经过敏感字段递归脱敏。项目扩展动作只能加入确有审计价值的非敏感字段，不得使用允许全部请求参数的通配规则。
+
+登录失败 Telegram 告警默认按同一 IP、用户名和失败代码在 10 分钟窗口内聚合，只在第 1、5、10、20 次失败时投递；所有失败仍逐条写入数据库登录日志。全局每分钟最多投递 30 条登录失败告警。可以通过 `VBEN_ADMIN_LOGIN_ALERT_WINDOW` 和 `VBEN_ADMIN_LOGIN_ALERT_GLOBAL_LIMIT` 调整窗口秒数及全局上限，修改后需要清理配置缓存并确保 `notice` 队列 Worker 正常运行。
 # Telegram 异常告警
 
 `chencongbao/laravel-vben-admin` 复用 `chencongbao/foundation` 的异常日志、去重、脱敏和异步 Telegram 通知能力。Laravel 判定需要报告的未处理系统异常和失败的后台登录日志默认都会进入告警流程。

@@ -244,8 +244,8 @@ final class AuthController extends Controller
         $user = $request->user();
         $data = $request->validate([
             'name' => ['required', 'string', 'max:120'],
-            'avatar' => ['nullable', 'string', 'max:2048', function (string $attribute, mixed $value, \Closure $fail): void {
-                if (! $this->isAllowedAvatar((string) $value)) {
+            'avatar' => ['nullable', 'string', 'max:2048', function (string $attribute, mixed $value, \Closure $fail) use ($user): void {
+                if (! $this->isAllowedAvatar($user, (string) $value)) {
                     $fail('The selected avatar is invalid.');
                 }
             }],
@@ -424,17 +424,16 @@ final class AuthController extends Controller
         return '/'.trim((string) config('laravel-vben-admin.path', 'admin'), '/').'/avatars/'.$id.'.svg';
     }
 
-    private function isAllowedAvatar(string $avatar): bool
+    private function isAllowedAvatar(AdminUser $user, string $avatar): bool
     {
         if (str_starts_with($avatar, 'default:')) {
             return in_array(Str::after($avatar, 'default:'), $this->defaultAvatarIds(), true);
         }
 
-        if (str_starts_with($avatar, Storage::disk('public')->url('laravel-vben-admin/avatars/'))) {
-            return true;
-        }
-
-        return filter_var($avatar, FILTER_VALIDATE_URL) !== false;
+        return str_starts_with(
+            $avatar,
+            Storage::disk('public')->url('laravel-vben-admin/avatars/'.$user->getKey().'/'),
+        );
     }
 
     private function deleteUploadedAvatar(AdminUser $user, ?string $avatar): void

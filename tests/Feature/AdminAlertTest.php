@@ -10,6 +10,7 @@ use Chencongbao\LaravelVbenAdmin\Models\AdminUser;
 use Chencongbao\LaravelVbenAdmin\Services\TelegramMessageDispatcher;
 use Illuminate\Contracts\Debug\ExceptionHandler;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Queue;
 use Laravel\Sanctum\SanctumServiceProvider;
 use Orchestra\Testbench\TestCase;
@@ -120,5 +121,50 @@ final class AdminAlertTest extends TestCase
         ], 'Business Alert');
 
         Queue::assertPushed(SendTelegramMessage::class, fn (SendTelegramMessage $job): bool => $job->queue === 'notice');
+    }
+
+    public function test_login_failure_alerts_are_aggregated_at_configured_thresholds(): void
+    {
+        Queue::fake();
+        Cache::flush();
+        $this->app['config']->set('foundation_log.telegram.enabled', true);
+        $this->app['config']->set('foundation_log.telegram.bot_token', 'test-bot-token');
+        $this->app['config']->set('foundation_log.telegram.chat_ids', ['123456']);
+        $this->app['config']->set('laravel-vben-admin.login_failure_alerts.thresholds', [1, 5]);
+        $request = Request::create('/api/admin/auth/login', 'POST', server: ['REMOTE_ADDR' => '203.0.113.10']);
+        $reporter = $this->app->make(AdminAlertReporter::class);
+
+        foreach (range(1, 5) as $attempt) {
+            $reporter->reportLoginFailure($request, 'admin', null, 'INVALID_CREDENTIALS');
+        }
+
+        Queue::assertPushed(SendTelegramMessage::class, 2);
+    }
+
+    public function test_login_failure_alerts_obey_the_global_per_minute_limit(): void
+    {
+        Queue::fake();
+        Cache::flush();
+        $this->app['config']->set('foundation_log.telegram.enabled', true);
+        $this->app['config']->set('foundation_log.telegram.bot_token', 'test-bot-token');
+        $this->app['config']->set('foundation_log.telegram.chat_ids', ['123456']);
+        $this->app['config']->set('laravel-vben-admin.login_failure_alerts.thresholds', [1]);
+        $this->app['config']->set('laravel-vben-admin.login_failure_alerts.global_limit', 1);
+        $reporter = $this->app->make(AdminAlertReporter::class);
+
+        $reporter->reportLoginFailure(
+            Request::create('/api/admin/auth/login', 'POST', server: ['REMOTE_ADDR' => '203.0.113.10']),
+            'admin-one',
+            null,
+            'INVALID_CREDENTIALS',
+        );
+        $reporter->reportLoginFailure(
+            Request::create('/api/admin/auth/login', 'POST', server: ['REMOTE_ADDR' => '203.0.113.11']),
+            'admin-two',
+            null,
+            'INVALID_CREDENTIALS',
+        );
+
+        Queue::assertPushed(SendTelegramMessage::class, 1);
     }
 }

@@ -22,8 +22,33 @@ final class PrivilegeAssignmentGuard
 
     public function canAssignRoles(AdminUser $actor, array $roleIds): bool
     {
-        return $this->isSuperAdmin($actor)
-            || ! AdminRole::query()->whereKey($roleIds)->where('is_super_admin', true)->exists();
+        if (AdminRole::query()->whereKey($roleIds)->where('is_super_admin', true)->exists()) {
+            return false;
+        }
+
+        return collect($roleIds)->diff($this->assignableRoleIds($actor))->isEmpty();
+    }
+
+    public function assignableRoleIds(AdminUser $actor): Collection
+    {
+        $roles = AdminRole::query()
+            ->where('is_active', true)
+            ->where('is_super_admin', false)
+            ->with(['permissions:id', 'menus:id'])
+            ->get();
+
+        if ($this->isSuperAdmin($actor)) {
+            return $roles->pluck('id');
+        }
+
+        $permissionIds = $this->accessiblePermissionIds($actor) ?? collect();
+        $menuIds = $this->accessibleMenuIds($actor) ?? collect();
+
+        return $roles
+            ->filter(fn (AdminRole $role) => $role->permissions->pluck('id')->diff($permissionIds)->isEmpty()
+                && $role->menus->pluck('id')->diff($menuIds)->isEmpty())
+            ->pluck('id')
+            ->values();
     }
 
     public function canAssignPermissions(AdminUser $actor, array $permissionIds): bool
