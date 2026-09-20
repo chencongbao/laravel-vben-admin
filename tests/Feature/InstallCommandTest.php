@@ -65,6 +65,7 @@ final class InstallCommandTest extends TestCase
                     'system.permission.delete',
                     'system.permission.update',
                     'system.permission.view',
+                    'system.theme-setting.update',
                     'system.theme-setting.view',
                 ])
                 ->pluck('id')
@@ -90,6 +91,7 @@ final class InstallCommandTest extends TestCase
             'system.permission.delete',
             'system.permission.update',
             'system.permission.view',
+            'system.theme-setting.update',
             'system.theme-setting.view',
         ])->exists());
         self::assertTrue($manager->menus()->where('code', 'system.security')->exists());
@@ -140,8 +142,12 @@ final class InstallCommandTest extends TestCase
         self::assertDatabaseHas('admin_permissions', ['code' => 'system.audit.view', 'parent_id' => $systemLogsPermission->getKey()]);
         self::assertDatabaseHas('admin_permissions', ['code' => 'system.setting.view', 'parent_id' => $configurationPermission->getKey()]);
         self::assertDatabaseHas('admin_permissions', ['code' => 'system.theme-setting.view', 'parent_id' => $configurationPermission->getKey()]);
-        self::assertDatabaseMissing('admin_permissions', ['code' => 'system.setting.update']);
-        self::assertDatabaseMissing('admin_permissions', ['code' => 'system.theme-setting.update']);
+        $settingViewPermission = AdminPermission::query()->where('code', 'system.setting.view')->firstOrFail();
+        $themeSettingViewPermission = AdminPermission::query()->where('code', 'system.theme-setting.view')->firstOrFail();
+        self::assertDatabaseHas('admin_permissions', ['code' => 'system.setting.update', 'parent_id' => $settingViewPermission->getKey()]);
+        self::assertDatabaseHas('admin_permissions', ['code' => 'system.theme-setting.update', 'parent_id' => $themeSettingViewPermission->getKey()]);
+        self::assertTrue($manager->permissions()->where('code', 'system.setting.update')->exists());
+        self::assertFalse($manager->permissions()->where('code', 'system.theme-setting.update')->exists());
         $configuration = AdminMenu::query()->where('code', 'configuration')->firstOrFail();
         self::assertTrue($configuration->permissions()->where('code', 'system.configuration.access')->exists());
         self::assertFalse($configuration->permissions()->whereIn('code', ['system.setting.view', 'system.theme-setting.view'])->exists());

@@ -28,6 +28,7 @@ final class SyncSystemDataCommand extends Command
         'system.permission.delete',
         'system.permission.update',
         'system.permission.view',
+        'system.theme-setting.update',
         'system.theme-setting.view',
     ];
 
@@ -164,7 +165,9 @@ final class SyncSystemDataCommand extends Command
             'system.security.view' => 'View security center',
             'system.security.update' => 'Manage security risks and IP blocks',
             'system.setting.view' => 'View system settings',
+            'system.setting.update' => 'Update system settings',
             'system.theme-setting.view' => 'View theme settings',
+            'system.theme-setting.update' => 'Update theme settings',
         ] as $code => $name) {
             $items[] = ['code' => $code, 'name' => $name, 'is_system' => true];
         }
@@ -203,7 +206,9 @@ final class SyncSystemDataCommand extends Command
             'system.security.view' => 'system.logs.access',
             'system.security.update' => 'system.security.view',
             'system.setting.view' => 'system.configuration.access',
+            'system.setting.update' => 'system.setting.view',
             'system.theme-setting.view' => 'system.configuration.access',
+            'system.theme-setting.update' => 'system.theme-setting.view',
         ];
     }
 

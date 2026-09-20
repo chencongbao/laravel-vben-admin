@@ -42,6 +42,14 @@ final class AdminPermissionController extends Controller
     {
         $data = $this->validated($request);
         $menuIds = $data['menu_ids'] ?? [];
+        $parentIds = isset($data['parent_id']) ? [(int) $data['parent_id']] : [];
+        if (! $this->privilegeGuard->canAssignMenus($request->user(), $menuIds)
+            || ! $this->privilegeGuard->canAssignPermissions($request->user(), $parentIds)) {
+            return response()->json([
+                'message' => 'Permission assignment exceeds your authority.',
+                'code' => 'ADMIN_PRIVILEGE_ESCALATION_DENIED',
+            ], 403);
+        }
         unset($data['menu_ids']);
         $permission = DB::transaction(function () use ($data, $menuIds, $request): AdminPermission {
             $permission = AdminPermission::query()->create($data + ['is_system' => false, 'is_deprecated' => false]);
@@ -86,6 +94,13 @@ final class AdminPermissionController extends Controller
         if ($submittedIds->all() !== $permissions->keys()->sort()->values()->all()) {
             return response()->json(['message' => 'The complete permission tree is required.', 'code' => 'PERMISSION_REORDER_INCOMPLETE'], 422);
         }
+        $parentIds = collect($data['items'])->pluck('parent_id')->filter()->map(fn ($id) => (int) $id)->unique()->values()->all();
+        if (! $this->privilegeGuard->canAssignPermissions($request->user(), $parentIds)) {
+            return response()->json([
+                'message' => 'Permission assignment exceeds your authority.',
+                'code' => 'ADMIN_PRIVILEGE_ESCALATION_DENIED',
+            ], 403);
+        }
 
         $parentById = collect($data['items'])->mapWithKeys(fn (array $item) => [$item['id'] => $item['parent_id']]);
         foreach ($parentById as $id => $parentId) {
@@ -129,11 +144,19 @@ final class AdminPermissionController extends Controller
 
         $data = $this->validated($request, $adminPermission);
         $parentId = array_key_exists('parent_id', $data) ? $data['parent_id'] : $adminPermission->parent_id;
+        $menuIds = $data['menu_ids'] ?? null;
+        if ((array_key_exists('parent_id', $data)
+                && ! $this->privilegeGuard->canAssignPermissions($request->user(), $parentId === null ? [] : [(int) $parentId]))
+            || ($menuIds !== null && ! $this->privilegeGuard->canAssignMenus($request->user(), $menuIds))) {
+            return response()->json([
+                'message' => 'Permission assignment exceeds your authority.',
+                'code' => 'ADMIN_PRIVILEGE_ESCALATION_DENIED',
+            ], 403);
+        }
         if ($this->createsCycle($adminPermission, $parentId)) {
             return response()->json(['message' => 'The permission hierarchy contains a cycle.', 'code' => 'PERMISSION_CYCLE'], 422);
         }
 
-        $menuIds = $data['menu_ids'] ?? null;
         unset($data['menu_ids']);
         $before = $adminPermission->load('menus:id')->toArray();
         DB::transaction(function () use ($adminPermission, $before, $data, $menuIds, $request): void {

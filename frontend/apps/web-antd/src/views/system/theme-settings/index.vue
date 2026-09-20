@@ -675,7 +675,13 @@ onMounted(load);
         </Tabs>
 
         <div class="theme-actions">
-          <Button :loading="saving" size="large" type="primary" @click="save">
+          <Button
+            v-access:code="'system.theme-setting.update'"
+            :loading="saving"
+            size="large"
+            type="primary"
+            @click="save"
+          >
             <IconifyIcon icon="lucide:save" />
             {{ $t('configuration.themeForm.save') }}
           </Button>

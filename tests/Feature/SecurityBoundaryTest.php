@@ -576,4 +576,140 @@ final class SecurityBoundaryTest extends TestCase
             collect($response->json('menus'))->pluck('id')->sort()->values()->all(),
         );
     }
+
+    public function test_setting_write_routes_require_their_update_permissions(): void
+    {
+        $this->artisan('vben-admin:install', ['--skip-frontend' => true])->assertSuccessful();
+        $actor = AdminUser::query()->create([
+            'username' => 'settings-reader',
+            'name' => 'Settings reader',
+            'password' => 'SecurePassword123',
+            'is_active' => true,
+        ]);
+        $role = AdminRole::query()->create([
+            'code' => 'settings-reader',
+            'name' => 'Settings reader',
+            'is_active' => true,
+        ]);
+        $role->permissions()->sync(AdminPermission::query()->whereIn('code', [
+            'system.setting.view',
+            'system.theme-setting.view',
+        ])->pluck('id'));
+        $actor->roles()->sync([$role->getKey()]);
+        Sanctum::actingAs($actor, ['admin']);
+
+        $this->getJson('/api/admin/system/settings')->assertOk();
+        $this->putJson('/api/admin/system/settings', [
+            'settings' => [['key' => 'system.name', 'value' => 'Denied update']],
+        ])->assertForbidden()->assertJsonPath('code', 'ADMIN_PERMISSION_DENIED');
+
+        $this->getJson('/api/admin/system/theme-settings')->assertOk();
+        $this->putJson('/api/admin/system/theme-settings', [
+            'settings' => [['key' => 'system.admin_theme', 'value' => 'violet']],
+        ])->assertForbidden()->assertJsonPath('code', 'ADMIN_PERMISSION_DENIED');
+
+        $role->permissions()->syncWithoutDetaching(AdminPermission::query()->whereIn('code', [
+            'system.setting.update',
+            'system.theme-setting.update',
+        ])->pluck('id'));
+
+        $this->putJson('/api/admin/system/settings', [
+            'settings' => [['key' => 'system.name', 'value' => 'Allowed update']],
+        ])->assertOk();
+        $this->putJson('/api/admin/system/theme-settings', [
+            'settings' => [['key' => 'system.admin_theme', 'value' => 'violet']],
+        ])->assertOk();
+    }
+
+    public function test_permission_relationships_cannot_reference_objects_outside_actor_scope(): void
+    {
+        $this->artisan('vben-admin:install', ['--skip-frontend' => true])->assertSuccessful();
+        $actor = AdminUser::query()->create([
+            'username' => 'limited-permission-manager',
+            'name' => 'Limited permission manager',
+            'password' => 'SecurePassword123',
+            'is_active' => true,
+        ]);
+        $role = AdminRole::query()->create(['code' => 'limited-permission-manager', 'name' => 'Limited permission manager', 'is_active' => true]);
+        $manageablePermissions = AdminPermission::query()->whereIn('code', [
+            'system.permission.create',
+            'system.permission.update',
+            'system.permission.view',
+        ])->get();
+        $visibleMenu = AdminMenu::query()->where('code', 'system.permissions')->firstOrFail();
+        $hiddenMenu = AdminMenu::query()->where('code', 'system.users')->firstOrFail();
+        $hiddenParent = AdminPermission::query()->where('code', 'system.user.view')->firstOrFail();
+        $target = AdminPermission::query()->create(['code' => 'limited.target', 'name' => 'Limited target']);
+        $role->permissions()->sync($manageablePermissions->pluck('id')->push($target->getKey()));
+        $role->menus()->sync([$visibleMenu->getKey()]);
+        $actor->roles()->sync([$role->getKey()]);
+        Sanctum::actingAs($actor, ['admin']);
+
+        $this->postJson('/api/admin/system/permissions', [
+            'code' => 'limited.hidden-menu',
+            'name' => 'Hidden menu',
+            'menu_ids' => [$hiddenMenu->getKey()],
+        ])->assertForbidden()->assertJsonPath('code', 'ADMIN_PRIVILEGE_ESCALATION_DENIED');
+        $this->patchJson('/api/admin/system/permissions/'.$target->getKey(), [
+            'parent_id' => $hiddenParent->getKey(),
+        ])->assertForbidden()->assertJsonPath('code', 'ADMIN_PRIVILEGE_ESCALATION_DENIED');
+
+        $items = $manageablePermissions->push($target)->map(fn (AdminPermission $permission) => [
+            'id' => $permission->getKey(),
+            'parent_id' => $permission->is($target) ? $hiddenParent->getKey() : null,
+            'sort' => 0,
+        ])->all();
+        $this->putJson('/api/admin/system/permissions/reorder', ['items' => $items])
+            ->assertForbidden()->assertJsonPath('code', 'ADMIN_PRIVILEGE_ESCALATION_DENIED');
+    }
+
+    public function test_menu_relationships_cannot_reference_objects_outside_actor_scope(): void
+    {
+        $this->artisan('vben-admin:install', ['--skip-frontend' => true])->assertSuccessful();
+        $actor = AdminUser::query()->create([
+            'username' => 'limited-menu-manager',
+            'name' => 'Limited menu manager',
+            'password' => 'SecurePassword123',
+            'is_active' => true,
+        ]);
+        $role = AdminRole::query()->create(['code' => 'limited-menu-manager', 'name' => 'Limited menu manager', 'is_active' => true]);
+        $manageablePermissions = AdminPermission::query()->whereIn('code', [
+            'system.menu.create',
+            'system.menu.update',
+            'system.menu.view',
+        ])->get();
+        $hiddenPermission = AdminPermission::query()->where('code', 'system.user.view')->firstOrFail();
+        $visibleMenu = AdminMenu::query()->where('code', 'system.menus')->firstOrFail();
+        $hiddenParent = AdminMenu::query()->where('code', 'system.users')->firstOrFail();
+        $target = AdminMenu::query()->create([
+            'code' => 'limited.menu-target',
+            'title' => 'Limited target',
+            'type' => 'page',
+            'route_name' => 'LimitedMenuTarget',
+            'route_path' => '/limited/menu-target',
+            'view_key' => 'limited.menu-target',
+        ]);
+        $role->permissions()->sync($manageablePermissions->pluck('id'));
+        $role->menus()->sync([$visibleMenu->getKey(), $target->getKey()]);
+        $actor->roles()->sync([$role->getKey()]);
+        Sanctum::actingAs($actor, ['admin']);
+
+        $this->postJson('/api/admin/system/menus', [
+            'code' => 'limited.hidden-permission',
+            'title' => 'Hidden permission',
+            'type' => 'page',
+            'route_name' => 'LimitedHiddenPermission',
+            'route_path' => '/limited/hidden-permission',
+            'view_key' => 'limited.hidden-permission',
+            'permission_ids' => [$hiddenPermission->getKey()],
+        ])->assertForbidden()->assertJsonPath('code', 'ADMIN_PRIVILEGE_ESCALATION_DENIED');
+        $this->patchJson('/api/admin/system/menus/'.$target->getKey(), [
+            'parent_id' => $hiddenParent->getKey(),
+        ])->assertForbidden()->assertJsonPath('code', 'ADMIN_PRIVILEGE_ESCALATION_DENIED');
+
+        $this->putJson('/api/admin/system/menus/reorder', ['items' => [
+            ['id' => $visibleMenu->getKey(), 'parent_id' => null, 'sort' => 0],
+            ['id' => $target->getKey(), 'parent_id' => $hiddenParent->getKey(), 'sort' => 1],
+        ]])->assertForbidden()->assertJsonPath('code', 'ADMIN_PRIVILEGE_ESCALATION_DENIED');
+    }
 }
