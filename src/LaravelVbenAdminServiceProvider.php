@@ -18,6 +18,7 @@ use Chencongbao\LaravelVbenAdmin\Contracts\Authorizer;
 use Chencongbao\LaravelVbenAdmin\Contracts\LoginRecorder;
 use Chencongbao\LaravelVbenAdmin\Contracts\ModuleRegistry;
 use Chencongbao\LaravelVbenAdmin\Http\Middleware\EnsureAdminUser;
+use Chencongbao\LaravelVbenAdmin\Http\Middleware\ForceHttps;
 use Chencongbao\LaravelVbenAdmin\Http\Middleware\RequirePermission;
 use Chencongbao\LaravelVbenAdmin\Http\Middleware\RequireSuperAdmin;
 use Chencongbao\LaravelVbenAdmin\Services\ActivityAuditRecorder;
@@ -39,7 +40,13 @@ final class LaravelVbenAdminServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->register(FoundationServiceProvider::class);
+        $defaultAdminConfig = require __DIR__.'/../config/laravel-vben-admin.php';
         $this->mergeConfigFrom(__DIR__.'/../config/laravel-vben-admin.php', 'laravel-vben-admin');
+        $configuredRoute = $this->app->make('config')->get('laravel-vben-admin.route', []);
+        $this->app->make('config')->set(
+            'laravel-vben-admin.route',
+            array_replace($defaultAdminConfig['route'], is_array($configuredRoute) ? $configuredRoute : []),
+        );
         $defaultLogConfig = require __DIR__.'/../config/vben-admin-log.php';
         $configuredLogConfig = $this->app->make('config')->get('vben-admin-log', []);
         $this->app->make('config')->set(
@@ -82,13 +89,18 @@ final class LaravelVbenAdminServiceProvider extends ServiceProvider
         $router->aliasMiddleware('admin.user', EnsureAdminUser::class);
         $router->aliasMiddleware('admin.permission', RequirePermission::class);
         $router->aliasMiddleware('admin.super-admin', RequireSuperAdmin::class);
-        Route::middleware(config('laravel-vben-admin.route.middleware', ['api']))
+        $routeMiddleware = (array) config('laravel-vben-admin.route.middleware', ['api']);
+        if ((bool) config('laravel-vben-admin.route.force_https', false)) {
+            $routeMiddleware[] = ForceHttps::class;
+        }
+
+        Route::middleware($routeMiddleware)
             ->prefix('api/admin')
             ->group(__DIR__.'/../routes/admin.php');
 
         $projectRoutes = base_path('routes/admin.php');
         if (File::isFile($projectRoutes)) {
-            Route::middleware(config('laravel-vben-admin.route.middleware', ['api']))
+            Route::middleware($routeMiddleware)
                 ->prefix('api/admin')
                 ->group($projectRoutes);
         }

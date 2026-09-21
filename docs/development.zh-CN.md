@@ -354,6 +354,7 @@ $this->audit->record(
 - 用户删除使用独立的 `system.user.delete` 权限并记录 `system.user.deleted` 审计。只有固定内置账号 `cmsadmin`、`admin` 禁止删除，前端不显示其删除按钮，服务端直接调用返回 `PROTECTED_ADMIN_USER_DELETE_DENIED`；之后通过用户管理新增的账号均可删除，包括分配 `manager` 管理员角色的账号。非超级管理员仍不得越权删除持有超级管理员角色的账号，服务端返回 `ADMIN_PRIVILEGE_ESCALATION_DENIED`。删除用户时同步撤销其访问令牌，角色关联由外键级联清理。
 - 服务端授权始终以路由中间件绑定的稳定权限 `code` 为准，菜单路由、菜单是否显示和按钮隐藏都不能替代服务端权限校验。菜单、权限的新增、编辑、删除分别要求对应的 `system.menu.*`、`system.permission.*` 权限，并记录操作审计。
 - 查看与写入必须使用独立权限：系统设置使用 `system.setting.view` / `system.setting.update`，主题配置使用 `system.theme-setting.view` / `system.theme-setting.update`；拥有查看权限不得调用保存接口，前端保存按钮也必须绑定对应更新权限。
+- 后台 API 是否强制 HTTPS 由 `laravel-vben-admin.route.force_https`（环境变量 `VBEN_ADMIN_FORCE_HTTPS`）控制，默认关闭以兼容本地开发。开启后内置与项目扩展 API 路由统一通过 `ForceHttps` 中间件使用 308 跳转；反向代理必须同步配置可信代理，静态后台入口的 HTTPS 跳转由 Web 服务器负责。
 - 菜单和权限的新增、编辑、拖拽排序不仅要验证关联 ID 存在，还必须验证当前操作者有权分配每个 `parent_id`、`permission_ids` 和 `menu_ids`；超出操作者可分配范围统一返回 `ADMIN_PRIVILEGE_ESCALATION_DENIED`，不得借关联关系挂载本人不可见的父级、菜单或权限。
 - 后台管理员身份摘要统一使用 `src/composables/use-admin-identity.ts`：第一行显示本地化角色名称，第二行优先显示去除首尾空格后的姓名，姓名为空时回退用户名。顶部用户入口和个人中心资料卡必须复用该逻辑，不得分别拼接显示字段。
 - 路由页面必须保持唯一根元素。全局内容区使用 `Transition mode="out-in"`，路由组件若以Fragment形式输出多个根节点，离开页面时可能无法完成过渡并导致下一个页面内容不挂载；Modal、Drawer等同页节点也必须包在该页面的唯一根容器内。

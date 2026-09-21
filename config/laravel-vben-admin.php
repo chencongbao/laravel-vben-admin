@@ -8,6 +8,7 @@ return [
 
     'route' => [
         'middleware' => ['api'],
+        'force_https' => (bool) env('VBEN_ADMIN_FORCE_HTTPS', false),
     ],
 
     'auth' => [

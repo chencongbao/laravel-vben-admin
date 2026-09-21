@@ -231,6 +231,14 @@ API 地址仍然固定为：
 https://你的域名/api/admin
 ```
 
+后台 API 默认同时接受 HTTP 和 HTTPS，便于本地开发。生产环境可在 `.env` 开启路由层 HTTPS 兜底：
+
+```dotenv
+VBEN_ADMIN_FORCE_HTTPS=true
+```
+
+开启后，包内置路由和 `routes/admin.php` 项目扩展路由的 HTTP 请求都会使用 `308 Permanent Redirect` 跳转到 HTTPS，以保留 POST、PUT、PATCH、DELETE 的请求方法和请求体。反向代理部署时必须正确配置 Laravel 可信代理，使 `X-Forwarded-Proto: https` 能被识别；后台静态页面仍建议在 Nginx、Apache 或负载均衡器配置整站 HTTP 到 HTTPS 跳转。
+
 修改路径后，前端必须使用相同的 Vite base 重新构建，再发布到新的目录：
 
 ```bash
