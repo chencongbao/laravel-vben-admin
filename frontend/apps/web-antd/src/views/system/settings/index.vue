@@ -41,8 +41,8 @@ const saving = ref(false);
 const logoUploading = ref(false);
 const settings = ref<SettingItem[]>([]);
 const { hasAccessByCodes } = useAccess();
-const canUpdateSettings = computed(() =>
-  hasAccessByCodes(['system.setting.update']),
+const canUpdateSettings = computed(
+  () => hasAccessByCodes(['*']) || hasAccessByCodes(['system.setting.update']),
 );
 
 const settingMeta: Record<
@@ -326,7 +326,7 @@ onMounted(load);
 
         <div class="settings-actions">
           <Button
-            v-access:code="'system.setting.update'"
+            v-if="canUpdateSettings"
             :loading="saving"
             size="large"
             type="primary"
