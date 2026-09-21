@@ -619,7 +619,7 @@ final class SecurityBoundaryTest extends TestCase
         );
     }
 
-    public function test_setting_write_routes_require_their_update_permissions(): void
+    public function test_setting_view_permissions_also_allow_writes(): void
     {
         $this->artisan('vben-admin:install', ['--skip-frontend' => true])->assertSuccessful();
         $actor = AdminUser::query()->create([
@@ -642,22 +642,10 @@ final class SecurityBoundaryTest extends TestCase
 
         $this->getJson('/api/admin/system/settings')->assertOk();
         $this->putJson('/api/admin/system/settings', [
-            'settings' => [['key' => 'system.name', 'value' => 'Denied update']],
-        ])->assertForbidden()->assertJsonPath('code', 'ADMIN_PERMISSION_DENIED');
-
-        $this->getJson('/api/admin/system/theme-settings')->assertOk();
-        $this->putJson('/api/admin/system/theme-settings', [
-            'settings' => [['key' => 'system.admin_theme', 'value' => 'violet']],
-        ])->assertForbidden()->assertJsonPath('code', 'ADMIN_PERMISSION_DENIED');
-
-        $role->permissions()->syncWithoutDetaching(AdminPermission::query()->whereIn('code', [
-            'system.setting.update',
-            'system.theme-setting.update',
-        ])->pluck('id'));
-
-        $this->putJson('/api/admin/system/settings', [
             'settings' => [['key' => 'system.name', 'value' => 'Allowed update']],
         ])->assertOk();
+
+        $this->getJson('/api/admin/system/theme-settings')->assertOk();
         $this->putJson('/api/admin/system/theme-settings', [
             'settings' => [['key' => 'system.admin_theme', 'value' => 'violet']],
         ])->assertOk();

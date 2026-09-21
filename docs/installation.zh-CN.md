@@ -72,7 +72,7 @@ php artisan vben-admin:install --overwrite-config
 - 使用 `admin_permission_menus` 写入每个系统菜单对应的访问权限；
 - `cmsadmin` 只绑定 `administrator`，`admin` 只绑定 `manager`；
 - `administrator` 通过超级管理员规则隐式拥有全部权限和菜单，不批量写入角色权限、角色菜单关联；
-- 新安装的 `manager` 默认关联内置系统权限和菜单，包括安全中心的查看、风险处理权限和菜单，以及系统设置的 `system.setting.view`、`system.setting.update`；但不关联固定工作台、菜单管理、权限管理、主题配置，也不关联 `system.menu.*`、`system.permission.*`、`system.theme-setting.view`、`system.theme-setting.update`；工作台由登录态自动提供，不写入 `admin_role_menus`。只有 `administrator` 超级管理员可以进入菜单管理、权限管理和主题配置。
+- 新安装的 `manager` 默认关联内置系统权限和菜单，包括安全中心的查看、风险处理权限和菜单，以及可查看并修改系统设置的 `system.setting.view`；但不关联固定工作台、菜单管理、权限管理、主题配置，也不关联 `system.menu.*`、`system.permission.*`、`system.theme-setting.view`；工作台由登录态自动提供，不写入 `admin_role_menus`。只有 `administrator` 超级管理员可以进入菜单管理、权限管理和主题配置。系统设置与主题配置不再拆分独立修改权限。
 
 `vben-admin:sync` 会保留已有自定义数据和非空角色授权。只有当内置 `manager` 的权限或菜单关联为空时，才补齐上述默认权限或默认菜单；非空授权视为超级管理员已经人工调整，不在同步时覆盖。
 

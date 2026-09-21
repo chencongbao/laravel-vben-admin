@@ -3,6 +3,8 @@
 namespace Chencongbao\LaravelVbenAdmin\Tests\Feature;
 
 use Chencongbao\LaravelVbenAdmin\LaravelVbenAdminServiceProvider;
+use Chencongbao\LaravelVbenAdmin\Models\AdminPermission;
+use Chencongbao\LaravelVbenAdmin\Models\AdminRole;
 use Chencongbao\LaravelVbenAdmin\Models\AdminSetting;
 use Chencongbao\LaravelVbenAdmin\Models\AdminUser;
 use Illuminate\Http\UploadedFile;
@@ -85,7 +87,7 @@ final class SystemLogoSettingsTest extends TestCase
         self::assertFalse(AdminSetting::query()->where('key', 'system.logo')->exists());
     }
 
-    public function test_logo_write_endpoints_require_the_system_setting_update_permission(): void
+    public function test_logo_write_endpoints_require_only_the_system_setting_view_permission(): void
     {
         Storage::fake('public');
         $this->artisan('vben-admin:install', ['--skip-frontend' => true])->assertSuccessful();
@@ -103,5 +105,20 @@ final class SystemLogoSettingsTest extends TestCase
         $this->deleteJson('/api/admin/system/settings/logo')->assertForbidden();
 
         self::assertFalse(AdminSetting::query()->where('key', 'system.logo')->exists());
+
+        $role = AdminRole::query()->create([
+            'code' => 'settings-reader',
+            'name' => 'Settings Reader',
+            'is_active' => true,
+            'is_system' => false,
+            'is_super_admin' => false,
+        ]);
+        $role->permissions()->attach(AdminPermission::query()->where('code', 'system.setting.view')->valueOrFail('id'));
+        $user->roles()->attach($role);
+
+        $this->postJson('/api/admin/system/settings/logo', [
+            'logo' => UploadedFile::fake()->image('brand.png', 128, 128),
+        ])->assertOk();
+        $this->deleteJson('/api/admin/system/settings/logo')->assertOk();
     }
 }

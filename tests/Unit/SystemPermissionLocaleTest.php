@@ -14,8 +14,8 @@ final class SystemPermissionLocaleTest extends TestCase
         $messages = json_decode((string) file_get_contents($path), true, flags: JSON_THROW_ON_ERROR);
 
         foreach ([
-            'system.setting.update',
-            'system.theme-setting.update',
+            'system.setting.view',
+            'system.theme-setting.view',
         ] as $permission) {
             $value = $messages['permissionNames'];
 

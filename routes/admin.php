@@ -84,9 +84,9 @@ Route::middleware(['auth:sanctum', 'admin.user'])->group(function (): void {
     Route::post('system/security/ip-blocks', [AdminSecurityController::class, 'block'])->middleware('admin.permission:system.security.update');
     Route::post('system/security/ip-blocks/{ipBlock}/release', [AdminSecurityController::class, 'release'])->middleware('admin.permission:system.security.update');
     Route::get('system/settings', [AdminSettingController::class, 'index'])->middleware('admin.permission:system.setting.view');
-    Route::put('system/settings', [AdminSettingController::class, 'update'])->middleware('admin.permission:system.setting.update');
-    Route::post('system/settings/logo', [AdminSettingController::class, 'uploadLogo'])->middleware(['admin.permission:system.setting.update', 'throttle:12,1']);
-    Route::delete('system/settings/logo', [AdminSettingController::class, 'resetLogo'])->middleware('admin.permission:system.setting.update');
+    Route::put('system/settings', [AdminSettingController::class, 'update'])->middleware('admin.permission:system.setting.view');
+    Route::post('system/settings/logo', [AdminSettingController::class, 'uploadLogo'])->middleware(['admin.permission:system.setting.view', 'throttle:12,1']);
+    Route::delete('system/settings/logo', [AdminSettingController::class, 'resetLogo'])->middleware('admin.permission:system.setting.view');
     Route::get('system/theme-settings', [AdminSettingController::class, 'theme'])->middleware('admin.permission:system.theme-setting.view');
-    Route::put('system/theme-settings', [AdminSettingController::class, 'updateTheme'])->middleware('admin.permission:system.theme-setting.update');
+    Route::put('system/theme-settings', [AdminSettingController::class, 'updateTheme'])->middleware('admin.permission:system.theme-setting.view');
 });

@@ -204,12 +204,10 @@
         "update": "Manage Security Risks"
       },
       "setting": {
-        "view": "System Configuration",
-        "update": "Update System Configuration"
+        "view": "System Configuration"
       },
       "theme-setting": {
-        "view": "Theme Configuration",
-        "update": "Update Theme Configuration"
+        "view": "Theme Configuration"
       }
     }
   },

@@ -28,8 +28,12 @@ final class SyncSystemDataCommand extends Command
         'system.permission.delete',
         'system.permission.update',
         'system.permission.view',
-        'system.theme-setting.update',
         'system.theme-setting.view',
+    ];
+
+    private const REMOVED_PERMISSION_CODES = [
+        'system.setting.update',
+        'system.theme-setting.update',
     ];
 
     protected $signature = 'vben-admin:sync {--dry-run : Preview changes without writing them}';
@@ -68,6 +72,8 @@ final class SyncSystemDataCommand extends Command
             foreach ($permissions as $permission) {
                 AdminPermission::query()->updateOrCreate(['code' => $permission['code']], $permission);
             }
+
+            AdminPermission::query()->whereIn('code', self::REMOVED_PERMISSION_CODES)->delete();
 
             foreach ($this->permissionParents() as $code => $parentCode) {
                 $parentId = AdminPermission::query()->where('code', $parentCode)->value('id');
@@ -165,9 +171,7 @@ final class SyncSystemDataCommand extends Command
             'system.security.view' => 'View security center',
             'system.security.update' => 'Manage security risks and IP blocks',
             'system.setting.view' => 'View system settings',
-            'system.setting.update' => 'Update system settings',
             'system.theme-setting.view' => 'View theme settings',
-            'system.theme-setting.update' => 'Update theme settings',
         ] as $code => $name) {
             $items[] = ['code' => $code, 'name' => $name, 'is_system' => true];
         }
@@ -206,9 +210,7 @@ final class SyncSystemDataCommand extends Command
             'system.security.view' => 'system.logs.access',
             'system.security.update' => 'system.security.view',
             'system.setting.view' => 'system.configuration.access',
-            'system.setting.update' => 'system.setting.view',
             'system.theme-setting.view' => 'system.configuration.access',
-            'system.theme-setting.update' => 'system.theme-setting.view',
         ];
     }
 

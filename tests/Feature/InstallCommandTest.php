@@ -65,7 +65,6 @@ final class InstallCommandTest extends TestCase
                     'system.permission.delete',
                     'system.permission.update',
                     'system.permission.view',
-                    'system.theme-setting.update',
                     'system.theme-setting.view',
                 ])
                 ->pluck('id')
@@ -91,7 +90,6 @@ final class InstallCommandTest extends TestCase
             'system.permission.delete',
             'system.permission.update',
             'system.permission.view',
-            'system.theme-setting.update',
             'system.theme-setting.view',
         ])->exists());
         self::assertTrue($manager->menus()->where('code', 'system.security')->exists());
@@ -144,12 +142,10 @@ final class InstallCommandTest extends TestCase
         self::assertDatabaseHas('admin_permissions', ['code' => 'system.audit.view', 'parent_id' => $systemLogsPermission->getKey()]);
         self::assertDatabaseHas('admin_permissions', ['code' => 'system.setting.view', 'parent_id' => $configurationPermission->getKey()]);
         self::assertDatabaseHas('admin_permissions', ['code' => 'system.theme-setting.view', 'parent_id' => $configurationPermission->getKey()]);
-        $settingViewPermission = AdminPermission::query()->where('code', 'system.setting.view')->firstOrFail();
-        $themeSettingViewPermission = AdminPermission::query()->where('code', 'system.theme-setting.view')->firstOrFail();
-        self::assertDatabaseHas('admin_permissions', ['code' => 'system.setting.update', 'parent_id' => $settingViewPermission->getKey()]);
-        self::assertDatabaseHas('admin_permissions', ['code' => 'system.theme-setting.update', 'parent_id' => $themeSettingViewPermission->getKey()]);
-        self::assertTrue($manager->permissions()->where('code', 'system.setting.update')->exists());
-        self::assertFalse($manager->permissions()->where('code', 'system.theme-setting.update')->exists());
+        self::assertDatabaseMissing('admin_permissions', ['code' => 'system.setting.update']);
+        self::assertDatabaseMissing('admin_permissions', ['code' => 'system.theme-setting.update']);
+        self::assertTrue($manager->permissions()->where('code', 'system.setting.view')->exists());
+        self::assertFalse($manager->permissions()->where('code', 'system.theme-setting.view')->exists());
         $configuration = AdminMenu::query()->where('code', 'configuration')->firstOrFail();
         self::assertTrue($configuration->permissions()->where('code', 'system.configuration.access')->exists());
         self::assertFalse($configuration->permissions()->whereIn('code', ['system.setting.view', 'system.theme-setting.view'])->exists());
@@ -192,6 +188,19 @@ final class InstallCommandTest extends TestCase
 
         self::assertTrue($manager->menus()->whereKey($settings->getKey())->exists());
         self::assertTrue($manager->menus()->whereKey($configuration->getKey())->exists());
+    }
+
+    public function test_sync_removes_obsolete_setting_update_permissions(): void
+    {
+        $this->artisan('vben-admin:install', ['--skip-frontend' => true])->assertSuccessful();
+
+        AdminPermission::query()->create(['code' => 'system.setting.update', 'name' => 'Obsolete system setting update', 'is_system' => true]);
+        AdminPermission::query()->create(['code' => 'system.theme-setting.update', 'name' => 'Obsolete theme setting update', 'is_system' => true]);
+
+        $this->artisan('vben-admin:sync')->assertSuccessful();
+
+        self::assertDatabaseMissing('admin_permissions', ['code' => 'system.setting.update']);
+        self::assertDatabaseMissing('admin_permissions', ['code' => 'system.theme-setting.update']);
     }
 
     public function test_sync_preserves_log_access_after_adding_the_system_logs_parent(): void

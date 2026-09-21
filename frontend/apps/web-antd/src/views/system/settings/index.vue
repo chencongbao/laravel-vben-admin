@@ -42,7 +42,10 @@ const logoUploading = ref(false);
 const settings = ref<SettingItem[]>([]);
 const { hasAccessByCodes } = useAccess();
 const canUpdateSettings = computed(
-  () => hasAccessByCodes(['*']) || hasAccessByCodes(['system.setting.update']),
+  () => hasAccessByCodes(['*']) || hasAccessByCodes(['system.setting.view']),
+);
+const canManageLogo = computed(
+  () => hasAccessByCodes(['*']) || hasAccessByCodes(['system.setting.view']),
 );
 
 const settingMeta: Record<
@@ -230,7 +233,7 @@ onMounted(load);
             <FormItem class="settings-control">
               <div v-if="item.type === 'asset'" class="logo-setting">
                 <Upload
-                  v-if="canUpdateSettings"
+                  v-if="canManageLogo"
                   accept="image/jpeg,image/png,image/webp"
                   :before-upload="beforeLogoUpload"
                   :custom-request="uploadLogo"
@@ -261,7 +264,7 @@ onMounted(load);
                     :src="item.value || DEFAULT_ADMIN_LOGO"
                   />
                 </div>
-                <div v-if="canUpdateSettings" class="logo-actions">
+                <div v-if="canManageLogo" class="logo-actions">
                   <Upload
                     accept="image/jpeg,image/png,image/webp"
                     :before-upload="beforeLogoUpload"

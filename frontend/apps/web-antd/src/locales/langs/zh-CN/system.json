@@ -197,8 +197,8 @@
       "audit": { "view": "操作日志" },
       "login-log": { "view": "登录日志" },
       "security": { "view": "安全中心", "update": "处理安全风险" },
-      "setting": { "view": "系统配置", "update": "修改系统配置" },
-      "theme-setting": { "view": "主题配置", "update": "修改主题配置" }
+      "setting": { "view": "系统配置" },
+      "theme-setting": { "view": "主题配置" }
     }
   },
   "menus": "菜单管理",

@@ -5,9 +5,11 @@ import type {
   LayoutType,
   ThemeModeType,
 } from '@vben/types';
+import type { SettingItem } from '#/api/system';
 
 import { computed, onMounted, ref } from 'vue';
 
+import { useAccess } from '@vben/access';
 import { Page } from '@vben/common-ui';
 import {
   IconifyIcon,
@@ -39,11 +41,7 @@ import {
   Tabs,
 } from 'ant-design-vue';
 
-import {
-  getCollection,
-  type SettingItem,
-  updateThemeSettings,
-} from '#/api/system';
+import { getCollection, updateThemeSettings } from '#/api/system';
 import { $t } from '#/locales';
 import { LOGIN_THEME_COLORS } from '#/preferences';
 
@@ -52,6 +50,11 @@ const saving = ref(false);
 const activeGroup = ref('login');
 const activeAdvancedSection = ref('appearance');
 const settings = ref<SettingItem[]>([]);
+const { hasAccessByCodes } = useAccess();
+const canSaveTheme = computed(
+  () =>
+    hasAccessByCodes(['*']) || hasAccessByCodes(['system.theme-setting.view']),
+);
 const themePresets = BUILT_IN_THEME_PRESETS.filter(
   ({ type }) => type !== 'custom',
 );
@@ -74,83 +77,276 @@ const advancedSections: Array<{
     key: 'appearance',
     title: ['内容与外观', 'Content & Appearance'],
     fields: [
-      { key: 'app.dynamicTitle', label: ['动态页面标题', 'Dynamic page title'], type: 'boolean' },
-      { key: 'app.contentCompact', label: ['内容宽度', 'Content width'], type: 'select', options: [
-        { label: ['流式', 'Wide'], value: 'wide' }, { label: ['定宽', 'Compact'], value: 'compact' },
-      ] },
-      { key: 'theme.radius', label: ['界面圆角', 'Interface radius'], type: 'select', options: [
-        { label: ['无圆角', 'None'], value: '0' }, { label: ['小', 'Small'], value: '0.25' },
-        { label: ['默认', 'Default'], value: '0.5' }, { label: ['大', 'Large'], value: '0.75' },
-      ] },
-      { key: 'theme.fontSize', label: ['基础字号', 'Base font size'], type: 'number', min: 12, max: 20 },
-      { key: 'app.colorGrayMode', label: ['灰色模式', 'Gray mode'], type: 'boolean' },
-      { key: 'app.colorWeakMode', label: ['色弱模式', 'Color-weak mode'], type: 'boolean' },
-      { key: 'theme.semiDarkHeader', label: ['深色顶栏', 'Dark header'], type: 'boolean' },
-      { key: 'theme.semiDarkSidebar', label: ['深色侧边栏', 'Dark sidebar'], type: 'boolean' },
-      { key: 'theme.semiDarkSidebarSub', label: ['深色子菜单', 'Dark submenu'], type: 'boolean' },
+      {
+        key: 'app.dynamicTitle',
+        label: ['动态页面标题', 'Dynamic page title'],
+        type: 'boolean',
+      },
+      {
+        key: 'app.contentCompact',
+        label: ['内容宽度', 'Content width'],
+        type: 'select',
+        options: [
+          { label: ['流式', 'Wide'], value: 'wide' },
+          { label: ['定宽', 'Compact'], value: 'compact' },
+        ],
+      },
+      {
+        key: 'theme.radius',
+        label: ['界面圆角', 'Interface radius'],
+        type: 'select',
+        options: [
+          { label: ['无圆角', 'None'], value: '0' },
+          { label: ['小', 'Small'], value: '0.25' },
+          { label: ['默认', 'Default'], value: '0.5' },
+          { label: ['大', 'Large'], value: '0.75' },
+        ],
+      },
+      {
+        key: 'theme.fontSize',
+        label: ['基础字号', 'Base font size'],
+        type: 'number',
+        min: 12,
+        max: 20,
+      },
+      {
+        key: 'app.colorGrayMode',
+        label: ['灰色模式', 'Gray mode'],
+        type: 'boolean',
+      },
+      {
+        key: 'app.colorWeakMode',
+        label: ['色弱模式', 'Color-weak mode'],
+        type: 'boolean',
+      },
+      {
+        key: 'theme.semiDarkHeader',
+        label: ['深色顶栏', 'Dark header'],
+        type: 'boolean',
+      },
+      {
+        key: 'theme.semiDarkSidebar',
+        label: ['深色侧边栏', 'Dark sidebar'],
+        type: 'boolean',
+      },
+      {
+        key: 'theme.semiDarkSidebarSub',
+        label: ['深色子菜单', 'Dark submenu'],
+        type: 'boolean',
+      },
     ],
   },
   {
     key: 'navigation',
     title: ['侧边栏与导航', 'Sidebar & Navigation'],
     fields: [
-      { key: 'sidebar.enable', label: ['显示侧边栏', 'Show sidebar'], type: 'boolean' },
-      { key: 'sidebar.width', label: ['侧边栏宽度', 'Sidebar width'], type: 'number', min: 180, max: 320 },
-      { key: 'sidebar.draggable', label: ['允许拖动宽度', 'Resizable sidebar'], type: 'boolean' },
-      { key: 'sidebar.collapsedShowTitle', label: ['折叠后显示标题', 'Show collapsed titles'], type: 'boolean' },
-      { key: 'sidebar.autoActivateChild', label: ['自动激活子菜单', 'Auto-activate child'], type: 'boolean' },
-      { key: 'sidebar.expandOnHover', label: ['固定展开侧边栏', 'Keep sidebar expanded'], type: 'boolean' },
-      { key: 'sidebar.collapsedButton', label: ['显示折叠按钮', 'Show collapse button'], type: 'boolean' },
-      { key: 'sidebar.fixedButton', label: ['显示固定按钮', 'Show pin button'], type: 'boolean' },
-      { key: 'navigation.accordion', label: ['菜单手风琴模式', 'Menu accordion'], type: 'boolean' },
-      { key: 'navigation.split', label: ['拆分导航菜单', 'Split navigation'], type: 'boolean' },
-      { key: 'navigation.styleType', label: ['导航样式', 'Navigation style'], type: 'select', options: [
-        { label: ['圆角', 'Rounded'], value: 'rounded' }, { label: ['朴素', 'Plain'], value: 'plain' },
-      ] },
+      {
+        key: 'sidebar.enable',
+        label: ['显示侧边栏', 'Show sidebar'],
+        type: 'boolean',
+      },
+      {
+        key: 'sidebar.width',
+        label: ['侧边栏宽度', 'Sidebar width'],
+        type: 'number',
+        min: 180,
+        max: 320,
+      },
+      {
+        key: 'sidebar.draggable',
+        label: ['允许拖动宽度', 'Resizable sidebar'],
+        type: 'boolean',
+      },
+      {
+        key: 'sidebar.collapsedShowTitle',
+        label: ['折叠后显示标题', 'Show collapsed titles'],
+        type: 'boolean',
+      },
+      {
+        key: 'sidebar.autoActivateChild',
+        label: ['自动激活子菜单', 'Auto-activate child'],
+        type: 'boolean',
+      },
+      {
+        key: 'sidebar.expandOnHover',
+        label: ['固定展开侧边栏', 'Keep sidebar expanded'],
+        type: 'boolean',
+      },
+      {
+        key: 'sidebar.collapsedButton',
+        label: ['显示折叠按钮', 'Show collapse button'],
+        type: 'boolean',
+      },
+      {
+        key: 'sidebar.fixedButton',
+        label: ['显示固定按钮', 'Show pin button'],
+        type: 'boolean',
+      },
+      {
+        key: 'navigation.accordion',
+        label: ['菜单手风琴模式', 'Menu accordion'],
+        type: 'boolean',
+      },
+      {
+        key: 'navigation.split',
+        label: ['拆分导航菜单', 'Split navigation'],
+        type: 'boolean',
+      },
+      {
+        key: 'navigation.styleType',
+        label: ['导航样式', 'Navigation style'],
+        type: 'select',
+        options: [
+          { label: ['圆角', 'Rounded'], value: 'rounded' },
+          { label: ['朴素', 'Plain'], value: 'plain' },
+        ],
+      },
     ],
   },
   {
     key: 'header',
     title: ['顶栏与面包屑', 'Header & Breadcrumb'],
     fields: [
-      { key: 'header.enable', label: ['显示顶栏', 'Show header'], type: 'boolean' },
-      { key: 'header.mode', label: ['顶栏模式', 'Header mode'], type: 'select', options: [
-        { label: ['固定', 'Fixed'], value: 'fixed' }, { label: ['静态', 'Static'], value: 'static' },
-      ] },
-      { key: 'header.menuAlign', label: ['顶栏菜单对齐', 'Header menu alignment'], type: 'select', options: [
-        { label: ['左侧', 'Left'], value: 'start' }, { label: ['居中', 'Center'], value: 'center' }, { label: ['右侧', 'Right'], value: 'end' },
-      ] },
-      { key: 'breadcrumb.enable', label: ['显示面包屑', 'Show breadcrumb'], type: 'boolean' },
-      { key: 'breadcrumb.showIcon', label: ['显示面包屑图标', 'Show breadcrumb icons'], type: 'boolean' },
-      { key: 'breadcrumb.showHome', label: ['显示首页入口', 'Show home entry'], type: 'boolean' },
-      { key: 'breadcrumb.hideOnlyOne', label: ['仅一项时隐藏', 'Hide when single'], type: 'boolean' },
-      { key: 'breadcrumb.styleType', label: ['面包屑样式', 'Breadcrumb style'], type: 'select', options: [
-        { label: ['普通', 'Normal'], value: 'normal' }, { label: ['背景', 'Background'], value: 'background' },
-      ] },
+      {
+        key: 'header.enable',
+        label: ['显示顶栏', 'Show header'],
+        type: 'boolean',
+      },
+      {
+        key: 'header.mode',
+        label: ['顶栏模式', 'Header mode'],
+        type: 'select',
+        options: [
+          { label: ['固定', 'Fixed'], value: 'fixed' },
+          { label: ['静态', 'Static'], value: 'static' },
+        ],
+      },
+      {
+        key: 'header.menuAlign',
+        label: ['顶栏菜单对齐', 'Header menu alignment'],
+        type: 'select',
+        options: [
+          { label: ['左侧', 'Left'], value: 'start' },
+          { label: ['居中', 'Center'], value: 'center' },
+          { label: ['右侧', 'Right'], value: 'end' },
+        ],
+      },
+      {
+        key: 'breadcrumb.enable',
+        label: ['显示面包屑', 'Show breadcrumb'],
+        type: 'boolean',
+      },
+      {
+        key: 'breadcrumb.showIcon',
+        label: ['显示面包屑图标', 'Show breadcrumb icons'],
+        type: 'boolean',
+      },
+      {
+        key: 'breadcrumb.showHome',
+        label: ['显示首页入口', 'Show home entry'],
+        type: 'boolean',
+      },
+      {
+        key: 'breadcrumb.hideOnlyOne',
+        label: ['仅一项时隐藏', 'Hide when single'],
+        type: 'boolean',
+      },
+      {
+        key: 'breadcrumb.styleType',
+        label: ['面包屑样式', 'Breadcrumb style'],
+        type: 'select',
+        options: [
+          { label: ['普通', 'Normal'], value: 'normal' },
+          { label: ['背景', 'Background'], value: 'background' },
+        ],
+      },
     ],
   },
   {
     key: 'shortcuts',
     title: ['快捷键、动画与工具栏', 'Shortcuts, Animation & Toolbar'],
     fields: [
-      { key: 'shortcutKeys.enable', label: ['启用快捷键', 'Enable shortcuts'], type: 'boolean' },
-      { key: 'shortcutKeys.globalSearch', label: ['搜索快捷键', 'Search shortcut'], type: 'boolean' },
-      { key: 'shortcutKeys.globalLogout', label: ['退出快捷键', 'Logout shortcut'], type: 'boolean' },
-      { key: 'shortcutKeys.globalLockScreen', label: ['锁屏快捷键', 'Lock-screen shortcut'], type: 'boolean' },
-      { key: 'transition.enable', label: ['页面切换动画', 'Page transitions'], type: 'boolean' },
-      { key: 'transition.loading', label: ['页面加载动画', 'Page loading animation'], type: 'boolean' },
-      { key: 'transition.progress', label: ['顶部进度条', 'Top progress bar'], type: 'boolean' },
-      { key: 'transition.name', label: ['切换动画样式', 'Transition style'], type: 'select', options: [
-        { label: ['淡入滑动', 'Fade slide'], value: 'fade-slide' }, { label: ['淡入', 'Fade'], value: 'fade' },
-        { label: ['向上淡入', 'Fade up'], value: 'fade-up' }, { label: ['向下淡入', 'Fade down'], value: 'fade-down' },
-      ] },
-      { key: 'widget.globalSearch', label: ['顶部搜索', 'Header search'], type: 'boolean' },
-      { key: 'widget.fullscreen', label: ['全屏按钮', 'Fullscreen button'], type: 'boolean' },
-      { key: 'widget.languageToggle', label: ['语言切换', 'Language switch'], type: 'boolean' },
-      { key: 'widget.notification', label: ['通知按钮', 'Notification button'], type: 'boolean' },
-      { key: 'widget.themeToggle', label: ['明暗切换', 'Theme switch'], type: 'boolean' },
-      { key: 'widget.sidebarToggle', label: ['侧边栏切换', 'Sidebar switch'], type: 'boolean' },
-      { key: 'widget.lockScreen', label: ['锁屏功能', 'Lock screen'], type: 'boolean' },
+      {
+        key: 'shortcutKeys.enable',
+        label: ['启用快捷键', 'Enable shortcuts'],
+        type: 'boolean',
+      },
+      {
+        key: 'shortcutKeys.globalSearch',
+        label: ['搜索快捷键', 'Search shortcut'],
+        type: 'boolean',
+      },
+      {
+        key: 'shortcutKeys.globalLogout',
+        label: ['退出快捷键', 'Logout shortcut'],
+        type: 'boolean',
+      },
+      {
+        key: 'shortcutKeys.globalLockScreen',
+        label: ['锁屏快捷键', 'Lock-screen shortcut'],
+        type: 'boolean',
+      },
+      {
+        key: 'transition.enable',
+        label: ['页面切换动画', 'Page transitions'],
+        type: 'boolean',
+      },
+      {
+        key: 'transition.loading',
+        label: ['页面加载动画', 'Page loading animation'],
+        type: 'boolean',
+      },
+      {
+        key: 'transition.progress',
+        label: ['顶部进度条', 'Top progress bar'],
+        type: 'boolean',
+      },
+      {
+        key: 'transition.name',
+        label: ['切换动画样式', 'Transition style'],
+        type: 'select',
+        options: [
+          { label: ['淡入滑动', 'Fade slide'], value: 'fade-slide' },
+          { label: ['淡入', 'Fade'], value: 'fade' },
+          { label: ['向上淡入', 'Fade up'], value: 'fade-up' },
+          { label: ['向下淡入', 'Fade down'], value: 'fade-down' },
+        ],
+      },
+      {
+        key: 'widget.globalSearch',
+        label: ['顶部搜索', 'Header search'],
+        type: 'boolean',
+      },
+      {
+        key: 'widget.fullscreen',
+        label: ['全屏按钮', 'Fullscreen button'],
+        type: 'boolean',
+      },
+      {
+        key: 'widget.languageToggle',
+        label: ['语言切换', 'Language switch'],
+        type: 'boolean',
+      },
+      {
+        key: 'widget.notification',
+        label: ['通知按钮', 'Notification button'],
+        type: 'boolean',
+      },
+      {
+        key: 'widget.themeToggle',
+        label: ['明暗切换', 'Theme switch'],
+        type: 'boolean',
+      },
+      {
+        key: 'widget.sidebarToggle',
+        label: ['侧边栏切换', 'Sidebar switch'],
+        type: 'boolean',
+      },
+      {
+        key: 'widget.lockScreen',
+        label: ['锁屏功能', 'Lock screen'],
+        type: 'boolean',
+      },
     ],
   },
 ];
@@ -191,9 +387,10 @@ const groups = computed(() => [
     title: $t('configuration.themeForm.tabbar.title'),
   },
   {
-    description: preferences.app.locale === 'en-US'
-      ? 'Configure the remaining shared interface preferences.'
-      : '集中配置其余未重复的后台界面偏好。',
+    description:
+      preferences.app.locale === 'en-US'
+        ? 'Configure the remaining shared interface preferences.'
+        : '集中配置其余未重复的后台界面偏好。',
     key: 'advanced',
     keys: ['system.advanced_preferences'],
     title: preferences.app.locale === 'en-US' ? 'Other settings' : '其他设置',
@@ -205,21 +402,25 @@ function localizedText(value: [string, string]) {
 }
 
 function advancedSetting() {
-  return settings.value.find(({ key }) => key === 'system.advanced_preferences');
+  return settings.value.find(
+    ({ key }) => key === 'system.advanced_preferences',
+  );
 }
 
 function advancedValue(path: string) {
   const [group, key] = path.split('.');
-  return advancedSetting()?.value?.[group!]?.[key!];
+  if (!group || !key) return undefined;
+  return advancedSetting()?.value?.[group]?.[key];
 }
 
 function setAdvancedValue(path: string, value: unknown) {
   const item = advancedSetting();
   if (!item) return;
   const [group, key] = path.split('.');
+  if (!group || !key) return;
   item.value ||= {};
-  item.value[group!] ||= {};
-  item.value[group!][key!] = value;
+  item.value[group] ||= {};
+  item.value[group][key] = value;
 }
 
 const settingOptions: Record<string, string[]> = {
@@ -347,9 +548,7 @@ function isTabbarSetting(key: string) {
 
 function tabbarStyleOptions() {
   return ['chrome', 'plain', 'card', 'brisk'].map((value) => ({
-    label: $t(
-      `configuration.themeForm.options.tabbarStyle.${value}`,
-    ),
+    label: $t(`configuration.themeForm.options.tabbarStyle.${value}`),
     value,
   }));
 }
@@ -407,7 +606,8 @@ async function save() {
 
     const settingValue = (key: string) =>
       settings.value.find((item) => item.key === key)?.value;
-    const advancedPreferences = settingValue('system.advanced_preferences') || {};
+    const advancedPreferences =
+      settingValue('system.advanced_preferences') || {};
     updatePreferences({
       ...advancedPreferences,
       app: { ...advancedPreferences.app, layout: adminLayout },
@@ -422,9 +622,7 @@ async function save() {
         draggable: settingValue('system.tabbar_draggable'),
         enable: settingValue('system.tabbar_enable'),
         maxCount: settingValue('system.tabbar_max_count'),
-        middleClickToClose: settingValue(
-          'system.tabbar_middle_click_to_close',
-        ),
+        middleClickToClose: settingValue('system.tabbar_middle_click_to_close'),
         persist: settingValue('system.tabbar_persist'),
         showIcon: settingValue('system.tabbar_show_icon'),
         showMaximize: settingValue('system.tabbar_show_maximize'),
@@ -449,15 +647,14 @@ onMounted(load);
 </script>
 
 <template>
-  <Page :description="$t('configuration.themeDescription')" :title="$t('configuration.themeSettings')">
+  <Page
+    :description="$t('configuration.themeDescription')"
+    :title="$t('configuration.themeSettings')"
+  >
     <Card :bordered="false" :loading="loading" class="theme-card">
       <Form layout="vertical">
         <Tabs v-model:active-key="activeGroup" class="theme-tabs">
-          <TabPane
-            v-for="group in groups"
-            :key="group.key"
-            :tab="group.title"
-          >
+          <TabPane v-for="group in groups" :key="group.key" :tab="group.title">
             <section class="theme-group">
               <header class="theme-group-header">
                 <h2>{{ group.title }}</h2>
@@ -676,7 +873,7 @@ onMounted(load);
 
         <div class="theme-actions">
           <Button
-            v-access:code="'system.theme-setting.update'"
+            v-if="canSaveTheme"
             :loading="saving"
             size="large"
             type="primary"
