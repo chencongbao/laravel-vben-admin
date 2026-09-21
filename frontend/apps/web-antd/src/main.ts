@@ -20,6 +20,7 @@ import { setAdminDefaultPageSize } from './utils/pagination';
 interface LaravelApplicationConfig {
   locale: SupportedLanguagesType;
   name: string;
+  logo: null | string;
   pageSize: number;
   timezone: string;
   loginLayout: AuthPageLayoutType;
@@ -34,6 +35,7 @@ interface LaravelApplicationConfig {
 const fallbackApplicationConfig: LaravelApplicationConfig = {
   locale: 'zh-CN',
   name: import.meta.env.VITE_APP_TITLE,
+  logo: null,
   pageSize: 20,
   timezone: 'Asia/Shanghai',
   loginLayout: 'panel-right',
@@ -69,6 +71,7 @@ async function resolveLaravelApplicationConfig(): Promise<LaravelApplicationConf
     const data = (await response.json()) as {
       locale?: string;
       name?: string;
+      logo?: null | string;
       page_size?: number;
       timezone?: string;
       login_layout?: string;
@@ -94,6 +97,7 @@ async function resolveLaravelApplicationConfig(): Promise<LaravelApplicationConf
     return {
       locale: data.locale === 'en-US' ? 'en-US' : 'zh-CN',
       name: data.name || fallbackApplicationConfig.name,
+      logo: typeof data.logo === 'string' && data.logo ? data.logo : null,
       pageSize:
         typeof data.page_size === 'number' &&
         data.page_size >= 10 &&
@@ -192,7 +196,8 @@ async function resolveLaravelApplicationConfig(): Promise<LaravelApplicationConf
           data.tabbar?.wheelable ?? fallbackApplicationConfig.tabbar.wheelable,
       },
       advancedPreferences:
-        data.advanced_preferences ?? fallbackApplicationConfig.advancedPreferences,
+        data.advanced_preferences ??
+        fallbackApplicationConfig.advancedPreferences,
     };
   } catch {
     return fallbackApplicationConfig;
@@ -216,6 +221,7 @@ async function initApplication() {
     loginLayout,
     loginTheme,
     name,
+    logo,
     pageSize,
     timezone,
     tabbar,
@@ -230,6 +236,7 @@ async function initApplication() {
     overrides: createOverridesPreferences(
       locale,
       name,
+      logo,
       timezone,
       loginTheme,
       loginLayout,

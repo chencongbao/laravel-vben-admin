@@ -1,0 +1,22 @@
+{
+  "actions": {
+    "hide": "Hide",
+    "read": "Mark as read",
+    "readAll": "Mark all as read"
+  },
+  "defaultTitle": "System notification",
+  "description": "View system notifications for the signed-in user. Read and hidden states are private to this account.",
+  "fields": {
+    "message": "Message",
+    "publishedAt": "Published At",
+    "severity": "Severity",
+    "title": "Title"
+  },
+  "severities": {
+    "error": "Error",
+    "info": "Info",
+    "success": "Success",
+    "warning": "Warning"
+  },
+  "title": "Notifications"
+}

@@ -1,5 +1,9 @@
 <script lang="ts" setup>
 import type { SettingItem } from '#/api/system';
+import type {
+  RcFile,
+  UploadRequestOption,
+} from 'ant-design-vue/es/vc-upload/interface';
 
 import { onMounted, ref } from 'vue';
 
@@ -18,14 +22,22 @@ import {
   Radio,
   RadioGroup,
   Switch,
+  Upload,
 } from 'ant-design-vue';
 
-import { getCollection, updateSettings } from '#/api/system';
+import {
+  getCollection,
+  resetSystemLogo,
+  updateSettings,
+  uploadSystemLogo,
+} from '#/api/system';
 import { $t } from '#/locales';
+import { DEFAULT_ADMIN_LOGO } from '#/preferences';
 import { setAdminDefaultPageSize } from '#/utils/pagination';
 
 const loading = ref(false);
 const saving = ref(false);
+const logoUploading = ref(false);
 const settings = ref<SettingItem[]>([]);
 
 const settingMeta: Record<
@@ -36,6 +48,11 @@ const settingMeta: Record<
     description: 'system.settingsForm.fields.systemName.description',
     label: 'system.settingsForm.fields.systemName.label',
     placeholder: 'system.settingsForm.fields.systemName.placeholder',
+  },
+  'system.logo': {
+    description: 'system.settingsForm.fields.systemLogo.description',
+    label: 'system.settingsForm.fields.systemLogo.label',
+    placeholder: '',
   },
   'system.page_size': {
     description: 'system.settingsForm.fields.pageSize.description',
@@ -86,7 +103,9 @@ async function save() {
   saving.value = true;
   try {
     const result = await updateSettings(
-      settings.value.map(({ key, value }) => ({ key, value })),
+      settings.value
+        .filter(({ type }) => type !== 'asset')
+        .map(({ key, value }) => ({ key, value })),
     );
     settings.value = result.settings;
     const systemName = settings.value.find(
@@ -104,11 +123,58 @@ async function save() {
   }
 }
 
+function beforeLogoUpload(file: RcFile) {
+  if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+    message.error($t('system.settingsForm.messages.logoTypeInvalid'));
+    return false;
+  }
+  if (file.size > 2 * 1024 * 1024) {
+    message.error($t('system.settingsForm.messages.logoSizeInvalid'));
+    return false;
+  }
+  return true;
+}
+
+async function uploadLogo(options: UploadRequestOption) {
+  logoUploading.value = true;
+  try {
+    const result = await uploadSystemLogo(options.file as File);
+    const setting = settings.value.find(({ key }) => key === 'system.logo');
+    if (setting) setting.value = result.logo;
+    updatePreferences({
+      logo: { source: result.logo, sourceDark: result.logo },
+    });
+    options.onSuccess?.(result);
+    message.success($t('system.settingsForm.messages.logoUploaded'));
+  } catch (error) {
+    options.onError?.(error as Error);
+  } finally {
+    logoUploading.value = false;
+  }
+}
+
+async function resetLogo(item: SettingItem) {
+  logoUploading.value = true;
+  try {
+    await resetSystemLogo();
+    item.value = null;
+    updatePreferences({
+      logo: { source: DEFAULT_ADMIN_LOGO, sourceDark: DEFAULT_ADMIN_LOGO },
+    });
+    message.success($t('system.settingsForm.messages.logoReset'));
+  } finally {
+    logoUploading.value = false;
+  }
+}
+
 onMounted(load);
 </script>
 
 <template>
-  <Page :description="$t('system.settingsDescription')" :title="$t('system.settings')">
+  <Page
+    :description="$t('system.settingsDescription')"
+    :title="$t('system.settings')"
+  >
     <Card :bordered="false" :loading="loading" class="settings-card">
       <Form layout="vertical">
         <div class="settings-list">
@@ -126,8 +192,40 @@ onMounted(load);
             </div>
 
             <FormItem class="settings-control">
+              <div v-if="item.type === 'asset'" class="logo-setting">
+                <div class="logo-preview">
+                  <img
+                    :alt="
+                      $t('system.settingsForm.fields.systemLogo.previewAlt')
+                    "
+                    :src="item.value || DEFAULT_ADMIN_LOGO"
+                  />
+                </div>
+                <div
+                  v-access:code="'system.setting.update'"
+                  class="logo-actions"
+                >
+                  <Upload
+                    accept="image/jpeg,image/png,image/webp"
+                    :before-upload="beforeLogoUpload"
+                    :custom-request="uploadLogo"
+                    :show-upload-list="false"
+                  >
+                    <Button :loading="logoUploading">
+                      {{ $t('system.settingsForm.actions.uploadLogo') }}
+                    </Button>
+                  </Upload>
+                  <Button
+                    v-if="item.value"
+                    :disabled="logoUploading"
+                    @click="resetLogo(item)"
+                  >
+                    {{ $t('system.settingsForm.actions.useDefaultLogo') }}
+                  </Button>
+                </div>
+              </div>
               <Switch
-                v-if="item.type === 'boolean'"
+                v-else-if="item.type === 'boolean'"
                 :id="`setting-${item.key}`"
                 v-model:checked="item.value"
               />
@@ -147,8 +245,12 @@ onMounted(load);
                 :id="`setting-${item.key}`"
                 v-model:value="item.value"
               >
-                <Radio value="weak">{{ $t('system.settingsForm.options.passwordStrength.weak') }}</Radio>
-                <Radio value="strong">{{ $t('system.settingsForm.options.passwordStrength.strong') }}</Radio>
+                <Radio value="weak">{{
+                  $t('system.settingsForm.options.passwordStrength.weak')
+                }}</Radio>
+                <Radio value="strong">{{
+                  $t('system.settingsForm.options.passwordStrength.strong')
+                }}</Radio>
               </RadioGroup>
               <Input
                 v-else
@@ -210,6 +312,35 @@ onMounted(load);
 
 .settings-copy {
   min-width: 0;
+}
+
+.logo-setting,
+.logo-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logo-setting {
+  flex-wrap: wrap;
+}
+
+.logo-preview {
+  display: flex;
+  width: 72px;
+  height: 72px;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
+  background: hsl(var(--background));
+}
+
+.logo-preview img {
+  max-width: 56px;
+  max-height: 56px;
+  object-fit: contain;
 }
 
 .settings-label {

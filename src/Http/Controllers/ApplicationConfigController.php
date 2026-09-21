@@ -14,6 +14,7 @@ final class ApplicationConfigController extends Controller
     {
         return response()->json([
             'name' => SystemSettings::value('system.name'),
+            'logo' => SystemSettings::logoUrl(),
             'locale' => AdminLocale::fromLaravel(),
             'supported_locales' => AdminLocale::SUPPORTED,
             'timezone' => 'Asia/Shanghai',

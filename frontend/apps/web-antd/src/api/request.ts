@@ -31,7 +31,8 @@ const localizedErrorKeys: Record<string, string> = {
   ADMIN_SUPER_ADMIN_REQUIRED: 'system.errors.superAdminRequired',
   ADMIN_SUPER_ROLE_ASSIGNMENT_DENIED: 'system.errors.superRoleAssignmentDenied',
   ADMIN_USERNAME_IMMUTABLE: 'system.errors.usernameImmutable',
-  BUILTIN_ADMIN_IDENTITY_PROTECTED: 'system.errors.builtInAdminIdentityProtected',
+  BUILTIN_ADMIN_IDENTITY_PROTECTED:
+    'system.errors.builtInAdminIdentityProtected',
   BUILTIN_ADMIN_ROLE_PROTECTED: 'system.errors.builtInAdminRoleProtected',
   CAPTCHA_INVALID: 'authentication.errors.captchaInvalid',
   CURRENT_PASSWORD_INCORRECT: 'profile.password.currentIncorrect',
@@ -49,7 +50,8 @@ const localizedErrorKeys: Record<string, string> = {
   PERMISSION_HAS_CHILDREN: 'system.errors.permissionHasChildren',
   PERMISSION_IN_USE: 'system.errors.permissionInUse',
   PERMISSION_REORDER_INCOMPLETE: 'system.errors.permissionReorderIncomplete',
-  PROTECTED_ADMIN_USER_DELETE_DENIED: 'system.errors.protectedAdminUserDeleteDenied',
+  PROTECTED_ADMIN_USER_DELETE_DENIED:
+    'system.errors.protectedAdminUserDeleteDenied',
   ROLE_IN_USE: 'system.errors.roleInUse',
   SYSTEM_MENU_PROTECTED: 'system.errors.systemMenuProtected',
   SYSTEM_PERMISSION_PROTECTED: 'system.errors.systemPermissionProtected',
@@ -65,6 +67,7 @@ const validationErrorKeys: Record<string, string> = {
   name: 'profile.basic.nameInvalid',
   password: 'profile.password.requirements',
   password_confirmation: 'profile.password.mismatch',
+  logo: 'system.settingsForm.messages.logoInvalid',
   'settings.system.login_description':
     'system.settingsForm.messages.loginDescriptionInvalid',
   'settings.system.login_remember_me':
@@ -103,7 +106,9 @@ function createRequestClient(baseURL: string, options?: RequestClientOptions) {
    * 刷新token逻辑
    */
   async function doRefreshToken(): Promise<string> {
-    throw new Error('Laravel Vben Admin uses revocable tokens without refresh.');
+    throw new Error(
+      'Laravel Vben Admin uses revocable tokens without refresh.',
+    );
   }
 
   function formatToken(token: null | string) {
@@ -160,17 +165,18 @@ function createRequestClient(baseURL: string, options?: RequestClientOptions) {
       const validationMessages = validationErrors
         ? Object.values(validationErrors).flat()
         : [];
-      const validationKey = validationMessages.includes('validation.regex')
-        && validationFields.includes('code')
-        ? 'system.permissionForm.messages.codeInvalid'
-        : validationFields
-            .map((field) => validationErrorKeys[field])
-            .find(Boolean)
-        ?? (validationFields.some((field) => field.startsWith('settings.'))
-          ? 'system.settingsForm.messages.invalid'
-          : validationFields.length > 0
-            ? 'common.errors.validationFailed'
-            : undefined);
+      const validationKey =
+        validationMessages.includes('validation.regex') &&
+        validationFields.includes('code')
+          ? 'system.permissionForm.messages.codeInvalid'
+          : (validationFields
+              .map((field) => validationErrorKeys[field])
+              .find(Boolean) ??
+            (validationFields.some((field) => field.startsWith('settings.'))
+              ? 'system.settingsForm.messages.invalid'
+              : validationFields.length > 0
+                ? 'common.errors.validationFailed'
+                : undefined));
       const messageKey = localizedKey ?? validationKey;
       const errorMessage = responseData?.error ?? responseData?.message ?? '';
       // 如果没有错误信息，则会根据状态码进行提示

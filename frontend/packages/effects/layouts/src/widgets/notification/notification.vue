@@ -1,7 +1,13 @@
 <script lang="ts" setup>
 import type { NotificationItem } from './types';
 
-import { Bell, CircleCheckBig, CircleX, MailCheck } from '@vben/icons';
+import {
+  Bell,
+  CircleCheckBig,
+  CircleX,
+  IconifyIcon,
+  MailCheck,
+} from '@vben/icons';
 import { $t } from '@vben/locales';
 
 import {
@@ -19,12 +25,15 @@ withDefaults(
   defineProps<{
     /** 显示圆点 */
     dot?: boolean;
+    /** 未读数量 */
+    unreadCount?: number;
     /** 消息列表 */
     notifications?: NotificationItem[];
   }>(),
   {
     dot: false,
     notifications: () => [],
+    unreadCount: 0,
   },
 );
 
@@ -63,8 +72,9 @@ const handleClear = () => {
         <VbenIconButton class="bell-button relative text-foreground">
           <span
             v-if="dot"
-            class="absolute top-0.5 right-0.5 size-2 rounded-sm bg-primary"
-          ></span>
+            class="absolute -top-1 -right-1 flex min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] leading-4 text-primary-foreground"
+            >{{ unreadCount > 99 ? '99+' : unreadCount }}</span
+          >
           <Bell class="size-4" />
         </VbenIconButton>
       </div>
@@ -98,9 +108,19 @@ const handleClear = () => {
                   class="relative flex size-10 shrink-0 overflow-hidden rounded-full"
                 >
                   <img
+                    v-if="item.avatar"
                     :src="item.avatar"
                     class="aspect-square size-full object-cover"
                   />
+                  <span
+                    v-else
+                    class="flex size-full items-center justify-center bg-accent text-primary"
+                  >
+                    <IconifyIcon
+                      :icon="item.icon || 'lucide:bell'"
+                      class="size-5"
+                    />
+                  </span>
                 </span>
                 <div class="flex flex-col gap-1 leading-none">
                   <p class="font-semibold">{{ item.title }}</p>

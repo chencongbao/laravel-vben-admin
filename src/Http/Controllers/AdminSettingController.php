@@ -10,12 +10,15 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 final class AdminSettingController extends Controller
 {
     private const SYSTEM_KEYS = [
         'system.name',
+        'system.logo',
         'system.page_size',
         'system.password_strength',
         'system.login_remember_me',
@@ -66,9 +69,11 @@ final class AdminSettingController extends Controller
         $settings = collect($definitions)->map(fn (array $definition, string $key) => [
             'key' => $key,
             'type' => $definition['type'],
-            'value' => $stored->has($key) && $definition['type'] !== 'json'
-                ? $stored->get($key)
-                : SystemSettings::value($key),
+            'value' => $definition['type'] === 'asset'
+                ? SystemSettings::logoUrl()
+                : ($stored->has($key) && $definition['type'] !== 'json'
+                    ? $stored->get($key)
+                    : SystemSettings::value($key)),
         ])->values();
 
         return response()->json(['settings' => $settings]);
@@ -77,6 +82,68 @@ final class AdminSettingController extends Controller
     public function update(Request $request): JsonResponse
     {
         return $this->updateSettings($request, self::SYSTEM_KEYS, fn () => $this->index());
+    }
+
+    public function uploadLogo(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'logo' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048', 'dimensions:min_width=64,min_height=64,max_width=4096,max_height=4096'],
+        ]);
+        $file = $data['logo'];
+        $oldPath = SystemSettings::value('system.logo');
+        $path = $file->storeAs(
+            'laravel-vben-admin/system/logo',
+            Str::uuid()->toString().'.'.$file->extension(),
+            'public',
+        );
+
+        try {
+            DB::transaction(function () use ($path, $oldPath, $request, $file): void {
+                AdminSetting::query()->updateOrCreate(
+                    ['key' => 'system.logo'],
+                    ['type' => 'asset', 'value' => $path, 'is_system' => true],
+                );
+                $this->audit->record(
+                    $request->user(),
+                    'system.settings.updated',
+                    null,
+                    ['settings' => ['system.logo' => ['before' => $oldPath, 'after' => $path]]],
+                    ['keys' => ['system.logo'], 'upload' => ['name' => $file->getClientOriginalName(), 'size' => $file->getSize(), 'mime_type' => $file->getMimeType()]],
+                );
+            });
+        } catch (\Throwable $exception) {
+            Storage::disk('public')->delete($path);
+
+            throw $exception;
+        }
+
+        $this->deleteLogoFile($oldPath);
+
+        return response()->json(['logo' => SystemSettings::logoUrl()]);
+    }
+
+    public function resetLogo(Request $request): JsonResponse
+    {
+        $oldPath = SystemSettings::value('system.logo');
+
+        if (is_string($oldPath) && $oldPath !== '') {
+            DB::transaction(function () use ($oldPath, $request): void {
+                AdminSetting::query()->updateOrCreate(
+                    ['key' => 'system.logo'],
+                    ['type' => 'asset', 'value' => '', 'is_system' => true],
+                );
+                $this->audit->record(
+                    $request->user(),
+                    'system.settings.updated',
+                    null,
+                    ['settings' => ['system.logo' => ['before' => $oldPath, 'after' => '']]],
+                    ['keys' => ['system.logo']],
+                );
+            });
+            $this->deleteLogoFile($oldPath);
+        }
+
+        return response()->json(['logo' => null]);
     }
 
     private function updateSettings(Request $request, array $keys, callable $response): JsonResponse
@@ -172,5 +239,12 @@ final class AdminSettingController extends Controller
         }
 
         return $value;
+    }
+
+    private function deleteLogoFile(mixed $path): void
+    {
+        if (is_string($path) && str_starts_with($path, 'laravel-vben-admin/system/logo/')) {
+            Storage::disk('public')->delete($path);
+        }
     }
 }

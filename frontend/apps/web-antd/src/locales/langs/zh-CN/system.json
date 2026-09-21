@@ -424,13 +424,22 @@
     "subjectType": "对象类型"
   },
   "settings": "系统设置",
-  "settingsDescription": "集中维护系统名称、默认分页数量及登录页面相关设置。",
+  "settingsDescription": "集中维护系统名称、系统 Logo、默认分页数量及登录页面相关设置。",
   "settingsForm": {
+    "actions": {
+      "uploadLogo": "上传 Logo",
+      "useDefaultLogo": "恢复默认 Logo"
+    },
     "fields": {
       "systemName": {
         "description": "显示在管理后台左上角的系统名称。",
         "label": "系统名称",
         "placeholder": "请输入系统名称"
+      },
+      "systemLogo": {
+        "description": "上传系统 Logo，支持 JPG、PNG 或 WebP，文件不超过 2 MB；未上传时使用默认 Logo。",
+        "label": "系统 Logo",
+        "previewAlt": "系统 Logo 预览"
       },
       "pageSize": {
         "description": "设置数据列表默认每页显示的记录数量，可填写 10 至 100。",
@@ -482,6 +491,11 @@
     "messages": {
       "invalid": "系统配置格式不正确，请检查后重试",
       "loginDescriptionInvalid": "登录页宣传语必须是文本，且不能超过 500 个字符",
+      "logoInvalid": "Logo 必须是 64×64 至 4096×4096 像素的 JPG、PNG 或 WebP 图片，且不超过 2 MB",
+      "logoReset": "已恢复默认 Logo",
+      "logoSizeInvalid": "Logo 文件不能超过 2 MB",
+      "logoTypeInvalid": "Logo 仅支持 JPG、PNG 或 WebP 格式",
+      "logoUploaded": "Logo 上传成功",
       "loginRememberMeInvalid": "“显示记住账号”配置格式不正确",
       "pageSizeInvalid": "默认分页数量必须是 10 至 100 之间的整数",
       "passwordStrengthInvalid": "密码类型只能选择弱密码或强密码",

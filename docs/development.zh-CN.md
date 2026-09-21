@@ -327,6 +327,40 @@ $this->audit->record(
 
 系统设置需要明确：键名、类型、默认值、验证规则、公开启动配置是否可见、管理权限和刷新后生效方式。密钥和凭据不得进入通用设置接口。
 
+系统 Logo 使用 `system.logo` 保存 public 磁盘中的相对路径，只能通过 `/system/settings/logo` 专用接口上传或恢复默认值，禁止通过通用设置接口保存任意外部 URL。上传仅接受 JPG、PNG、WebP，最大 2 MB，尺寸限制为 64×64 至 4096×4096；未上传、文件不存在或恢复默认后，前端使用包内默认 Logo。上传与重置都要求 `system.setting.update`、记录 `system.settings.updated` 审计，并要求部署环境执行 `php artisan storage:link`。
+
+## 9.1 后台通知接入规则
+
+后台通知中心是每个已登录后台用户都可使用的系统能力，不注册业务菜单和业务权限。通知列表、未读数量、已读和隐藏状态只作用于当前登录账号；宿主业务是否有权触发某条通知，仍必须在自己的服务端业务入口完成权限校验，不能把“所有人可读通知”误解为“所有人都能发布通知”。包不提供前端发布接口。
+
+宿主项目发布系统级通知时，必须依赖统一契约，不能直接写通知表：
+
+```php
+use Chencongbao\LaravelVbenAdmin\Contracts\AdminNotificationPublisher;
+
+app(AdminNotificationPublisher::class)->publish([
+    'code' => 'order.settlement.completed',
+    'source' => 'settlement',
+    'type' => 'business',
+    'severity' => 'success',
+    'title_key' => 'settlement.notifications.completedTitle',
+    'message_key' => 'settlement.notifications.completedMessage',
+    'title' => 'Settlement completed',
+    'message' => 'Settlement #20260921001 has completed.',
+    'parameters' => ['number' => '20260921001'],
+    'icon' => 'lucide:circle-check',
+    'link' => '/settlements/20260921001',
+]);
+```
+
+`title_key`、`message_key` 和 `parameters` 是多语言主数据，`title`、`message` 是目标语言不存在时的纯文本回退。不同语言数量不限于中英文；宿主在 `resources/admin/locales/{locale}` 增加同名翻译键即可。禁止在通知文本中保存或渲染 HTML。内部链接只能是以单个 `/` 开头的路由，外部链接只允许 HTTPS。
+
+`metadata` 仅用于无敏感信息的展示辅助数据，不得写入密码、Token、Authorization、密钥、验证码、2FA Secret、Cookie、个人凭据或完整请求体。发布器会递归拒绝常见敏感键。通知与 Telegram 等外部告警是两套能力：站内通知面向已登录用户，外部告警面向运维；业务需要两者时分别调用，不在通知中心暗中转发。
+
+默认数据源绑定为 `AdminNotificationSource` 的数据库实现。不同后台需要聚合自己的通知系统时，可在宿主 Service Provider 中重新绑定该契约，实现分页、最近通知、未读数量、已读、全部已读、隐藏和清空方法；返回字段必须保持 `docs/api.md` 的统一契约。发布端也可替换 `AdminNotificationPublisher`，但必须保留相同验证、安全与多语言约束。默认前端每 60 秒仅在页面可见时轻量刷新；需要实时推送时应新增独立适配层，不得改变现有 HTTP 契约。
+
+数据库使用新的 `admin_notifications` 与 `admin_notification_states` migration。部署包更新后必须执行 `php artisan migrate --force`；全新安装由 `vben-admin:install` 自动迁移。通知属于用户个人收件箱，读、隐藏、清空不写操作审计；真正产生业务状态变化的上游操作仍必须按日志规则记录审计。
+
 ## 10. Vben前端开发规则
 
 - 新增后台业务功能必须作为完整能力交付：页面标题、说明、字段、占位提示、按钮、状态、确认提示、成功提示、空状态和错误提示同时维护 `zh-CN`、`en-US`，两种语言的文件名和键结构一致；前端与服务端表单验证必须跟随当前语言，服务端使用稳定错误码或字段错误由前端语言包映射，禁止直接显示 `validation.regex`、翻译键、异常类名或单一语言原始消息。数据表、字段、索引、外键和约束必须使用新的可回滚 migration，禁止修改已经发布或执行的 migration。每个可进入的后台功能必须同时注册菜单和权限：至少包含页面查看权限，新增、编辑、删除、导出、审核等操作按实际能力拆分稳定权限码；菜单关联查看权限，服务端路由绑定权限中间件，前端按钮使用同一权限码。菜单、权限、父子关系和关联关系必须进入模块注册或同步流程，保证全新安装可写入、重复同步幂等且不覆盖人工角色授权，并在任务文档中明确默认角色是否授权。API、数据库、菜单路径、权限码、默认授权、部署命令及 migration/安装/同步/允许/拒绝/中英文验证测试必须同步完成，缺少任一项不得标记新功能完成。

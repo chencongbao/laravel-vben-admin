@@ -3,6 +3,7 @@
 namespace Chencongbao\LaravelVbenAdmin\Support;
 
 use Chencongbao\LaravelVbenAdmin\Models\AdminSetting;
+use Illuminate\Support\Facades\Storage;
 use Throwable;
 
 final class SystemSettings
@@ -13,6 +14,10 @@ final class SystemSettings
             'system.name' => [
                 'type' => 'string',
                 'default' => (string) config('app.name', 'Laravel Vben Admin'),
+            ],
+            'system.logo' => [
+                'type' => 'asset',
+                'default' => '',
             ],
             'system.page_size' => [
                 'type' => 'integer',
@@ -138,5 +143,18 @@ final class SystemSettings
         }
 
         return $definition['default'];
+    }
+
+    public static function logoUrl(): ?string
+    {
+        $path = self::value('system.logo');
+
+        if (! is_string($path) || $path === '' || ! str_starts_with($path, 'laravel-vben-admin/system/logo/')) {
+            return null;
+        }
+
+        return Storage::disk('public')->exists($path)
+            ? Storage::disk('public')->url($path)
+            : null;
     }
 }

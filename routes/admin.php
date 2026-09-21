@@ -3,6 +3,7 @@
 use Chencongbao\LaravelVbenAdmin\Http\Controllers\AccessController;
 use Chencongbao\LaravelVbenAdmin\Http\Controllers\AdminLogController;
 use Chencongbao\LaravelVbenAdmin\Http\Controllers\AdminMenuController;
+use Chencongbao\LaravelVbenAdmin\Http\Controllers\AdminNotificationController;
 use Chencongbao\LaravelVbenAdmin\Http\Controllers\AdminPermissionController;
 use Chencongbao\LaravelVbenAdmin\Http\Controllers\AdminRoleController;
 use Chencongbao\LaravelVbenAdmin\Http\Controllers\AdminSecurityController;
@@ -33,6 +34,14 @@ Route::middleware(['auth:sanctum', 'admin.user'])->group(function (): void {
     Route::delete('auth/sessions/{tokenId}', [AuthController::class, 'destroySession'])->whereNumber('tokenId');
     Route::get('access/permissions', [AccessController::class, 'permissions']);
     Route::get('access/menus', [AccessController::class, 'menus']);
+
+    Route::get('notifications', [AdminNotificationController::class, 'index']);
+    Route::get('notifications/latest', [AdminNotificationController::class, 'latest']);
+    Route::get('notifications/unread-count', [AdminNotificationController::class, 'unreadCount']);
+    Route::post('notifications/read-all', [AdminNotificationController::class, 'readAll']);
+    Route::delete('notifications', [AdminNotificationController::class, 'clear']);
+    Route::post('notifications/{notification}/read', [AdminNotificationController::class, 'read']);
+    Route::delete('notifications/{notification}', [AdminNotificationController::class, 'hide']);
 
     Route::get('system/users', [AdminUserController::class, 'index'])->middleware('admin.permission:system.user.view');
     Route::get('system/users/role-options', [AdminUserController::class, 'roleOptions'])->middleware('admin.permission:system.user.view');
@@ -76,6 +85,8 @@ Route::middleware(['auth:sanctum', 'admin.user'])->group(function (): void {
     Route::post('system/security/ip-blocks/{ipBlock}/release', [AdminSecurityController::class, 'release'])->middleware('admin.permission:system.security.update');
     Route::get('system/settings', [AdminSettingController::class, 'index'])->middleware('admin.permission:system.setting.view');
     Route::put('system/settings', [AdminSettingController::class, 'update'])->middleware('admin.permission:system.setting.update');
+    Route::post('system/settings/logo', [AdminSettingController::class, 'uploadLogo'])->middleware(['admin.permission:system.setting.update', 'throttle:12,1']);
+    Route::delete('system/settings/logo', [AdminSettingController::class, 'resetLogo'])->middleware('admin.permission:system.setting.update');
     Route::get('system/theme-settings', [AdminSettingController::class, 'theme'])->middleware('admin.permission:system.theme-setting.view');
     Route::put('system/theme-settings', [AdminSettingController::class, 'updateTheme'])->middleware('admin.permission:system.theme-setting.update');
 });

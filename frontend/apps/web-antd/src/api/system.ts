@@ -63,6 +63,16 @@ export function updateSettings(settings: Array<{ key: string; value: any }>) {
   });
 }
 
+export function uploadSystemLogo(file: File) {
+  return requestClient.upload<{ logo: string }>('/system/settings/logo', {
+    logo: file,
+  });
+}
+
+export function resetSystemLogo() {
+  return requestClient.delete<{ logo: null }>('/system/settings/logo');
+}
+
 export function updateThemeSettings(
   settings: Array<{ key: string; value: any }>,
 ) {
@@ -74,6 +84,13 @@ export function updateThemeSettings(
 
 export interface SettingItem {
   key: string;
-  type: 'boolean' | 'enum' | 'integer' | 'json' | 'string' | 'timezone';
+  type:
+    | 'asset'
+    | 'boolean'
+    | 'enum'
+    | 'integer'
+    | 'json'
+    | 'string'
+    | 'timezone';
   value: any;
 }

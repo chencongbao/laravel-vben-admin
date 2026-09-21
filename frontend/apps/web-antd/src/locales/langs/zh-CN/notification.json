@@ -1,0 +1,18 @@
+{
+  "actions": { "hide": "隐藏", "read": "标记已读", "readAll": "全部已读" },
+  "defaultTitle": "系统通知",
+  "description": "查看系统发送给当前登录用户的通知。已读和隐藏状态仅对当前账号生效。",
+  "fields": {
+    "message": "内容",
+    "publishedAt": "发布时间",
+    "severity": "级别",
+    "title": "标题"
+  },
+  "severities": {
+    "error": "错误",
+    "info": "信息",
+    "success": "成功",
+    "warning": "警告"
+  },
+  "title": "通知中心"
+}

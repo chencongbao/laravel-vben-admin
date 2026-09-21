@@ -203,8 +203,14 @@
         "view": "Security Center",
         "update": "Manage Security Risks"
       },
-      "setting": { "view": "System Configuration", "update": "Update System Configuration" },
-      "theme-setting": { "view": "Theme Configuration", "update": "Update Theme Configuration" }
+      "setting": {
+        "view": "System Configuration",
+        "update": "Update System Configuration"
+      },
+      "theme-setting": {
+        "view": "Theme Configuration",
+        "update": "Update Theme Configuration"
+      }
     }
   },
   "menus": "Menus",
@@ -438,13 +444,22 @@
     "subjectType": "Subject Type"
   },
   "settings": "Settings",
-  "settingsDescription": "Manage the system name, default page size, and login-page settings in one place.",
+  "settingsDescription": "Manage the system name, system logo, default page size, and login-page settings in one place.",
   "settingsForm": {
+    "actions": {
+      "uploadLogo": "Upload logo",
+      "useDefaultLogo": "Use default logo"
+    },
     "fields": {
       "systemName": {
         "description": "The system name displayed in the upper-left corner of the administration panel.",
         "label": "System name",
         "placeholder": "Enter the system name"
+      },
+      "systemLogo": {
+        "description": "Upload a JPG, PNG, or WebP logo up to 2 MB. The default logo is used when no custom logo is uploaded.",
+        "label": "System logo",
+        "previewAlt": "System logo preview"
       },
       "pageSize": {
         "description": "Set the default number of records displayed per page, from 10 to 100.",
@@ -499,6 +514,11 @@
     "messages": {
       "invalid": "The system settings are invalid. Check them and try again.",
       "loginDescriptionInvalid": "The login description must be text with no more than 500 characters.",
+      "logoInvalid": "The logo must be a JPG, PNG, or WebP image from 64×64 to 4096×4096 pixels and no larger than 2 MB.",
+      "logoReset": "Default logo restored",
+      "logoSizeInvalid": "The logo file must not exceed 2 MB.",
+      "logoTypeInvalid": "Only JPG, PNG, and WebP logos are supported.",
+      "logoUploaded": "Logo uploaded",
       "loginRememberMeInvalid": "The Show Remember Me setting is invalid.",
       "pageSizeInvalid": "The default page size must be an integer from 10 to 100.",
       "passwordStrengthInvalid": "The password type must be weak or strong.",

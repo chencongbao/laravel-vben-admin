@@ -101,6 +101,8 @@ final class InstallCommandTest extends TestCase
         ])->count());
         self::assertTrue(Schema::hasColumns('personal_access_tokens', ['ip_address', 'user_agent']));
         self::assertTrue(Schema::hasColumns('activity_log', ['log_name', 'log_type', 'event', 'attribute_changes', 'properties']));
+        self::assertTrue(Schema::hasTable('admin_notifications'));
+        self::assertTrue(Schema::hasTable('admin_notification_states'));
         self::assertFalse(Schema::hasTable('admin_login_logs'));
         self::assertFalse(Schema::hasTable('admin_audit_logs'));
         self::assertFalse(Schema::hasColumn('admin_menus', 'permission_code'));

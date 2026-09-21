@@ -1,7 +1,8 @@
 <script lang="ts" setup>
 import type { NotificationItem } from '@vben/layouts';
+import type { AdminNotificationRecord } from '#/api/core/notification';
 
-import { computed, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 
 import { AuthenticationLoginExpiredModal } from '@vben/common-ui';
@@ -11,70 +12,68 @@ import {
   Notification,
   UserDropdown,
 } from '@vben/layouts';
-import {
-  preferences,
-  updatePreferences,
-} from '@vben/preferences';
+import { preferences, updatePreferences } from '@vben/preferences';
 import { useAccessStore, useUserStore } from '@vben/stores';
 
 import { $t } from '#/locales';
+import { formatBeijingDateTime } from '#/utils/datetime';
+import {
+  clearNotificationsApi,
+  getLatestNotificationsApi,
+  getNotificationUnreadCountApi,
+  hideNotificationApi,
+  markAllNotificationsReadApi,
+  markNotificationReadApi,
+} from '#/api/core/notification';
 import { useAdminIdentity } from '#/composables/use-admin-identity';
 import { getAdminAppearance, LOGIN_THEME_COLORS } from '#/preferences';
 import { useAuthStore } from '#/store';
 import LoginForm from '#/views/_core/authentication/login.vue';
 
-const notifications = ref<NotificationItem[]>([
-  {
-    id: 1,
-    avatar: 'https://avatar.vercel.sh/vercel.svg?text=VB',
-    date: '3小时前',
-    isRead: true,
-    message: '描述信息描述信息描述信息',
-    title: '收到了 14 份新周报',
-  },
-  {
-    id: 2,
-    avatar: 'https://avatar.vercel.sh/1',
-    date: '刚刚',
-    isRead: false,
-    message: '描述信息描述信息描述信息',
-    title: '朱偏右 回复了你',
-  },
-  {
-    id: 3,
-    avatar: 'https://avatar.vercel.sh/1',
-    date: '2024-01-01',
-    isRead: false,
-    message: '描述信息描述信息描述信息',
-    title: '曲丽丽 评论了你',
-  },
-  {
-    id: 4,
-    avatar: 'https://avatar.vercel.sh/satori',
-    date: '1天前',
-    isRead: false,
-    message: '描述信息描述信息描述信息',
-    title: '代办提醒',
-  },
-  {
-    id: 5,
-    avatar: 'https://avatar.vercel.sh/satori',
-    date: '1天前',
-    isRead: false,
-    message: '描述信息描述信息描述信息',
-    title: '跳转Workspace示例',
-    link: '/workspace',
-  },
-  {
-    id: 6,
-    avatar: 'https://avatar.vercel.sh/satori',
-    date: '1天前',
-    isRead: false,
-    message: '描述信息描述信息描述信息',
-    title: '跳转外部链接示例',
-    link: 'https://doc.vben.pro',
-  },
-]);
+const notifications = ref<NotificationItem[]>([]);
+const unreadCount = ref(0);
+let notificationTimer: number | undefined;
+
+function translateNotification(
+  key?: null | string,
+  fallback = '',
+  parameters: Record<string, unknown> = {},
+) {
+  if (!key) return fallback;
+  const translated = $t(key, parameters as Record<string, string | number>);
+  return translated === key ? fallback : translated;
+}
+
+function toNotificationItem(item: AdminNotificationRecord): NotificationItem {
+  return {
+    id: item.id,
+    date: formatBeijingDateTime(item.published_at),
+    icon:
+      item.icon ||
+      `lucide:${item.severity === 'error' ? 'circle-alert' : 'bell'}`,
+    isRead: item.is_read,
+    link: item.link || undefined,
+    message: translateNotification(
+      item.message_key,
+      item.message || '',
+      item.parameters,
+    ),
+    title: translateNotification(
+      item.title_key,
+      item.title || $t('notification.defaultTitle'),
+      item.parameters,
+    ),
+  };
+}
+
+async function loadNotifications() {
+  const [latest, unread] = await Promise.all([
+    getLatestNotificationsApi(),
+    getNotificationUnreadCountApi(),
+  ]);
+  notifications.value = latest.data.map(toNotificationItem);
+  unreadCount.value = unread.count;
+}
 
 const router = useRouter();
 const userStore = useUserStore();
@@ -87,7 +86,7 @@ const storedThemeMode = localStorage.getItem(themeModeStorageKey);
 const preferredThemeMode = ['light', 'dark', 'auto'].includes(
   storedThemeMode || '',
 )
-  ? storedThemeMode as 'auto' | 'dark' | 'light'
+  ? (storedThemeMode as 'auto' | 'dark' | 'light')
   : adminAppearance.mode;
 updatePreferences({
   app: { layout: adminAppearance.layout },
@@ -103,9 +102,7 @@ watch(
   (mode) => localStorage.setItem(themeModeStorageKey, mode),
   { flush: 'sync' },
 );
-const showDot = computed(() =>
-  notifications.value.some((item) => !item.isRead),
-);
+const showDot = computed(() => unreadCount.value > 0);
 
 const menus = computed(() => [
   {
@@ -125,28 +122,30 @@ async function handleLogout() {
   await authStore.logout(false);
 }
 
-function handleNoticeClear() {
-  notifications.value = [];
+async function handleNoticeClear() {
+  await clearNotificationsApi();
+  await loadNotifications();
 }
 
-function markRead(id: number | string) {
-  const item = notifications.value.find((item) => item.id === id);
-  if (item) {
-    item.isRead = true;
-  }
+async function markRead(id: number | string) {
+  await markNotificationReadApi(String(id));
+  await loadNotifications();
 }
 
-function remove(id: number | string) {
-  notifications.value = notifications.value.filter((item) => item.id !== id);
+async function remove(id: number | string) {
+  await hideNotificationApi(String(id));
+  await loadNotifications();
 }
 
-function handleMakeAll() {
-  notifications.value.forEach((item) => (item.isRead = true));
+async function handleMakeAll() {
+  await markAllNotificationsReadApi();
+  await loadNotifications();
 }
 
-const viewAll = () => {};
+const viewAll = () => router.push({ name: 'Notifications' });
 
 const handleClick = (item: NotificationItem) => {
+  if (!item.isRead) void markRead(item.id);
   // 如果通知项有链接，点击时跳转
   if (item.link) {
     navigateTo(item.link, item.query, item.state);
@@ -158,9 +157,9 @@ function navigateTo(
   query?: Record<string, any>,
   state?: Record<string, any>,
 ) {
-  if (link.startsWith('http://') || link.startsWith('https://')) {
+  if (link.startsWith('https://')) {
     // 外部链接，在新标签页打开
-    window.open(link, '_blank');
+    window.open(link, '_blank', 'noopener,noreferrer');
   } else {
     // 内部路由链接，支持 query 参数和 state
     router.push({
@@ -171,6 +170,15 @@ function navigateTo(
   }
 }
 
+onMounted(() => {
+  void loadNotifications();
+  notificationTimer = window.setInterval(() => {
+    if (document.visibilityState === 'visible') void loadNotifications();
+  }, 60_000);
+});
+onBeforeUnmount(() => {
+  if (notificationTimer) window.clearInterval(notificationTimer);
+});
 </script>
 
 <template>
@@ -189,6 +197,7 @@ function navigateTo(
       <Notification
         :dot="showDot"
         :notifications="notifications"
+        :unread-count="unreadCount"
         @clear="handleNoticeClear"
         @read="(item) => item.id && markRead(item.id)"
         @remove="(item) => item.id && remove(item.id)"

@@ -47,6 +47,16 @@ const coreRoutes: RouteRecordRaw[] = [
           title: $t('auth.profile'),
         },
       },
+      {
+        name: 'Notifications',
+        path: 'notifications',
+        component: () => import('#/views/_core/notifications/index.vue'),
+        meta: {
+          icon: 'lucide:bell',
+          hideInMenu: true,
+          title: $t('notification.title'),
+        },
+      },
     ],
   },
   {

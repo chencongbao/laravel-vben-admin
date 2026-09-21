@@ -166,16 +166,38 @@ Updating several system or theme settings in one request creates one `system.set
 
 Both lists use `id DESC` pagination. Manual blocks accept one exact IPv4/IPv6 address, an uppercase stable reason code, and an optional duration of 1 through 8760 hours. CIDR input and duplicate active blocks return HTTP 422. Resolve, block, and release are idempotent where applicable and write `system.security.event.resolved`, `system.security.ip-block.created`, or `system.security.ip-block.released` audit records. The built-in manager role receives the security-center menu plus `system.security.view` and `system.security.update` by default.
 
+## Notifications
+
+Notification inbox endpoints are available to every authenticated administrator. They intentionally do not require a role permission because they operate only on the current user's inbox state; they do not grant access to a business module or expose a notification-creation API.
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| GET | `/notifications` | Paginated notifications, newest first |
+| GET | `/notifications/latest` | Latest popup items; `limit` is 1 through 20 |
+| GET | `/notifications/unread-count` | Current user's unread count |
+| POST | `/notifications/{notification}/read` | Mark one visible item as read |
+| POST | `/notifications/read-all` | Mark all current visible items as read |
+| DELETE | `/notifications/{notification}` | Hide one item for the current user |
+| DELETE | `/notifications` | Hide all current visible items for the current user |
+
+The default source returns `id`, `code`, `source`, `type`, `severity`, plain-text `title` and `message` fallbacks, optional `title_key` and `message_key`, `parameters`, `icon`, `link`, safe `metadata`, `is_read`, `published_at`, and `expires_at`. Published and expiry time are enforced by the source. Read and hidden state is stored per administrator and never affects another account.
+
+Internal links must start with one `/` and external links must use HTTPS. The client renders all text as text, never as HTML. Notification parameters and metadata must not contain passwords, tokens, credentials, authorization values, secrets, two-factor secrets, or similar sensitive fields.
+
 ## Settings
 
 | Method | Path | Permission |
 | --- | --- | --- |
 | GET | `/system/settings` | `system.setting.view` |
 | PUT | `/system/settings` | `system.setting.update` |
+| POST | `/system/settings/logo` | `system.setting.update` |
+| DELETE | `/system/settings/logo` | `system.setting.update` |
 | GET | `/system/theme-settings` | `system.theme-setting.view` |
 | PUT | `/system/theme-settings` | `system.theme-setting.update` |
 
-The package owns the built-in `system.name`, `system.page_size`, `system.login_remember_me`, `system.login_description`, login appearance, administration appearance, `system.tabbar_*`, and `system.advanced_preferences` definitions; their runtime values are stored in `admin_settings` instead of duplicated in the published package configuration. Configuration permissions separate reading from writing: `system.setting.view` and `system.theme-setting.view` authorize page access, while `system.setting.update` and `system.theme-setting.update` authorize saving changes. Watermark, footer, copyright, tenant mode, form-fullscreen, default-table-size, and report-title preferences are intentionally not registered by this package. These values are returned by the public application bootstrap so the selected behavior and appearance are applied before authentication and after refresh. `system.page_size` is also the default for every paginated administration endpoint when `per_page` is omitted and for every list created by the shared frontend pagination factory; an explicit bounded `per_page` or a page-size selection remains a request/page-local override. The page-size selector includes the configured value even when it is not one of the common presets. The supported types are string, bounded integer, boolean, enum, JSON, and IANA timezone. Secrets and credentials are deliberately unsupported.
+The package owns the built-in `system.name`, `system.logo`, `system.page_size`, `system.login_remember_me`, `system.login_description`, login appearance, administration appearance, `system.tabbar_*`, and `system.advanced_preferences` definitions; their runtime values are stored in `admin_settings` instead of duplicated in the published package configuration. Configuration permissions separate reading from writing: `system.setting.view` and `system.theme-setting.view` authorize page access, while `system.setting.update` and `system.theme-setting.update` authorize saving changes. Watermark, footer, copyright, tenant mode, form-fullscreen, default-table-size, and report-title preferences are intentionally not registered by this package. These values are returned by the public application bootstrap so the selected behavior and appearance are applied before authentication and after refresh. `system.page_size` is also the default for every paginated administration endpoint when `per_page` is omitted and for every list created by the shared frontend pagination factory; an explicit bounded `per_page` or a page-size selection remains a request/page-local override. The page-size selector includes the configured value even when it is not one of the common presets. The supported types are string, bounded integer, boolean, enum, JSON, asset, and IANA timezone. Secrets and credentials are deliberately unsupported.
+
+The system logo is written only through the dedicated upload endpoint; the generic settings endpoint rejects arbitrary asset values. Uploads accept JPG, PNG, and WebP images up to 2 MB with dimensions from 64×64 through 4096×4096, store an internal relative path on the public disk, and return its public URL. Resetting deletes the uploaded file and makes the client use the bundled default logo. Both operations require `system.setting.update` and create a `system.settings.updated` audit event. Deployments must expose Laravel's public storage disk, normally with `php artisan storage:link`.
 
 `system.password_strength` is also a built-in enum setting. Its default `strong` policy requires 12 characters with uppercase letters, lowercase letters, and numbers; `weak` requires at least 6 characters. Changing it affects only passwords subsequently created or changed and does not invalidate existing password hashes.
 

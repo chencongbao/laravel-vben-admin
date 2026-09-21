@@ -11,6 +11,9 @@ import { defineOverridesPreferences } from '@vben/preferences';
 
 import defaultAvatar from './assets/default-avatar.svg?url';
 
+export const DEFAULT_ADMIN_LOGO =
+  'https://unpkg.com/@vbenjs/static-source@0.1.7/source/logo-v1.webp';
+
 export interface AdminTabbarConfig {
   draggable: boolean;
   enable: boolean;
@@ -38,6 +41,7 @@ export type AdvancedPreferencesConfig = Record<
 export function createOverridesPreferences(
   locale: SupportedLanguagesType,
   name: string,
+  logo: null | string,
   timezone: string,
   loginTheme: BuiltinThemeType,
   loginLayout: AuthPageLayoutType,
@@ -63,8 +67,15 @@ export function createOverridesPreferences(
       authPageLayout: loginLayout,
     },
     breadcrumb: advancedPreferences.breadcrumb,
+    copyright: {
+      companySiteLink: window.location.origin,
+    },
     header: advancedPreferences.header,
     navigation: advancedPreferences.navigation,
+    logo: {
+      source: logo || DEFAULT_ADMIN_LOGO,
+      sourceDark: logo || DEFAULT_ADMIN_LOGO,
+    },
     shortcutKeys: advancedPreferences.shortcutKeys,
     sidebar: advancedPreferences.sidebar,
     theme: {

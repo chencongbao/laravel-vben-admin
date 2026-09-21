@@ -46,5 +46,7 @@ return [
         'settings' => 'admin_settings',
         'security_events' => 'admin_security_events',
         'login_ip_blocks' => 'admin_login_ip_blocks',
+        'notifications' => 'admin_notifications',
+        'notification_states' => 'admin_notification_states',
     ],
 ];
