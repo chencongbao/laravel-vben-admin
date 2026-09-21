@@ -203,8 +203,8 @@
         "view": "Security Center",
         "update": "Manage Security Risks"
       },
-      "setting": { "view": "System Configuration" },
-      "theme-setting": { "view": "Theme Configuration" }
+      "setting": { "view": "System Configuration", "update": "Update System Configuration" },
+      "theme-setting": { "view": "Theme Configuration", "update": "Update Theme Configuration" }
     }
   },
   "menus": "Menus",
