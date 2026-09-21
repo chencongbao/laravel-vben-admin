@@ -447,6 +447,7 @@
   "settingsDescription": "Manage the system name, system logo, default page size, and login-page settings in one place.",
   "settingsForm": {
     "actions": {
+      "replaceLogo": "Replace",
       "uploadLogo": "Upload logo",
       "useDefaultLogo": "Use default logo"
     },
@@ -457,9 +458,10 @@
         "placeholder": "Enter the system name"
       },
       "systemLogo": {
-        "description": "Upload a JPG, PNG, or WebP logo up to 2 MB. The default logo is used when no custom logo is uploaded.",
+        "description": "Click the logo preview or Upload logo to replace it. The system default is used until a custom logo is uploaded.",
         "label": "System logo",
-        "previewAlt": "System logo preview"
+        "previewAlt": "System logo preview",
+        "requirements": "Requirements: JPG, PNG, or WebP; no larger than 2 MB; both width and height from 64 to 4096 pixels."
       },
       "pageSize": {
         "description": "Set the default number of records displayed per page, from 10 to 100.",
@@ -515,6 +517,7 @@
       "invalid": "The system settings are invalid. Check them and try again.",
       "loginDescriptionInvalid": "The login description must be text with no more than 500 characters.",
       "logoInvalid": "The logo must be a JPG, PNG, or WebP image from 64×64 to 4096×4096 pixels and no larger than 2 MB.",
+      "logoDimensionsInvalid": "Both logo width and height must be from 64 to 4096 pixels.",
       "logoReset": "Default logo restored",
       "logoSizeInvalid": "The logo file must not exceed 2 MB.",
       "logoTypeInvalid": "Only JPG, PNG, and WebP logos are supported.",

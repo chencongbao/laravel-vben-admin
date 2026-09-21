@@ -5,8 +5,9 @@ import type {
   UploadRequestOption,
 } from 'ant-design-vue/es/vc-upload/interface';
 
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 
+import { useAccess } from '@vben/access';
 import { Page } from '@vben/common-ui';
 import { IconifyIcon } from '@vben/icons';
 import { updatePreferences } from '@vben/preferences';
@@ -39,6 +40,10 @@ const loading = ref(false);
 const saving = ref(false);
 const logoUploading = ref(false);
 const settings = ref<SettingItem[]>([]);
+const { hasAccessByCodes } = useAccess();
+const canUpdateSettings = computed(() =>
+  hasAccessByCodes(['system.setting.update']),
+);
 
 const settingMeta: Record<
   string,
@@ -123,13 +128,44 @@ async function save() {
   }
 }
 
-function beforeLogoUpload(file: RcFile) {
+async function beforeLogoUpload(file: RcFile) {
   if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
     message.error($t('system.settingsForm.messages.logoTypeInvalid'));
     return false;
   }
   if (file.size > 2 * 1024 * 1024) {
     message.error($t('system.settingsForm.messages.logoSizeInvalid'));
+    return false;
+  }
+
+  const dimensionsValid = await new Promise<boolean>((resolve) => {
+    const image = new Image();
+    const objectUrl = URL.createObjectURL(file);
+    image.addEventListener(
+      'load',
+      () => {
+        URL.revokeObjectURL(objectUrl);
+        resolve(
+          image.width >= 64 &&
+            image.height >= 64 &&
+            image.width <= 4096 &&
+            image.height <= 4096,
+        );
+      },
+      { once: true },
+    );
+    image.addEventListener(
+      'error',
+      () => {
+        URL.revokeObjectURL(objectUrl);
+        resolve(false);
+      },
+      { once: true },
+    );
+    image.src = objectUrl;
+  });
+  if (!dimensionsValid) {
+    message.error($t('system.settingsForm.messages.logoDimensionsInvalid'));
     return false;
   }
   return true;
@@ -193,7 +229,31 @@ onMounted(load);
 
             <FormItem class="settings-control">
               <div v-if="item.type === 'asset'" class="logo-setting">
-                <div class="logo-preview">
+                <Upload
+                  v-if="canUpdateSettings"
+                  accept="image/jpeg,image/png,image/webp"
+                  :before-upload="beforeLogoUpload"
+                  :custom-request="uploadLogo"
+                  :show-upload-list="false"
+                >
+                  <button
+                    class="logo-preview logo-preview-button"
+                    :disabled="logoUploading"
+                    type="button"
+                  >
+                    <img
+                      :alt="
+                        $t('system.settingsForm.fields.systemLogo.previewAlt')
+                      "
+                      :src="item.value || DEFAULT_ADMIN_LOGO"
+                    />
+                    <span class="logo-preview-overlay">
+                      <IconifyIcon icon="lucide:upload" />
+                      {{ $t('system.settingsForm.actions.replaceLogo') }}
+                    </span>
+                  </button>
+                </Upload>
+                <div v-else class="logo-preview">
                   <img
                     :alt="
                       $t('system.settingsForm.fields.systemLogo.previewAlt')
@@ -201,10 +261,7 @@ onMounted(load);
                     :src="item.value || DEFAULT_ADMIN_LOGO"
                   />
                 </div>
-                <div
-                  v-access:code="'system.setting.update'"
-                  class="logo-actions"
-                >
+                <div v-if="canUpdateSettings" class="logo-actions">
                   <Upload
                     accept="image/jpeg,image/png,image/webp"
                     :before-upload="beforeLogoUpload"
@@ -223,6 +280,9 @@ onMounted(load);
                     {{ $t('system.settingsForm.actions.useDefaultLogo') }}
                   </Button>
                 </div>
+                <p class="logo-requirements">
+                  {{ $t('system.settingsForm.fields.systemLogo.requirements') }}
+                </p>
               </div>
               <Switch
                 v-else-if="item.type === 'boolean'"
@@ -325,6 +385,10 @@ onMounted(load);
   flex-wrap: wrap;
 }
 
+.logo-setting :deep(.ant-upload-wrapper) {
+  display: block;
+}
+
 .logo-preview {
   display: flex;
   width: 72px;
@@ -341,6 +405,44 @@ onMounted(load);
   max-width: 56px;
   max-height: 56px;
   object-fit: contain;
+}
+
+.logo-preview-button {
+  position: relative;
+  padding: 0;
+  cursor: pointer;
+}
+
+.logo-preview-button:disabled {
+  cursor: wait;
+}
+
+.logo-preview-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 11px;
+  opacity: 0;
+  background: rgb(15 23 42 / 68%);
+  transition: opacity 0.2s ease;
+}
+
+.logo-preview-button:hover .logo-preview-overlay,
+.logo-preview-button:focus-visible .logo-preview-overlay {
+  opacity: 1;
+}
+
+.logo-requirements {
+  flex-basis: 100%;
+  margin: 0;
+  color: hsl(var(--muted-foreground));
+  font-size: 12px;
+  line-height: 18px;
 }
 
 .settings-label {

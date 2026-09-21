@@ -427,6 +427,7 @@
   "settingsDescription": "集中维护系统名称、系统 Logo、默认分页数量及登录页面相关设置。",
   "settingsForm": {
     "actions": {
+      "replaceLogo": "更换",
       "uploadLogo": "上传 Logo",
       "useDefaultLogo": "恢复默认 Logo"
     },
@@ -437,9 +438,10 @@
         "placeholder": "请输入系统名称"
       },
       "systemLogo": {
-        "description": "上传系统 Logo，支持 JPG、PNG 或 WebP，文件不超过 2 MB；未上传时使用默认 Logo。",
+        "description": "点击 Logo 预览或“上传 Logo”即可更换；未上传时使用系统默认 Logo。",
         "label": "系统 Logo",
-        "previewAlt": "系统 Logo 预览"
+        "previewAlt": "系统 Logo 预览",
+        "requirements": "上传要求：JPG、PNG 或 WebP；文件不超过 2 MB；宽度和高度均为 64 至 4096 像素。"
       },
       "pageSize": {
         "description": "设置数据列表默认每页显示的记录数量，可填写 10 至 100。",
@@ -492,6 +494,7 @@
       "invalid": "系统配置格式不正确，请检查后重试",
       "loginDescriptionInvalid": "登录页宣传语必须是文本，且不能超过 500 个字符",
       "logoInvalid": "Logo 必须是 64×64 至 4096×4096 像素的 JPG、PNG 或 WebP 图片，且不超过 2 MB",
+      "logoDimensionsInvalid": "Logo 宽度和高度必须均为 64 至 4096 像素",
       "logoReset": "已恢复默认 Logo",
       "logoSizeInvalid": "Logo 文件不能超过 2 MB",
       "logoTypeInvalid": "Logo 仅支持 JPG、PNG 或 WebP 格式",
