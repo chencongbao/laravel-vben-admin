@@ -2,7 +2,7 @@ import type { Router } from 'vue-router';
 
 import { LOGIN_PATH } from '@vben/constants';
 import { preferences } from '@vben/preferences';
-import { useAccessStore, useUserStore } from '@vben/stores';
+import { resetAllStores, useAccessStore, useUserStore } from '@vben/stores';
 import { startProgress, stopProgress } from '@vben/utils';
 
 import { accessRoutes, coreRouteNames } from '#/router/routes';
@@ -49,6 +49,15 @@ function setupAccessGuard(router: Router) {
     const accessStore = useAccessStore();
     const userStore = useUserStore();
     const authStore = useAuthStore();
+
+    // 刷新后只恢复锁屏标记，临时锁屏密码已随页面内存丢失。
+    if (accessStore.isLockScreen && !accessStore.lockScreenPassword) {
+      resetAllStores();
+      accessStore.$persist();
+      if (to.path !== LOGIN_PATH) {
+        return { path: LOGIN_PATH, replace: true };
+      }
+    }
 
     // 基本路由通常不需要进入权限拦截；个人中心使用后台基础布局，
     // 刷新时仍需初始化动态菜单，否则侧边栏会只剩空容器。

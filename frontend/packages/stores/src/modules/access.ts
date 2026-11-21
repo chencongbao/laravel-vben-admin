@@ -72,6 +72,7 @@ export const useAccessStore = defineStore('core-access', {
     lockScreen(password: string) {
       this.isLockScreen = true;
       this.lockScreenPassword = password;
+      this.$persist?.();
     },
     setAccessCodes(codes: string[]) {
       this.accessCodes = codes;
@@ -97,12 +98,13 @@ export const useAccessStore = defineStore('core-access', {
     unlockScreen() {
       this.isLockScreen = false;
       this.lockScreenPassword = undefined;
+      this.$persist?.();
     },
   },
   persist: {
     // Authentication state is scoped to the current browser tab. The local
     // screen-lock password must never be written to Web Storage.
-    pick: ['accessToken', 'refreshToken', 'accessCodes'],
+    pick: ['accessToken', 'refreshToken', 'accessCodes', 'isLockScreen'],
     storage: sessionStorage,
   },
   state: (): AccessState => ({

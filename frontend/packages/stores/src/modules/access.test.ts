@@ -1,9 +1,34 @@
 import { createPinia, setActivePinia } from 'pinia';
+import { createPersistedState } from 'pinia-plugin-persistedstate';
 import { beforeEach, describe, expect, it } from 'vitest';
+import { createApp, nextTick } from 'vue';
 
 import { useAccessStore } from './access';
 
 describe('useAccessStore', () => {
+  it('restores the lock marker without restoring the lock password', async () => {
+    sessionStorage.removeItem('core-access');
+    function newStore() {
+      const pinia = createPinia().use(createPersistedState());
+      createApp({}).use(pinia);
+      return useAccessStore(pinia);
+    }
+
+    const store = newStore();
+    store.setAccessToken('example-token');
+    await nextTick();
+    store.lockScreen('temporary-password');
+
+    const restored = newStore();
+    expect(restored.accessToken).toBe('example-token');
+    expect(restored.isLockScreen).toBe(true);
+    expect(restored.lockScreenPassword).toBeUndefined();
+    expect(sessionStorage.getItem('core-access')).not.toContain(
+      'temporary-password',
+    );
+    sessionStorage.removeItem('core-access');
+  });
+
   beforeEach(() => {
     setActivePinia(createPinia());
   });
