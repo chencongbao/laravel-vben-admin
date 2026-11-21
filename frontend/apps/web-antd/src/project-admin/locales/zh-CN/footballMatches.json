@@ -1,0 +1,27 @@
+{
+  "title": "比赛与结构化比分",
+  "description": "人工维护比赛骨架、主客队、阶段、比分、状态和正式阵容。",
+  "create": "新增比赛", "edit": "编辑比赛", "archive": "归档", "search": "查询", "actions": "操作", "empty": "暂无比赛",
+  "statusChange": "比赛状态转换", "changeStatus": "确认转换", "terminalStatus": "当前为终态，不允许通过普通流程重开。",
+  "lineups": "正式阵容", "addPlayer": "添加球员", "remove": "移除", "saveLineup": "保存完整阵容",
+  "permission": {"status": "修改比赛状态", "lineup": "维护正式阵容"},
+  "fields": {"competition": "赛事", "season": "赛季", "stage": "阶段", "group": "小组", "round": "轮次", "venue": "场地", "home": "主队", "away": "客队", "kickoff": "开球时间（UTC）", "status": "比赛状态", "targetStatus": "选择目标状态", "statusReason": "操作原因（至少 3 个字符）", "lineupTeam": "选择参赛球队", "formation": "阵型，如 4-3-3", "jersey": "号码", "lineupReason": "阵容修改原因（至少 3 个字符）", "leg": "回合", "originalName": "原始比赛名", "originalLocale": "原始语言", "scoreType": "比分类型", "homeScore": "主队比分", "awayScore": "客队比分", "confirmed": "已确认", "periodType": "阶段类型", "sequence": "顺序"},
+  "scores": "结构化比分", "periods": "比赛阶段", "save": "保存", "add": "添加", "cancel": "取消",
+  "confirmArchive": "确定归档这场比赛吗？已确认比分的比赛不能归档。",
+  "events": {
+    "title": "正式事件与 VAR", "help": "事件按权威顺序展示；VAR 必须明确选择被审查事件，比分变化必须填写操作后的完整比分快照。", "create": "新增事件", "edit": "修订事件", "rescind": "撤回", "rescindTitle": "撤回正式事件", "rescindWarning": "撤回会保留历史证据并发布新的比赛 revision，不会物理删除。", "scoreAfter": "操作后的完整比分",
+    "fields": {"time": "时间", "type": "事件类型", "status": "状态", "subject": "球队 / 球员", "details": "英文详情", "period": "比赛阶段", "team": "参赛球队", "player": "主要球员", "relatedPlayer": "关联球员", "minute": "分钟 / 补时", "sortOrder": "权威顺序", "subtype": "稳定子类型", "resultText": "当时结果文本", "supersedes": "替代旧事件", "reviewedEvent": "明确审查事件", "varOutcome": "VAR 结论", "reviewedStatus": "审查期间目标状态", "reason": "操作原因（至少 3 个字符）"},
+    "messages": {"required": "请填写事件类型、状态、权威顺序和至少 3 个字符的操作原因", "varRequired": "VAR 必须明确选择被审查事件和结论", "reasonRequired": "请填写至少 3 个字符的撤回原因", "saved": "正式事件已保存并发布", "rescinded": "事件已撤回并发布", "failed": "操作失败，请刷新后检查 revision、事件关联和比分快照"}
+  },
+  "commentaries": {
+    "title": "正式英文文字直播", "help": "供应平台只保存英文正式原文；事件关联必须人工明确选择，不根据分钟、球员或进球标记自动推断。", "create": "新增文字直播", "edit": "修订文字直播", "rescind": "撤回", "rescindTitle": "撤回正式文字直播", "rescindWarning": "撤回会保留记录并发布新的比赛 revision，且不能直接恢复。需要重新发布时应新增记录。",
+    "fields": {"time": "时间", "type": "内容类型", "text": "英文正式原文", "flags": "展示标记", "status": "状态", "period": "比赛阶段", "event": "显式关联正式事件", "minute": "分钟 / 补时", "player": "主要球员", "relatedPlayer": "关联球员", "sortOrder": "展示顺序", "reason": "操作原因（至少 3 个字符）"},
+    "messages": {"required": "请填写内容类型、英文原文、展示顺序和至少 3 个字符的操作原因", "playersDifferent": "主要球员和关联球员不能相同", "reasonRequired": "请填写至少 3 个字符的撤回原因", "saved": "正式文字直播已保存并发布", "rescinded": "文字直播已撤回并发布", "failed": "操作失败，请刷新后检查 Match revision 和关联字段"}
+  },
+  "statistics": {
+    "title": "正式比赛统计", "help": "统计按球队或球员提交完整快照；空白指标不会入库，统计不会反向修改比分、事件或比赛状态。", "edit": "编辑完整快照", "team": "球队统计", "player": "球员统计", "snapshotWarning": "保存会完整替换当前球队或球员的全部正式统计，不是局部追加。", "deprecatedWarning": "当前作用域包含已废弃指标。为避免完整替换时误删历史值，页面暂不允许保存，请先确认废弃指标迁移方案。", "clearTitle": "确认清空正式统计", "clearWarning": "当前作用域已有正式统计。清空是高风险操作，会提交空快照、递增 Match revision 并保留审计记录。",
+    "fields": {"subject": "统计对象", "metric": "指标", "value": "值", "updatedAt": "更新时间", "team": "参赛球队", "player": "球员", "reason": "操作原因（至少 3 个字符）"},
+    "messages": {"required": "请选择统计对象并填写至少 3 个字符的操作原因", "invalidJson": "JSON 类型指标必须填写有效的对象或数组", "deprecatedBlocked": "当前作用域含已废弃指标，未确认迁移方案前不能完整替换", "definitionsFailed": "统计指标字典加载失败，当前禁止提交完整快照", "clearForbidden": "清空已有正式统计需要独立的统计清空权限", "saved": "正式统计完整快照已保存并发布", "failed": "操作失败，请刷新后检查 Match revision、指标类型、精度和作用域"}
+  },
+  "messages": {"saved": "保存成功", "failed": "操作失败，请检查字段关系", "archived": "已归档", "statusRequired": "请选择目标状态并填写至少 3 个字符的原因", "statusChanged": "比赛状态已更新并发布", "statusFailed": "状态转换失败，请刷新后检查转换规则、开球时间和已确认比分", "lineupRequired": "请选择球队并填写至少 3 个字符的原因", "lineupSaved": "正式阵容已保存并发布", "lineupFailed": "阵容保存失败，请刷新后检查 revision、参赛球队和球员冲突"}
+}

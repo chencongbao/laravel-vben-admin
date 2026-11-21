@@ -1,0 +1,72 @@
+{
+  "title": "Source takeovers",
+  "description": "Manage primary-to-fallback source takeovers per match and data group. Takeovers collect supplier candidates and never directly update canonical match data.",
+  "search": "Search",
+  "reset": "Reset",
+  "propose": "Propose takeover",
+  "details": "Details",
+  "fields": {
+    "id": "ID",
+    "matchId": "Local match ID",
+    "dataGroup": "Data group",
+    "primarySource": "Primary source",
+    "fallbackSource": "Fallback source",
+    "status": "Status",
+    "progress": "Recovery progress",
+    "generationVersion": "Generation / version",
+    "lastRun": "Latest run",
+    "failure": "Failure",
+    "reasonCode": "Reason code",
+    "reason": "Operation reason",
+    "actions": "Actions"
+  },
+  "dataGroups": {
+    "base_data": "Base data",
+    "scores": "Scores",
+    "status": "Match status",
+    "lineups": "Lineups",
+    "events": "Detailed events",
+    "var": "VAR",
+    "statistics": "Statistics",
+    "standings": "Standings",
+    "commentary": "Commentary"
+  },
+  "statuses": {
+    "proposed": "Proposed",
+    "approved": "Approved",
+    "activating": "Activating",
+    "active": "Active",
+    "reconciling": "Awaiting reconciliation",
+    "closed": "Closed",
+    "cancelled": "Cancelled",
+    "failed": "Activation failed"
+  },
+  "actions": {
+    "approve": "Approve",
+    "cancel": "Cancel",
+    "activate": "Activate fallback collection",
+    "probe": "Probe primary recovery",
+    "close": "Reconcile and close"
+  },
+  "help": {
+    "reasonCode": "Use a stable lowercase code such as primary_timeout.",
+    "activation": "Only scores and match status currently support real fallback collection. Other groups may be proposed but cannot be activated.",
+    "recovery": "The primary must succeed at least 3 consecutive times over at least 2 minutes before reconciliation.",
+    "close": "The server compares primary and fallback scores or status before closing. A mismatch never switches back."
+  },
+  "messages": {
+    "saved": "Operation submitted",
+    "failed": "Operation failed. Refresh and check the state, version, and server validation result.",
+    "required": "Complete all required fields",
+    "reasonRequired": "An operation reason of at least 3 characters is required"
+  },
+  "permission": {
+    "view": "View source takeovers",
+    "propose": "Propose source takeovers",
+    "approve": "Approve source takeovers",
+    "cancel": "Cancel source takeovers",
+    "activate": "Activate fallback collection",
+    "reconcile": "Probe primary source recovery",
+    "close": "Reconcile and close source takeovers"
+  }
+}

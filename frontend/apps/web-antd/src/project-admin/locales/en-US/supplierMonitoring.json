@@ -1,0 +1,31 @@
+{
+  "title": "Supplier data monitoring",
+  "description": "Read-only view of source health, collection results, raw-record processing, and mapping backlog. It never switches sources or changes official data.",
+  "window": "Window",
+  "refresh": "Refresh",
+  "sourceTable": "By source",
+  "failedCount": "Failed {count}",
+  "windows": { "6": "Last 6 hours", "24": "Last 24 hours", "72": "Last 3 days", "168": "Last 7 days" },
+  "cards": { "activeSources": "Active sources", "completedRuns": "Completed runs", "pendingRecords": "Pending raw records", "pendingMappings": "Pending mappings" },
+  "fields": { "source": "Source", "status": "Status", "health": "Health", "scorePolling": "Score scheduling", "runs": "Completed / all runs", "apiCalls": "Successful / all calls", "apiLatency": "Average / P95 latency", "pendingMappings": "Pending mappings", "latestRun": "Latest run", "lastSuccess": "Last success" },
+  "health": { "unknown": "Unknown", "healthy": "Healthy", "delayed": "Delayed", "degraded": "Degraded", "unavailable": "Unavailable", "recovering": "Recovering" },
+  "sourceStatuses": { "draft": "Draft", "active": "Active", "degraded": "Degraded", "suspended": "Suspended", "disabled": "Disabled" },
+  "runStatuses": { "pending": "Pending", "running": "Running", "completed": "Completed", "failed": "Failed" },
+  "scorePolling": { "title": "Automatic live-score scheduling", "description": "Read-only visibility into live-score polling. An expired lease indicates a previous task may have exited unexpectedly and can be reclaimed by a later scheduler run.", "enabled": "Polling enabled", "due": "Due", "claimed": "Active leases", "staleClaims": "Expired leases", "states": { "disabled": "Disabled", "scheduled": "Scheduled", "due": "Due", "claimed": "Running", "stale_claim": "Lease expired" } },
+  "apiQuality": { "title": "Supplier API call quality", "description": "Counts real collection and manual probe requests. Only source, operation, resource, status, error code, and duration are stored; URLs, secrets, headers, and response bodies are excluded.", "total": "Calls", "errorRate": "Error rate", "rateLimited": "429 rate limits", "p95": "P95 response time" },
+  "takeovers": { "title": "Actual source takeovers", "description": "Only persisted takeover lifecycle records are counted. Activations in the selected window use activated_at; currently active includes active and reconciling. Proposals never count as activations.", "currentlyActive": "Currently active", "pending": "Pending takeovers", "activated": "Activated in window", "failed": "Activation failures in window", "proposed": "Proposed in window", "closed": "Closed in window", "recoveryPending": "Primary recovery probes pending" },
+  "latency": { "title": "Supplier data delivery latency", "description": "Only score and event snapshots with an explicit provider timestamp are included. The metric is local received time minus provider updated time; it is not per-event occurrence latency or pure network time.", "fields": { "resource": "Data group", "samples": "Valid samples", "average": "Average" }, "resources": { "scores": "Score snapshots", "events": "Event snapshots" } },
+  "postMatchRevisions": { "title": "Post-match publication revisions", "description": "For finished matches in the quality window, only matches with an official finished publication snapshot are eligible. Every later revision after the first finished snapshot counts as one post-match publication revision.", "limitations": "This shows whether official snapshots continued to change; it does not judge correctness, and matches without a finished publication snapshot are excluded from the denominator.", "eligible": "Matches with finished snapshot", "revised": "Matches revised after finish", "revisions": "Post-finish revisions", "rate": "Post-match revision rate" },
+  "conflictQuality": { "title": "Primary-shadow supplier conflict rate", "description": "Only field comparisons actually executed between the Sportmonks primary source and Goalserve shadow source in the current runtime window are included. Conflict rate is conflicting fields divided by comparable fields. {count} fields lacked sufficient data or dictionary mappings and are excluded from the denominator.", "runs": "Completed comparison runs", "pairs": "Matched fixture pairs", "conflicts": "Conflicting / comparable fields", "rate": "Field conflict rate" },
+  "quality": {
+    "title": "Official match data presence",
+    "window": "Quality window",
+    "description": "Checks whether each official data group exists for {count} finished matches in the selected window. Presence does not prove semantic completeness.",
+    "varNote": "VAR evidence is the share of matches containing a VAR event. Until VAR applicability is configured per competition, absence must not be classified as missing data.",
+    "windows": { "7": "Last 7 days", "30": "Last 30 days", "90": "Last 90 days" },
+    "fields": { "group": "Data group", "matches": "Matches present", "rate": "Presence rate" },
+    "groups": { "confirmed_score": "Confirmed score", "confirmed_lineups": "Both confirmed lineups", "events": "Match events", "var_evidence": "VAR event evidence", "statistics": "Team or player statistics", "active_commentary": "Active English commentary" }
+  },
+  "messages": { "failed": "Failed to load monitoring data" },
+  "permission": { "view": "View supplier data monitoring" }
+}

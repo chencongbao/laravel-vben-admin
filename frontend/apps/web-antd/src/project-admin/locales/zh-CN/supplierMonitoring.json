@@ -1,0 +1,31 @@
+{
+  "title": "供应数据运行监控",
+  "description": "只读查看数据源健康、采集结果、原始记录处理和映射积压，不会自动切换来源或修改正式数据。",
+  "window": "统计窗口",
+  "refresh": "刷新",
+  "sourceTable": "按数据源查看",
+  "failedCount": "失败 {count}",
+  "windows": { "6": "最近 6 小时", "24": "最近 24 小时", "72": "最近 3 天", "168": "最近 7 天" },
+  "cards": { "activeSources": "启用数据源", "completedRuns": "完成采集批次", "pendingRecords": "待处理原始记录", "pendingMappings": "待审核映射" },
+  "fields": { "source": "数据源", "status": "状态", "health": "健康状态", "scorePolling": "比分调度", "runs": "完成/全部批次", "apiCalls": "成功/全部调用", "apiLatency": "平均/P95 耗时", "pendingMappings": "待审核映射", "latestRun": "最近批次", "lastSuccess": "最后成功" },
+  "health": { "unknown": "未知", "healthy": "健康", "delayed": "延迟", "degraded": "降级", "unavailable": "不可用", "recovering": "恢复中" },
+  "sourceStatuses": { "draft": "草稿", "active": "启用", "degraded": "降级", "suspended": "暂停", "disabled": "停用" },
+  "runStatuses": { "pending": "等待中", "running": "执行中", "completed": "已完成", "failed": "失败" },
+  "scorePolling": { "title": "实时比分自动调度", "description": "只读展示自动比分轮询的当前调度状态；逾期租约表示上一次任务可能异常退出，后续调度可重新领取。", "enabled": "已启用轮询", "due": "等待执行", "claimed": "执行租约中", "staleClaims": "逾期租约", "states": { "disabled": "未启用", "scheduled": "已排期", "due": "待执行", "claimed": "执行中", "stale_claim": "租约逾期" } },
+  "apiQuality": { "title": "供应商 API 调用质量", "description": "统计真实采集与人工探测请求；仅保存来源、操作、资源、状态码、错误码和耗时，不保存 URL、密钥、请求头或响应正文。", "total": "调用次数", "errorRate": "错误率", "rateLimited": "429 限流次数", "p95": "P95 响应耗时" },
+  "takeovers": { "title": "供应商实际接管", "description": "只统计已持久化的接管生命周期。窗口内激活次数按 activated_at 计算，当前接管中包含 active 和 reconciling；接管建议不会计入激活次数。", "currentlyActive": "当前接管中", "pending": "待处理接管", "activated": "窗口内已激活", "failed": "窗口内激活失败", "proposed": "窗口内接管建议", "closed": "窗口内已关闭", "recoveryPending": "主源恢复探测中" },
+  "latency": { "title": "供应商数据接收延迟", "description": "仅统计供应商明确提供更新时间的比分和事件快照，口径为本地接收时间减供应商更新时间；这不是单个进球/事件的发生到达延迟，也不是纯网络耗时。", "fields": { "resource": "数据组", "samples": "有效样本", "average": "平均值" }, "resources": { "scores": "比分快照", "events": "事件快照" } },
+  "postMatchRevisions": { "title": "赛后发布修订", "description": "统计质量窗口内已完赛比赛中，存在正式 finished 发布快照的比赛；首次 finished 快照之后的每个新 revision 计为一次赛后发布修订。", "limitations": "这里只反映正式发布快照是否继续变化，不判断修订正确性，也不把没有 finished 发布快照的比赛计入分母。", "eligible": "有完赛快照的比赛", "revised": "发生赛后修订的比赛", "revisions": "赛后 revision 数", "rate": "赛后修订率" },
+  "conflictQuality": { "title": "主备供应商冲突率", "description": "只统计当前运行窗口内真正执行过的 Sportmonks 主源与 Goalserve 影子源字段比对；冲突率为冲突字段数除以可比较字段数。另有 {count} 个字段因数据或字典不足不可比较，未进入分母。", "runs": "完成比对次数", "pairs": "匹配比赛对", "conflicts": "冲突/可比较字段", "rate": "字段冲突率" },
+  "quality": {
+    "title": "正式比赛数据存在率",
+    "window": "质量窗口",
+    "description": "统计最近窗口内 {count} 场已完赛比赛是否存在对应正式数据；这里只表示存在，不代表字段语义已经完整。",
+    "varNote": "VAR 证据比例仅表示存在 VAR 事件的比赛占比。由于尚未配置赛事 VAR 适用范围，不应把没有 VAR 事件直接判断为数据缺失。",
+    "windows": { "7": "最近 7 天", "30": "最近 30 天", "90": "最近 90 天" },
+    "fields": { "group": "数据组", "matches": "存在比赛数", "rate": "存在率" },
+    "groups": { "confirmed_score": "已确认比分", "confirmed_lineups": "双方已确认阵容", "events": "比赛事件", "var_evidence": "VAR 事件证据", "statistics": "球队或球员统计", "active_commentary": "有效英文文字直播" }
+  },
+  "messages": { "failed": "加载监控数据失败" },
+  "permission": { "view": "查看供应数据运行监控" }
+}

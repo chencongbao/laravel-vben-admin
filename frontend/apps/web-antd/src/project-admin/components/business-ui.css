@@ -1,0 +1,21 @@
+.business-modal .ant-modal-content { display: flex; flex-direction: column; max-height: calc(100vh - 48px); }
+.business-modal .ant-modal-body { min-height: 0; overscroll-behavior: contain; }
+.business-modal .ant-modal-header, .business-modal .ant-modal-footer { flex-shrink: 0; }
+.business-modal .ant-space { max-width: 100%; }
+.business-modal .ant-form-item { min-width: 0; }
+.business-modal .ant-input-number { max-width: 100%; }
+.business-modal pre { overflow-wrap: anywhere; }
+
+/* Fixed cells must cover the horizontally scrolling columns underneath.
+   Scope to project business tables; shared system tables keep their theme. */
+.business-data-table.admin-data-table .ant-table-thead > tr > .ant-table-cell-fix-left,
+.business-data-table.admin-data-table .ant-table-thead > tr > .ant-table-cell-fix-right {
+  background: hsl(var(--muted));
+  background: color-mix(in srgb, hsl(var(--muted)) 70%, hsl(var(--card)));
+}
+
+.business-data-table.admin-data-table .ant-table-tbody > tr:hover > .ant-table-cell-fix-left,
+.business-data-table.admin-data-table .ant-table-tbody > tr:hover > .ant-table-cell-fix-right {
+  background: hsl(var(--accent));
+  background: color-mix(in srgb, hsl(var(--accent)) 55%, hsl(var(--card)));
+}

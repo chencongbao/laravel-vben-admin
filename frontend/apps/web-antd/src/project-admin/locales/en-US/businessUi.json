@@ -1,0 +1,23 @@
+{
+  "refresh": "Refresh",
+  "filter": "Filters",
+  "search": "Search",
+  "reset": "Reset",
+  "revision": "Revision",
+  "received": "Received",
+  "duplicate": "Duplicates",
+  "collectionRunId": "Collection run ID",
+  "rawRecordId": "Raw record ID",
+  "sourceId": "Source ID",
+  "basic": "Basic information",
+  "access": "Access configuration",
+  "collection": "Collection and retries",
+  "policy": "Runtime policy",
+  "goal": "Goal",
+  "important": "Important",
+  "event": "Event",
+  "jsonHint": "JSON object or array",
+  "moreActions": "More actions",
+  "confirm": "OK",
+  "cancel": "Cancel"
+}

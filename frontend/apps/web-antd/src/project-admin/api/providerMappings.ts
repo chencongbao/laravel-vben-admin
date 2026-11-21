@@ -1,0 +1,20 @@
+import { requestClient } from '#/api/request';
+
+export const mappingOptions = () => requestClient.get<any>('/provider-mappings/options');
+export const providerMappings = (params: any) => requestClient.get<any>('/provider-mappings', { params });
+export const mappingCandidates = (params: any) => requestClient.get<any>('/provider-mappings/candidates', { params });
+export const mappingComparison = (id: number, params?: any) => requestClient.get<any>(`/provider-mappings/${id}/comparison`, { params });
+export const shadowComparisons = (params: any) => requestClient.get<any>('/provider-mappings/shadow-comparisons', { params });
+export const createMapping = (data: any) => requestClient.post('/provider-mappings', data);
+export const bindMapping = (id: number, data: any) => requestClient.post(`/provider-mappings/${id}/bind`, data);
+export const rejectMapping = (id: number, data: any) => requestClient.post(`/provider-mappings/${id}/reject`, data);
+export const unbindMapping = (id: number, data: any) => requestClient.post(`/provider-mappings/${id}/unbind`, data);
+export const executeStatisticCandidate = (id: number, data: any) => requestClient.post(`/provider-mappings/${id}/execute-statistics`, data);
+export const executeStandingCandidate = (id: number, data: any) => requestClient.post(`/provider-mappings/${id}/execute-standing`, data);
+export const executeCommentaryCandidate = (id: number, data: any) => requestClient.post(`/provider-mappings/${id}/execute-commentary`, data);
+export const executeEventCandidate = (id: number, data: any) => requestClient.post(`/provider-mappings/${id}/execute-events`, data);
+export const executeLineupCandidate = (id: number, data: any) => requestClient.post(`/provider-mappings/${id}/execute-lineups`, data);
+export const executeScoreStatusCandidate = (id: number, data: any) => requestClient.post(`/provider-mappings/${id}/execute-score-status`, data);
+export const supplierMatchConflicts = (params: any) => requestClient.get<any>('/supplier-match-conflicts', { params });
+export const detectSupplierMatchConflicts = (data: any) => requestClient.post('/supplier-match-conflicts/detect', data);
+export const resolveSupplierMatchConflict = (id: number, data: any) => requestClient.post(`/supplier-match-conflicts/${id}/resolve`, data);

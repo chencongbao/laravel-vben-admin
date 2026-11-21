@@ -1,0 +1,72 @@
+{
+  "title": "供应商接管",
+  "description": "按比赛和数据组管理主备来源接管。接管只采集供应商候选，不会直接修改正式比赛数据。",
+  "search": "查询",
+  "reset": "重置",
+  "propose": "创建接管建议",
+  "details": "详情",
+  "fields": {
+    "id": "ID",
+    "matchId": "本地比赛 ID",
+    "dataGroup": "数据组",
+    "primarySource": "主来源",
+    "fallbackSource": "备用来源",
+    "status": "接管状态",
+    "progress": "恢复进度",
+    "generationVersion": "代次 / 版本",
+    "lastRun": "最近采集",
+    "failure": "失败原因",
+    "reasonCode": "原因码",
+    "reason": "操作原因",
+    "actions": "操作"
+  },
+  "dataGroups": {
+    "base_data": "基础资料",
+    "scores": "比分",
+    "status": "比赛状态",
+    "lineups": "阵容",
+    "events": "详细事件",
+    "var": "VAR",
+    "statistics": "统计",
+    "standings": "积分榜",
+    "commentary": "文字直播"
+  },
+  "statuses": {
+    "proposed": "待批准",
+    "approved": "已批准",
+    "activating": "正在激活",
+    "active": "接管中",
+    "reconciling": "待对账关闭",
+    "closed": "已关闭",
+    "cancelled": "已取消",
+    "failed": "激活失败"
+  },
+  "actions": {
+    "approve": "批准",
+    "cancel": "取消",
+    "activate": "激活备用采集",
+    "probe": "探测主源恢复",
+    "close": "确认对账并关闭"
+  },
+  "help": {
+    "reasonCode": "使用稳定的小写英文原因码，例如 primary_timeout。",
+    "activation": "当前只有比分和比赛状态支持真实备用采集；其他数据组可记录建议，但不能激活。",
+    "recovery": "主源连续成功至少 3 次且首末间隔至少 2 分钟后，才会进入待对账状态。",
+    "close": "关闭前服务端会校验主备比分或状态一致，校验失败不会切回主源。"
+  },
+  "messages": {
+    "saved": "操作已提交",
+    "failed": "操作失败，请刷新后确认状态、版本和服务端校验结果",
+    "required": "请完整填写必填项",
+    "reasonRequired": "操作原因至少填写 3 个字符"
+  },
+  "permission": {
+    "view": "查看供应商接管",
+    "propose": "创建供应商接管建议",
+    "approve": "批准供应商接管",
+    "cancel": "取消供应商接管",
+    "activate": "激活备用来源采集",
+    "reconcile": "探测主来源恢复",
+    "close": "对账并关闭供应商接管"
+  }
+}

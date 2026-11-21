@@ -1,0 +1,35 @@
+{
+  "title": "Internal API clients",
+  "description": "Manage scoped credentials used by the business platform to access supplier /v1 APIs. Secrets are shown once.",
+  "create": "Create client",
+  "rotate": "Rotate secret",
+  "changeScopes": "Change scopes",
+  "enable": "Enable",
+  "disable": "Disable",
+  "search": "Search",
+  "secretTitle": "Save the client secret now",
+  "secretWarning": "The secret cannot be displayed again after this dialog closes. Store it in the business platform secret configuration, never in browsers, chat, or ordinary logs.",
+  "fields": {
+    "name": "Client name",
+    "keyId": "Client ID",
+    "status": "Status",
+    "scopes": "Scopes",
+    "expiresAt": "Expires at",
+    "lastUsedAt": "Last used",
+    "createdAt": "Created at",
+    "reason": "Reason",
+    "secret": "Client secret",
+    "actions": "Actions"
+  },
+  "statuses": { "active": "Active", "disabled": "Disabled" },
+  "messages": {
+    "created": "Client created",
+    "rotated": "Secret rotated; the previous secret is now invalid",
+    "statusChanged": "Client status updated",
+    "scopesChanged": "Client scopes updated",
+    "required": "Complete the required fields",
+    "createFailed": "Failed to create client",
+    "operationFailed": "Operation failed"
+  },
+  "permission": { "view": "View internal API clients", "manage": "Manage internal API clients" }
+}

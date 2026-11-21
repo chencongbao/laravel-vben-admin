@@ -1,0 +1,5 @@
+import {requestClient} from '#/api/request';
+export const collectionOptions=()=>requestClient.get<any>('/collections/options'); export const collectionRuns=(params:any={})=>requestClient.get<any>('/collections/runs',{params:{...params,per_page:100}}); export const rawRecords=(params:any={})=>requestClient.get<any>('/collections/raw-records',{params:{...params,per_page:100}}); export const syncCursors=()=>requestClient.get<any>('/collections/cursors'); export const createRun=(data:any)=>requestClient.post('/collections/runs',data); export const ingestRecord=(data:any)=>requestClient.post('/collections/raw-records',data); export const replayRecord=(id:number)=>requestClient.post(`/collections/raw-records/${id}/replay`); export const saveCursor=(data:any)=>requestClient.put('/collections/cursors',data);
+export const syncCatalog=(data:any)=>requestClient.post('/collections/catalog-sync',data);
+export const cursorCheckpoints=(id:number)=>requestClient.get<any>(`/collections/cursors/${id}/checkpoints`);
+export const restoreCursor=(id:number,data:any)=>requestClient.post(`/collections/cursor-checkpoints/${id}/restore`,data);

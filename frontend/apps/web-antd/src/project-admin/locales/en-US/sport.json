@@ -1,0 +1,64 @@
+{
+  "menu": "Sports",
+  "title": "Sport management",
+  "description": "Manage Football, Basketball, Tennis, Baseball and Esports data categories. Enabling a sport does not connect a supplier.",
+  "fields": {
+    "code": "Sport code",
+    "nameZh": "Chinese name",
+    "nameEn": "English name",
+    "enabled": "Status",
+    "sort": "Sort order",
+    "sourcesCount": "Supplier configurations",
+    "adaptation": "Adapter support",
+    "keyword": "Name or code",
+    "actions": "Actions"
+  },
+  "create": "Create sport",
+  "edit": "Edit sport",
+  "enable": "Enable",
+  "disable": "Disable",
+  "delete": "Delete",
+  "save": "Save",
+  "enabled": "Enabled",
+  "disabled": "Disabled",
+  "notAdapted": "Not adapted yet",
+  "empty": "No sports found",
+  "placeholder": "Search code, Chinese or English name",
+  "codeHint": "Start with a lowercase letter; use lowercase letters, digits or underscores. Maximum 32 characters.",
+  "codeLocked": "The code is reserved or referenced and cannot be changed.",
+  "sortHint": "Selectors use ascending sort order. This list shows the newest sports first.",
+  "adaptationHint": "Creating or enabling a sport does not connect a supplier or start collection. Other sports still need adapters and match modules.",
+  "prompts": {
+    "delete": "Delete this sport? Referenced or reserved sports cannot be deleted.",
+    "disable": "Disable this sport? Existing checks restrict new configurations and relevant collection. History is retained; supplier statuses and queued tasks are not automatically changed.",
+    "enable": "Enable this sport? This will not automatically start collection."
+  },
+  "validation": {
+    "required": "This field is required.",
+    "length": "Names allow 80 characters; codes allow 32.",
+    "code": "Code must start with a lowercase letter and contain lowercase letters, digits or underscores.",
+    "sort": "Sort order must be an integer from 0 to 100000."
+  },
+  "messages": {
+    "saved": "Sport saved",
+    "deleted": "Sport deleted",
+    "loadFailed": "Unable to load. Click Refresh to retry.",
+    "saveFailed": "Unable to save. Check the input or retry later.",
+    "codeProtected": "The sport code is referenced or reserved and cannot be changed.",
+    "deleteProtected": "This sport is referenced or reserved and cannot be deleted.",
+    "conflict": "The code is duplicated or the sport is referenced. Refresh and retry."
+  },
+  "permission": {
+    "view": "View sports",
+    "create": "Create sports",
+    "update": "Edit sports",
+    "status": "Enable or disable sports",
+    "delete": "Delete sports"
+  },
+  "audit": {
+    "created": "Sport created",
+    "updated": "Sport edited",
+    "statusChanged": "Sport status changed",
+    "deleted": "Sport deleted"
+  }
+}

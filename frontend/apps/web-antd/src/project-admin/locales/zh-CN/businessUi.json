@@ -1,0 +1,23 @@
+{
+  "refresh": "刷新",
+  "filter": "筛选",
+  "search": "查询",
+  "reset": "重置",
+  "revision": "版本",
+  "received": "接收数量",
+  "duplicate": "重复数量",
+  "collectionRunId": "采集批次 ID",
+  "rawRecordId": "原始记录 ID",
+  "sourceId": "供应商 ID",
+  "basic": "基本信息",
+  "access": "访问配置",
+  "collection": "采集与重试",
+  "policy": "运行策略",
+  "goal": "进球",
+  "important": "重要事件",
+  "event": "事件",
+  "jsonHint": "JSON 对象或数组",
+  "moreActions": "更多操作",
+  "confirm": "确定",
+  "cancel": "取消"
+}

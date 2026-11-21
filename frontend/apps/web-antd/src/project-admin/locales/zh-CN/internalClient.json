@@ -1,0 +1,35 @@
+{
+  "title": "内部 API 客户端",
+  "description": "管理业务平台访问供应平台 /v1 API 的范围受限凭证。密钥只显示一次。",
+  "create": "创建客户端",
+  "rotate": "轮换密钥",
+  "changeScopes": "修改范围",
+  "enable": "启用",
+  "disable": "停用",
+  "search": "查询",
+  "secretTitle": "立即保存客户端密钥",
+  "secretWarning": "密钥关闭后无法再次查看。请保存到业务平台的安全配置中，不要发送到浏览器、聊天或普通日志。",
+  "fields": {
+    "name": "客户端名称",
+    "keyId": "客户端编号",
+    "status": "状态",
+    "scopes": "授权范围",
+    "expiresAt": "过期时间",
+    "lastUsedAt": "最后使用",
+    "createdAt": "创建时间",
+    "reason": "操作原因",
+    "secret": "客户端密钥",
+    "actions": "操作"
+  },
+  "statuses": { "active": "启用", "disabled": "停用" },
+  "messages": {
+    "created": "客户端已创建",
+    "rotated": "密钥已轮换，旧密钥立即失效",
+    "statusChanged": "客户端状态已更新",
+    "scopesChanged": "客户端授权范围已更新",
+    "required": "请填写必填信息",
+    "createFailed": "创建客户端失败",
+    "operationFailed": "操作失败"
+  },
+  "permission": { "view": "查看内部 API 客户端", "manage": "管理内部 API 客户端" }
+}

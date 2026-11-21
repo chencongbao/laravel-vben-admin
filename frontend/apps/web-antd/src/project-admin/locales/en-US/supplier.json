@@ -1,0 +1,207 @@
+{
+  "actions": {
+    "actions": "Actions",
+    "activate": "Activate",
+    "create": "Add supplier",
+    "disable": "Disable",
+    "edit": "Edit",
+    "reset": "Reset",
+    "search": "Search",
+    "suspend": "Suspend",
+    "testConnection": "Test connection",
+    "testPull": "Test pull"
+  },
+  "auditLog": {
+    "actionNames": {
+      "capabilityCreated": "Supplier capability created",
+      "capabilityUpdated": "Supplier capability updated",
+      "created": "Supplier created",
+      "credentialsUpdated": "Supplier credentials updated",
+      "probeFailed": "Supplier probe failed",
+      "probeSucceeded": "Supplier probe succeeded",
+      "statusChanged": "Supplier status changed",
+      "updated": "Supplier updated"
+    },
+    "subjectTypes": {
+      "source": "Supplier",
+      "sourceCapability": "Supplier capability"
+    }
+  },
+  "capability": {
+    "deliveryMethods": {
+      "polling": "Polling",
+      "stream": "Data stream",
+      "webhook": "Webhook",
+      "websocket": "WebSocket"
+    },
+    "description": "Maintain verified coverage, delivery methods, latency, and package limitations for each supplier.",
+    "fields": {
+      "competitionLimit": "Competition limitation",
+      "deliveryMethods": "Delivery methods",
+      "expectedLatency": "Expected latency (ms)",
+      "languages": "Supported languages",
+      "lastVerifiedAt": "Last verified at",
+      "packageLimit": "Package limitation",
+      "resource": "Resource",
+      "source": "Supplier",
+      "supportStatus": "Support status"
+    },
+    "help": {
+      "languages": "Use BCP 47 language tags such as en or zh-CN."
+    },
+    "messages": {
+      "loadFailed": "Could not load the capability matrix",
+      "required": "Select a support status",
+      "saveFailed": "Could not save the capability. Check the input",
+      "saved": "Capability saved"
+    },
+    "placeholders": {
+      "languages": "Enter en and press return"
+    },
+    "resources": {
+      "commentaries": "Text commentaries",
+      "competitions": "Competitions",
+      "events": "Events",
+      "lineups": "Lineups",
+      "matches": "Matches",
+      "players": "Players",
+      "scores": "Scores",
+      "standings": "Standings",
+      "statistics": "Statistics",
+      "teams": "Teams",
+      "var": "VAR"
+    },
+    "statuses": {
+      "competition_limited": "Competition limited",
+      "not_supported": "Not supported",
+      "package_limited": "Package limited",
+      "partial": "Partial",
+      "supported": "Supported",
+      "unknown": "Unknown"
+    },
+    "title": "Supplier capability matrix"
+  },
+  "credentials": {
+    "configured": "Configured",
+    "notConfigured": "Not configured"
+  },
+  "credentialStorages": {
+    "encrypted": "Encrypted by platform",
+    "reference": "External secret reference"
+  },
+  "description": "Manage the base configuration and operating state of Sportmonks, Goalserve, and future suppliers.",
+  "fields": {
+    "adapter": "Adapter",
+    "apiBaseUrl": "API base URL",
+    "apiVersion": "API version",
+    "code": "Supplier code",
+    "concurrencyLimit": "Concurrency limit",
+    "credentialReference": "Secret reference",
+    "credentialStorage": "Credential storage",
+    "credentials": "Credentials",
+    "healthStatus": "Health",
+    "id": "ID",
+    "name": "Supplier name",
+    "notes": "Notes",
+    "rateLimitPerDay": "Daily quota",
+    "rateLimitPerHour": "Hourly quota",
+    "rateLimitPerMinute": "Per-minute quota",
+    "requestTimeout": "Request timeout (seconds)",
+    "retryBackoffMs": "Retry backoff (ms)",
+    "retryMaxAttempts": "Maximum attempts",
+    "retryMaxDelayMs": "Maximum backoff (ms)",
+    "runMode": "Run mode",
+    "scorePollEnabled": "Automatic live-score polling",
+    "scorePollIntervalSeconds": "Score polling interval (seconds)",
+    "status": "Status",
+    "updatedAt": "Updated at",
+    "website": "Website",
+    "sport": "Sport"
+  },
+  "filters": {
+    "keyword": "Name, code, or adapter",
+    "runMode": "Run mode",
+    "status": "Status",
+    "sport": "Sport"
+  },
+  "form": {
+    "createTitle": "Add supplier",
+    "editTitle": "Edit supplier"
+  },
+  "healthStatuses": {
+    "degraded": "Degraded",
+    "delayed": "Delayed",
+    "healthy": "Healthy",
+    "recovering": "Recovering",
+    "unavailable": "Unavailable",
+    "unknown": "Unknown"
+  },
+  "help": {
+    "credentialReference": "Only an encrypted reference is stored and the original value is never returned. Leave blank to keep the current configuration.",
+    "credentials": "Enter a JSON object. Sportmonks uses the api_token field; a Goalserve shadow source uses the request_url field with the full HTTPS URL from the account portal. Credentials are encrypted and never returned by the API. Leave blank when editing to keep the current configuration.",
+    "scorePolling": "Disabled by default. When enabled with configured credentials in testing or shadow mode, only score raw snapshots and mapping candidates are collected; official data is never published automatically."
+  },
+  "menu": {
+    "capabilities": "Capability matrix",
+    "sources": "Supplier management"
+  },
+  "messages": {
+    "credentialsInvalid": "Credentials must be a JSON object whose values are strings",
+    "probeFailed": "Could not run the supplier probe",
+    "probeSucceeded": "Test succeeded in {duration} ms",
+    "required": "Complete all required fields",
+    "saveFailed": "Could not save the supplier. Check the input",
+    "saved": "Supplier saved",
+    "statusChangeFailed": "Could not change the supplier status",
+    "statusChanged": "Supplier status changed",
+    "sportUnsupported": "The selected adapter does not support this sport",
+    "sportImmutable": "A source with downstream data cannot change sport; create a new source instead"
+  },
+  "permission": {
+    "capabilityUpdate": "Update supplier capabilities",
+    "capabilityView": "View supplier capabilities",
+    "create": "Create suppliers",
+    "credentials": "Manage supplier credentials",
+    "status": "Change supplier status",
+    "test": "Test supplier connections",
+    "update": "Update suppliers",
+    "view": "View suppliers"
+  },
+  "probeErrors": {
+    "SUPPLIER_AUTHENTICATION_FAILED": "Supplier authentication failed",
+    "SUPPLIER_CONNECTION_FAILED": "Could not connect to the supplier",
+    "SUPPLIER_CREDENTIALS_MISSING": "Test credentials are not configured",
+    "SUPPLIER_ENDPOINT_NOT_ALLOWED": "The API endpoint is not on the security allowlist",
+    "SUPPLIER_HTTP_ERROR": "The supplier returned an HTTP error",
+    "SUPPLIER_PROBE_NOT_IMPLEMENTED": "The probe contract for this adapter is not implemented",
+    "SUPPLIER_RATE_LIMITED": "The supplier rate limited the request",
+    "SUPPLIER_REQUEST_FAILED": "The supplier request failed",
+    "SUPPLIER_RESPONSE_INVALID": "The supplier response format is invalid",
+    "SUPPLIER_RESPONSE_TOO_LARGE": "The supplier response exceeded the test limit",
+    "SUPPLIER_SECRET_REFERENCE_UNAVAILABLE": "No external secret-reference resolver is available"
+  },
+  "placeholders": {
+    "code": "For example, sportmonks",
+    "credentialReference": "Reference in the secret manager",
+    "credentials": "api_token or request_url",
+    "name": "For example, Sportmonks"
+  },
+  "prompts": {
+    "activate": "Activate this supplier?",
+    "disable": "Disable this supplier?",
+    "suspend": "Suspend this supplier?"
+  },
+  "runModes": {
+    "production": "Production",
+    "shadow": "Shadow",
+    "testing": "Testing"
+  },
+  "statuses": {
+    "active": "Active",
+    "degraded": "Degraded",
+    "disabled": "Disabled",
+    "draft": "Draft",
+    "suspended": "Suspended"
+  },
+  "title": "Supplier management"
+}
